@@ -1,0 +1,31 @@
+name: ledger_pro
+description: "Summa, a local-first personal ledger for Android and future desktop platforms."
+publish_to: 'none'
+version: 0.3.0+3
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  drift: ^2.34.4
+  file_picker: ^12.2.0
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  intl: ^0.20.3
+  package_info_plus: ^10.2.1
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  share_plus: ^13.3.0
+  url_launcher: ^6.3.2
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.34.6
+  build_runner: ^2.16.1
+
+flutter:
+  uses-material-design: true
