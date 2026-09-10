@@ -8,9 +8,8 @@ Summa requires no account and no backend server. Accounts, liabilities,
 categories, transactions, and in-app backups remain in the device's local
 SQLite database unless you explicitly export or share them.
 
-> Latest stable release: [`v0.3.0`](https://github.com/ManiaAmaeOvo/Summa/releases/tag/v0.3.0).
-> The `0.4.0` development branch adds complete English and Simplified Chinese
-> localization. Export a complete backup regularly when using important data.
+> Latest stable release: [`v0.4.0`](https://github.com/ManiaAmaeOvo/Summa/releases/tag/v0.4.0)
+> (`0.4.0+4`). Export a complete backup regularly when using important data.
 
 ## Why Summa exists
 
