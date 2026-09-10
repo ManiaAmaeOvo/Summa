@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:ledger_pro/app/providers.dart';
 import 'package:ledger_pro/domain/import_export/ledger_backup.dart';
 import 'package:ledger_pro/domain/import_export/local_backup.dart';
+import 'package:ledger_pro/l10n/l10n.dart';
 import 'package:share_plus/share_plus.dart';
 
 class DataManagementScreen extends ConsumerStatefulWidget {
@@ -37,7 +38,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
         .where((item) => item.kind == LocalBackupKind.manual)
         .toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('数据与备份')),
+      appBar: AppBar(title: Text(context.l10n.dataAndBackup)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -54,13 +55,11 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '完整备份由你掌控',
+                    context.l10n.backupUnderYourControl,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    '本地节点保存在 Summa 的应用专属文档目录；新版 Android 的普通文件管理器可能不会直接显示该目录，请在本页管理或导出。',
-                  ),
+                  Text(context.l10n.backupLocationDescription),
                   if (_location != null) ...[
                     const SizedBox(height: 10),
                     SelectableText(
@@ -77,21 +76,21 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
             const LinearProgressIndicator(),
           ],
           const SizedBox(height: 20),
-          const _SectionTitle(
-            title: '自动备份',
-            subtitle: '每次启动后的第一次成功修改前保存，滚动保留最近 5 个节点。',
+          _SectionTitle(
+            title: context.l10n.automaticBackups,
+            subtitle: context.l10n.automaticBackupsSubtitle,
           ),
           const SizedBox(height: 8),
           _BackupCard(
-            emptyText: '本次启动尚未发生有效修改',
+            emptyText: context.l10n.noAutomaticBackupYet,
             nodes: automatic,
             enabled: !_busy,
             onAction: _handleNodeAction,
           ),
           const SizedBox(height: 20),
-          const _SectionTitle(
-            title: '手动备份',
-            subtitle: '本地节点留在应用中；导出分享可保存到文件管理器、云盘或其他位置。',
+          _SectionTitle(
+            title: context.l10n.manualBackups,
+            subtitle: context.l10n.manualBackupsSubtitle,
           ),
           const SizedBox(height: 8),
           Card(
@@ -99,8 +98,8 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.save_outlined),
-                  title: const Text('备份到软件本地'),
-                  subtitle: const Text('创建一个不受 5 个自动节点限制的手动节点'),
+                  title: Text(context.l10n.backupInsideApp),
+                  subtitle: Text(context.l10n.backupInsideAppSubtitle),
                   trailing: const Icon(Icons.chevron_right),
                   enabled: !_busy,
                   onTap: _createManualBackup,
@@ -108,8 +107,8 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.ios_share_outlined),
-                  title: const Text('导出或分享备份'),
-                  subtitle: const Text('生成 Summa 完整 JSON 备份并交给系统保存'),
+                  title: Text(context.l10n.exportOrShareBackup),
+                  subtitle: Text(context.l10n.exportOrShareBackupSubtitle),
                   trailing: const Icon(Icons.chevron_right),
                   enabled: !_busy,
                   onTap: _exportBackup,
@@ -117,8 +116,8 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.file_open_outlined),
-                  title: const Text('从外部备份文件恢复'),
-                  subtitle: const Text('选择 JSON 文件后覆盖回档或合并'),
+                  title: Text(context.l10n.restoreExternalBackup),
+                  subtitle: Text(context.l10n.restoreExternalBackupSubtitle),
                   trailing: const Icon(Icons.chevron_right),
                   enabled: !_busy,
                   onTap: _pickAndRestore,
@@ -128,15 +127,15 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
           ),
           const SizedBox(height: 8),
           _BackupCard(
-            emptyText: '还没有手动本地备份',
+            emptyText: context.l10n.noManualBackups,
             nodes: manual,
             enabled: !_busy,
             onAction: _handleNodeAction,
           ),
           const SizedBox(height: 24),
-          const _SectionTitle(
-            title: '重置',
-            subtitle: '重置账本会保留本地备份，恢复出厂会同时删除它们。',
+          _SectionTitle(
+            title: context.l10n.reset,
+            subtitle: context.l10n.resetSubtitle,
           ),
           const SizedBox(height: 8),
           Card(
@@ -144,8 +143,10 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.cleaning_services_outlined),
-                  title: const Text('重置账单与账户'),
-                  subtitle: const Text('清空账单，账户恢复默认且余额归零；保留分类和备份'),
+                  title: Text(context.l10n.resetTransactionsAccounts),
+                  subtitle: Text(
+                    context.l10n.resetTransactionsAccountsSubtitle,
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   enabled: !_busy,
                   onTap: _resetLedgerData,
@@ -157,12 +158,12 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   title: Text(
-                    '恢复出厂设置',
+                    context.l10n.factoryReset,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                  subtitle: const Text('清空账单、账户、分类以及所有本地备份'),
+                  subtitle: Text(context.l10n.factoryResetSubtitle),
                   trailing: const Icon(Icons.chevron_right),
                   enabled: !_busy,
                   onTap: _factoryReset,
@@ -187,12 +188,15 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
         _location = location;
       });
     } catch (_) {
-      if (mounted) _message('无法读取本地备份目录');
+      if (mounted) _message(context.l10n.cannotReadBackupDirectory);
     }
   }
 
   Future<void> _createManualBackup() async {
-    final name = await _askForName(title: '手动备份名称', initial: '我的备份');
+    final name = await _askForName(
+      title: context.l10n.manualBackupName,
+      initial: context.l10n.myBackup,
+    );
     if (name == null || !mounted) return;
     await _runBusy(() async {
       final content = await ref
@@ -202,8 +206,8 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
           .read(localBackupStoreProvider)
           .createManualBackup(content, name: name);
       await _reloadBackups();
-      if (mounted) _message('手动备份已保存到软件本地');
-    }, failure: '创建本地备份失败');
+      if (mounted) _message(context.l10n.manualBackupSaved);
+    }, failure: context.l10n.createLocalBackupFailed);
   }
 
   Future<void> _exportBackup() async {
@@ -222,13 +226,13 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
             XFile.fromData(utf8.encode(content), mimeType: 'application/json'),
           ],
           fileNameOverrides: [name],
-          subject: 'Summa 完整备份',
+          subject: context.l10n.completeBackupSubject,
           sharePositionOrigin: box == null
               ? null
               : box.localToGlobal(Offset.zero) & box.size,
         ),
       );
-    }, failure: '备份导出失败，请重试');
+    }, failure: context.l10n.backupExportFailed);
   }
 
   Future<void> _pickAndRestore() async {
@@ -243,7 +247,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
         sourceName: file.name,
       );
     } catch (_) {
-      if (mounted) _message('无法读取所选备份文件');
+      if (mounted) _message(context.l10n.cannotReadSelectedBackup);
     }
   }
 
@@ -261,23 +265,26 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
         if (source == null) return;
         await _restoreSource(source, sourceName: node.name, mergeOnly: true);
       case _BackupNodeAction.rename:
-        final name = await _askForName(title: '重命名备份', initial: node.name);
+        final name = await _askForName(
+          title: context.l10n.renameBackup,
+          initial: node.name,
+        );
         if (name == null || !mounted) return;
         await _runBusy(() async {
           await ref.read(localBackupStoreProvider).renameBackup(node, name);
           await _reloadBackups();
-        }, failure: '重命名失败，请检查是否存在同名备份');
+        }, failure: context.l10n.renameBackupFailed);
       case _BackupNodeAction.delete:
         final confirmed = await _confirm(
-          title: '删除备份节点？',
-          message: '“${node.name}”将被永久删除，无法撤销。',
-          confirmLabel: '删除',
+          title: context.l10n.deleteBackupTitle,
+          message: context.l10n.deleteBackupMessage(node.name),
+          confirmLabel: context.l10n.delete,
         );
         if (!confirmed || !mounted) return;
         await _runBusy(() async {
           await ref.read(localBackupStoreProvider).deleteBackup(node);
           await _reloadBackups();
-        }, failure: '删除备份失败');
+        }, failure: context.l10n.deleteBackupFailed);
     }
   }
 
@@ -285,7 +292,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
     try {
       return await ref.read(localBackupStoreProvider).readBackup(node);
     } catch (_) {
-      if (mounted) _message('备份节点已不存在或无法读取');
+      if (mounted) _message(context.l10n.backupNoLongerAvailable);
       await _reloadBackups();
       return null;
     }
@@ -315,11 +322,17 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
         await repository.restoreFullBackup(source, mode: mode);
         await _reloadBackups();
         if (mounted) {
-          _message(mode == BackupRestoreMode.replace ? '已回档到所选备份' : '备份已合并');
+          _message(
+            mode == BackupRestoreMode.replace
+                ? context.l10n.restoredSelectedBackup
+                : context.l10n.backupMerged,
+          );
         }
-      }, failure: '恢复失败，数据库没有被部分修改');
+      }, failure: context.l10n.restoreDatabaseSafeFailure);
     } on LedgerBackupException catch (error) {
-      if (mounted) _message(error.message);
+      if (mounted) {
+        _message(_localizedBackupError(context, error.message));
+      }
     }
   }
 
@@ -329,20 +342,20 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
   ) => showDialog<BackupRestoreMode>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('确认恢复内容'),
+      title: Text(context.l10n.confirmRestoreContents),
       content: _BackupPreview(preview: preview, sourceName: sourceName),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(context.l10n.cancel),
         ),
         OutlinedButton(
           onPressed: () => Navigator.pop(context, BackupRestoreMode.merge),
-          child: const Text('合并'),
+          child: Text(context.l10n.merge),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, BackupRestoreMode.replace),
-          child: const Text('覆盖回档'),
+          child: Text(context.l10n.replaceAndRestore),
         ),
       ],
     ),
@@ -355,16 +368,24 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
   ) => showDialog<BackupRestoreMode>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text(mode == BackupRestoreMode.replace ? '回档到此节点？' : '合并此节点？'),
+      title: Text(
+        mode == BackupRestoreMode.replace
+            ? context.l10n.restoreThisSnapshotTitle
+            : context.l10n.mergeThisSnapshotTitle,
+      ),
       content: _BackupPreview(preview: preview, sourceName: sourceName),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, mode),
-          child: Text(mode == BackupRestoreMode.replace ? '确认回档' : '确认合并'),
+          child: Text(
+            mode == BackupRestoreMode.replace
+                ? context.l10n.confirmRestore
+                : context.l10n.confirmMerge,
+          ),
         ),
       ],
     ),
@@ -372,31 +393,31 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
 
   Future<void> _resetLedgerData() async {
     final confirmed = await _confirm(
-      title: '重置账单与账户？',
-      message: '全部账单将被永久清除，自定义账户将删除，默认账户余额归零。分类和所有备份会保留。',
-      confirmLabel: '确认重置',
+      title: context.l10n.resetTransactionsAccountsTitle,
+      message: context.l10n.resetTransactionsAccountsMessage,
+      confirmLabel: context.l10n.confirmReset,
     );
     if (!confirmed || !mounted) return;
     await _runBusy(() async {
       await ref.read(expenseRepositoryProvider).resetLedgerData();
       await _reloadBackups();
-      if (mounted) _message('账单与账户已重置，备份均已保留');
-    }, failure: '重置失败，数据没有被部分修改');
+      if (mounted) _message(context.l10n.transactionsAccountsReset);
+    }, failure: context.l10n.resetSafeFailure);
   }
 
   Future<void> _factoryReset() async {
     final confirmed = await _confirm(
-      title: '恢复出厂设置？',
-      message: '账单、账户、分类和软件内全部备份都将永久清除。导出到应用外部的文件不受影响。',
-      confirmLabel: '全部清除',
+      title: context.l10n.factoryResetTitle,
+      message: context.l10n.factoryResetMessage,
+      confirmLabel: context.l10n.clearEverything,
     );
     if (!confirmed || !mounted) return;
     await _runBusy(() async {
       await ref.read(expenseRepositoryProvider).resetToFactoryDefaults();
       await ref.read(localBackupStoreProvider).clearAllBackups();
       await _reloadBackups();
-      if (mounted) _message('Summa 已恢复出厂设置');
-    }, failure: '恢复出厂设置失败');
+      if (mounted) _message(context.l10n.factoryResetComplete);
+    }, failure: context.l10n.factoryResetFailed);
   }
 
   Future<String?> _askForName({
@@ -412,19 +433,19 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
           controller: controller,
           autofocus: true,
           maxLength: 40,
-          decoration: const InputDecoration(labelText: '名称'),
+          decoration: InputDecoration(labelText: context.l10n.name),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
               final value = controller.text.trim();
               if (value.isNotEmpty) Navigator.pop(context, value);
             },
-            child: const Text('保存'),
+            child: Text(context.l10n.save),
           ),
         ],
       ),
@@ -446,7 +467,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
@@ -565,28 +586,36 @@ class _BackupTile extends StatelessWidget {
           ? Icons.history_rounded
           : Icons.save_outlined,
     ),
-    title: Text(node.name),
+    title: Text(
+      node.kind == LocalBackupKind.automatic
+          ? context.l10n.automaticBackupName
+          : node.name,
+    ),
     subtitle: Text(
-      '${DateFormat('yyyy-MM-dd HH:mm:ss').format(node.createdAt)} · ${_formatSize(node.sizeBytes)} · 点击回档',
+      '${DateFormat.yMd(Localizations.localeOf(context).toLanguageTag()).add_Hms().format(node.createdAt)} · '
+      '${_formatSize(node.sizeBytes)} · ${context.l10n.tapToRestore}',
     ),
     trailing: PopupMenuButton<_BackupNodeAction>(
       enabled: enabled,
       onSelected: (action) => onAction(node, action),
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: _BackupNodeAction.replace,
-          child: Text('覆盖回档'),
+          child: Text(context.l10n.replaceAndRestore),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: _BackupNodeAction.merge,
-          child: Text('合并到当前账本'),
+          child: Text(context.l10n.mergeIntoLedger),
         ),
         if (node.kind == LocalBackupKind.manual)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: _BackupNodeAction.rename,
-            child: Text('重命名'),
+            child: Text(context.l10n.rename),
           ),
-        const PopupMenuItem(value: _BackupNodeAction.delete, child: Text('删除')),
+        PopupMenuItem(
+          value: _BackupNodeAction.delete,
+          child: Text(context.l10n.delete),
+        ),
       ],
     ),
   );
@@ -605,12 +634,23 @@ class _BackupPreview extends StatelessWidget {
     children: [
       Text(sourceName, style: Theme.of(context).textTheme.titleSmall),
       const SizedBox(height: 10),
-      Text('备份时间：${DateFormat('yyyy-MM-dd HH:mm').format(preview.createdAt)}'),
-      Text('账户：${preview.accountCount}'),
-      Text('分类：${preview.categoryCount}'),
-      Text('账单：${preview.entryCount}（含 ${preview.deletedEntryCount} 条已删除记录）'),
+      Text(
+        context.l10n.backupTime(
+          DateFormat.yMd(Localizations.localeOf(context).toLanguageTag())
+              .add_Hm()
+              .format(preview.createdAt),
+        ),
+      ),
+      Text(context.l10n.backupAccountCount(preview.accountCount)),
+      Text(context.l10n.backupCategoryCount(preview.categoryCount)),
+      Text(
+        context.l10n.backupTransactionCount(
+          preview.entryCount,
+          preview.deletedEntryCount,
+        ),
+      ),
       const SizedBox(height: 12),
-      const Text('执行成功前，Summa 会按本次启动的自动备份规则保护当前状态。'),
+      Text(context.l10n.restoreSafetyHint),
     ],
   );
 }
@@ -619,4 +659,59 @@ String _formatSize(int bytes) {
   if (bytes < 1024) return '$bytes B';
   if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
   return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
+}
+
+String _localizedBackupError(BuildContext context, String message) {
+  if (Localizations.localeOf(context).languageCode == 'zh') return message;
+  if (message.startsWith('备份 JSON 格式错误：')) {
+    return context.l10n.backupInvalidJson(
+      message.substring('备份 JSON 格式错误：'.length),
+    );
+  }
+  if (message == '这不是受支持的 Summa 完整备份') {
+    return context.l10n.backupUnsupported;
+  }
+  if (message == '备份时间无效') return context.l10n.backupInvalidTime;
+  final patterns = <(RegExp, String Function(RegExpMatch))>[
+    (
+      RegExp(r'^备份缺少 (.+) 列表$'),
+      (match) => context.l10n.backupMissingList(match.group(1)!),
+    ),
+    (
+      RegExp(r'^(.+) 中包含无效项目$'),
+      (match) => context.l10n.backupInvalidItem(match.group(1)!),
+    ),
+    (
+      RegExp(r'^字段 (.+) 必须是字符串$'),
+      (match) => context.l10n.backupFieldMustString(match.group(1)!),
+    ),
+    (
+      RegExp(r'^字段 (.+) 必须是字符串或 null$'),
+      (match) => context.l10n.backupFieldMustNullableString(match.group(1)!),
+    ),
+    (
+      RegExp(r'^字段 (.+) 必须是整数$'),
+      (match) => context.l10n.backupFieldMustInteger(match.group(1)!),
+    ),
+    (
+      RegExp(r'^字段 (.+) 必须是布尔值$'),
+      (match) => context.l10n.backupFieldMustBoolean(match.group(1)!),
+    ),
+    (
+      RegExp(r'^字段 (.+) 不是有效时间$'),
+      (match) => context.l10n.backupFieldInvalidTime(match.group(1)!),
+    ),
+    (
+      RegExp(r'^字段 (.+) 的值不受支持：(.*)$'),
+      (match) => context.l10n.backupFieldUnsupportedValue(
+        match.group(1)!,
+        match.group(2)!,
+      ),
+    ),
+  ];
+  for (final (pattern, translate) in patterns) {
+    final match = pattern.firstMatch(message);
+    if (match != null) return translate(match);
+  }
+  return context.l10n.restoreDatabaseSafeFailure;
 }

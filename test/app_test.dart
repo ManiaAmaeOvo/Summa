@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ledger_pro/app/app.dart';
+import 'package:ledger_pro/app/locale_controller.dart';
 import 'package:ledger_pro/app/providers.dart';
 import 'package:ledger_pro/app/theme/ledger_scroll_behavior.dart';
 import 'package:ledger_pro/data/database/app_database.dart';
@@ -12,8 +13,17 @@ import 'package:ledger_pro/domain/categories/ledger_category.dart';
 import 'package:ledger_pro/domain/transactions/expense_record.dart';
 import 'package:ledger_pro/domain/transactions/expense_repository.dart';
 import 'package:ledger_pro/features/transaction_editor/add_expense_sheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    LocaleController.instance.resetForTesting();
+    LocaleController.instance.value = AppLanguage.simplifiedChinese;
+  });
+
+  tearDown(LocaleController.instance.resetForTesting);
+
   final cashBalance = AccountBalance(
     id: 'cash',
     name: '现金',
@@ -45,6 +55,61 @@ void main() {
     expect(find.text('流动净资产'), findsOneWidget);
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.scrollBehavior, isA<LedgerScrollBehavior>());
+  });
+
+  testWidgets('switches the complete shell to English', (tester) async {
+    LocaleController.instance.value = AppLanguage.english;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          transactionsProvider.overrideWith(
+            (ref) => Stream.value(<LedgerRecord>[]),
+          ),
+          accountBalancesProvider.overrideWith(
+            (ref) => Stream.value(<AccountBalance>[]),
+          ),
+        ],
+        child: const SummaApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No transactions yet'), findsOneWidget);
+    expect(find.text('Add transaction'), findsOneWidget);
+    expect(find.text('Expense this month'), findsOneWidget);
+    expect(find.text('Liquid net worth'), findsOneWidget);
+    expect(find.text('Accounts'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('changes and persists language from Settings', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          transactionsProvider.overrideWith(
+            (ref) => Stream.value(<LedgerRecord>[]),
+          ),
+          accountBalancesProvider.overrideWith(
+            (ref) => Stream.value(<AccountBalance>[]),
+          ),
+        ],
+        child: const SummaApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('设置'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('语言'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Language'), findsOneWidget);
+    expect(LocaleController.instance.value, AppLanguage.english);
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.getString('app_language'), 'english');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('balance dialog closes without lifecycle errors', (tester) async {
@@ -110,13 +175,14 @@ void main() {
     expect(find.text('数据与备份'), findsOneWidget);
     expect(find.text('使用说明'), findsOneWidget);
     expect(find.text('关于 Summa'), findsOneWidget);
+    await tester.ensureVisible(find.text('使用说明'));
     await tester.tap(find.text('使用说明'));
     await tester.pumpAndSettle();
     expect(find.text('记账与交易类型'), findsOneWidget);
     await tester.tap(find.text('记账与交易类型'));
     await tester.pumpAndSettle();
     expect(find.textContaining('借入会同时增加负债'), findsOneWidget);
-    await tester.pageBack();
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     await tester.tap(find.text('分类管理'));
     await tester.pumpAndSettle();
@@ -391,6 +457,13 @@ class _RejectingExpenseRepository extends DriftExpenseRepository {
     String? categoryId,
     required String note,
   }) {
-    return Future.error(const TransactionRuleException('现金余额不足，当前可用 ¥1.00'));
+    return Future.error(
+      const TransactionRuleException(
+        TransactionRuleError.insufficientBalance,
+        accountId: 'account-cash',
+        accountName: '现金',
+        amountMinor: 100,
+      ),
+    );
   }
 }

@@ -1,66 +1,85 @@
 # Summa
 
-一款完全本地优先、面向 Android 的个人记账应用。
+**English** | [简体中文](README.zh-CN.md)
 
-Summa 不要求登录，不依赖后台服务器。账户、负债、分类和账单默认只
-保存在设备上的 SQLite 数据库中，并可随时导出为人类可读格式或完整备份。
+A local-first personal finance ledger for Android.
 
-> 当前版本：`0.3.0+3`。项目处于早期公开测试阶段，建议在录入重要数据后
-> 定期导出完整备份。
+Summa requires no account and no backend server. Accounts, liabilities,
+categories, transactions, and in-app backups remain in the device's local
+SQLite database unless you explicitly export or share them.
 
-## 为什么做 Summa
+> Latest stable release: [`v0.3.0`](https://github.com/ManiaAmaeOvo/Summa/releases/tag/v0.3.0).
+> The `0.4.0` development branch adds complete English and Simplified Chinese
+> localization. Export a complete backup regularly when using important data.
 
-这个项目源于一个使用 Python、NumPy 和 Markdown 编写的个人记账工具。
-旧版本依赖命令行或需要常驻 Server 的 Web UI，因此无法真正做到随身、离线、
-开箱即用。Summa 使用 Flutter 从头构建，先完成 Android 端，未来可以在
-同一数据模型上扩展桌面端与 iOS。
+## Why Summa exists
 
-项目早期开发阶段曾使用 `LedgerPro` 作为名称，现已更名为 `Summa`。为保证
-已安装测试版本和既有备份可以继续升级与恢复，部分不会展示给用户的内部标识
-仍保留旧名称。
+Summa grew out of a personal ledger built with Python, NumPy, and Markdown.
+That tool worked through a command line or a Web UI backed by an always-on
+server, so it was not truly portable or offline. Summa is a clean Flutter
+implementation designed for Android first, with desktop and iOS support left
+open for future development.
 
-## 已实现功能
+The project used the working name `LedgerPro` during early development. Some
+non-user-facing identifiers retain that name so existing test installations
+and backups remain compatible.
 
-- 支出、收入、借入、还款和个人账户间转账。
-- 支出与收入各自独立的两级分类，可新增、重命名、排序和停用。
-- 现金、银行卡、电子钱包、受托/授权资金和负债账户。
-- 余额不足、超额还款等硬性校验，避免账户出现不合理负数。
-- 日报、周报、月报和年报，以及收支分类饼图和负债走势。
-- 严格 JSON 单笔/批量导入，导入前可逐条预览和编辑。
-- JSON 中不存在的账户可在确认后随批次原子创建。
-- 按时间范围导出 JSON、CSV 或 Markdown 账单。
-- 完整备份与覆盖/合并恢复；恢复前自动保存当前账本。
-- 每次启动后的第一次有效修改前自动备份，滚动保留最近 5 个节点。
-- 手动本地备份节点可查看、重命名、删除、合并或直接回档。
-- 可选择仅重置账单与账户，或将数据和本地备份一并恢复出厂。
-- 全部核心功能可以脱机使用。
+## Features
 
-## 安装
+- Expense, income, borrowing, repayment, and personal-account transfers.
+- Separate two-level category trees for income and expenses, with add, rename,
+  ordering, and archive controls.
+- Cash, bank, wallet, entrusted or authorized funds, and liability accounts.
+- Hard validation for insufficient balances and liability overpayment.
+- Daily, weekly, monthly, and yearly summaries; category pie charts, expense
+  trends, and liability trends.
+- Strict single or batch JSON import with editable preview and atomic writes.
+- Automatic creation of confirmed unknown accounts during JSON import.
+- Transaction export by date range in JSON, CSV, or Markdown.
+- Complete backup with replace or merge restore and a safety snapshot before
+  restoration.
+- One automatic snapshot before the first successful change after each launch,
+  with the latest five automatic snapshots retained.
+- Named manual local snapshots with preview, rename, merge, restore, and delete.
+- English and Simplified Chinese UI with a persistent in-app language selector.
+- Fully offline core functionality.
 
-从项目 Release 页面下载 APK，在 Android 设备上允许“安装未知应用”后安装。
+## Install
 
-开发构建也可以通过 Flutter 直接安装：
+Download the APK from [GitHub Releases](https://github.com/ManiaAmaeOvo/Summa/releases),
+allow installation from unknown apps when Android asks, and install it.
+
+A development build can also be installed with Flutter:
 
 ```bash
 flutter pub get
 flutter run
 ```
 
-当前 Android 要求 `minSdk 24`，目标 SDK 为 36。
+Android currently requires `minSdk 24` and targets SDK 36.
 
-## 快速使用
+## Quick start
 
-1. 在底部“账户”中校准现金、银行卡、钱包和负债的当前余额。
-2. 点击首页“记一笔”，选择支出、收入、借入、还款或转账并保存。
-3. 在“设置 → 分类管理”维护收入和支出的两级分类。
-4. 首页右上角代码图标可粘贴严格 JSON，预览并批量导入账单。
-5. “报表”提供日/周/月/年汇总，并可按范围导出 JSON、CSV 或 Markdown。
-6. “设置 → 数据与备份”可管理自动/手动本地节点、外部备份、回档与重置。
+1. Open **Accounts** and calibrate the current balances for cash, bank,
+   payment-wallet, entrusted-fund, and liability accounts.
+2. Tap **Add transaction** on the home screen and choose Expense, Income,
+   Borrowing, Repayment, or Transfer.
+3. Open **Settings → Category management** to maintain the two-level income
+   and expense categories.
+4. Use the code icon in the top-right of the home screen to paste strict JSON,
+   preview the parsed transactions, and import them as one atomic batch.
+5. Open **Reports** for daily, weekly, monthly, or yearly summaries and export
+   JSON, CSV, or Markdown for a selected period.
+6. Open **Settings → Data & backup** to manage automatic and manual snapshots,
+   external backups, restore, merge, and reset operations.
+7. Open **Settings → Language** to follow the system language or explicitly use
+   English or Simplified Chinese.
 
-详细操作、账本含义、JSON 示例、备份区别和常见问题见
-[Summa 完整使用说明](USER_GUIDE.md)。应用内也可打开“设置 → 使用说明”离线阅读。
+See the [complete user guide](USER_GUIDE.md) for ledger semantics, import
+examples, backup behavior, recovery options, and common questions. The same
+core guidance is available offline inside Summa.
 
-## JSON 导入示例
+## JSON import example
 
 ```json
 {
@@ -70,83 +89,97 @@ flutter run
       "type": "expense",
       "amount": "28.50",
       "occurred_at": "2026-09-09T12:30:00+08:00",
-      "category": "饮食/午餐",
-      "account": "支付宝",
+      "category": "Food/Lunch",
+      "account": "Alipay",
       "account_kind": "wallet",
-      "note": "午餐"
+      "note": "Lunch"
     },
     {
       "type": "transfer",
       "amount": "100.00",
-      "occurred_at": "2026-09-09T18:00:00+08:00",
-      "account": "支付宝",
-      "target_account": "微信",
-      "note": "余额转移"
+      "occurred_at": "2026-09-09T13:00:00+08:00",
+      "account": "Alipay",
+      "target_account": "WeChat Pay",
+      "note": "Balance transfer"
     }
   ]
 }
 ```
 
-完整字段与推断规则见 [JSON 导入协议](docs/json-import.md)。日常使用建议先阅读
-[完整使用说明](USER_GUIDE.md)。
+The protocol keywords remain English and language-neutral. Summa accepts both
+English and Chinese aliases for untouched default accounts and categories.
+Unknown accounts can be created during import; unknown categories must be
+corrected or created before confirmation. See the
+[JSON import protocol](docs/json-import.md) for every field and validation rule.
 
-## 技术栈
+## Technology
 
-- Flutter / Dart
+- Flutter and Dart
 - Material 3
 - Riverpod
-- Drift + SQLite
-- `share_plus`、`file_picker` 与 `package_info_plus`
+- Drift and SQLite
+- `share_plus`, `file_picker`, `shared_preferences`, and `package_info_plus`
 
-架构说明见 [docs/architecture.md](docs/architecture.md)，账本规则及产品决策见
-[docs/product-foundation.md](docs/product-foundation.md)。
+See the [architecture](docs/architecture.md),
+[product foundation](docs/product-foundation.md), and
+[development guide](docs/development.md) for implementation details.
 
-## 本地开发
-
-环境准备、模拟器和构建命令见 [开发与发布指南](docs/development.md)。常用检查：
+## Local development
 
 ```bash
+flutter pub get
+flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
 flutter build apk --release
 ```
 
-## 数据与隐私
+CI runs formatting, analysis, and tests on pushes to `main` and pull requests.
 
-- Summa 当前不包含统计 SDK、广告 SDK 或远程账户系统。
-- 应用不会主动上传账本；分享或导出文件只在用户明确操作后发生。
-- 卸载应用通常会删除 Android 应用私有目录，请先导出完整备份。
-- 完整备份包含敏感财务信息，应保存在可信位置。
-- 自动和手动本地节点位于应用专属文档目录的 `summa_backups` 下，实际路径会
-  显示在“设置 → 数据与备份”。新版 Android 的普通文件管理器可能不允许直接
-  浏览该目录；本地节点会随卸载或恢复出厂而删除，长期留存请使用导出功能。
+## Data and privacy
 
-## 项目状态与路线
+- Summa currently contains no analytics SDK, advertising SDK, or remote account
+  service.
+- It does not upload the ledger. Network-capable share targets are invoked only
+  after an explicit export or share action.
+- Android normally removes the private app directory during uninstall. Export a
+  complete backup first.
+- Complete backups contain sensitive financial information and should be kept
+  only in trusted locations.
+- Automatic and manual snapshots live in the app-specific `summa_backups`
+  directory shown under **Settings → Data & backup**. Recent Android file
+  managers may not expose that private directory directly.
 
-- 真机反馈与无障碍/小屏适配。
-- 分类导入映射和更友好的批量纠错。
-- 可选 OCR 与自然语言账单解析，但模型输出仍须经过本地校验和确认。
-- 桌面端管理界面与 iOS 适配。
+## Project status and roadmap
 
-版本变化见 [CHANGELOG.md](CHANGELOG.md)。
+- Continue real-device, accessibility, large-text, and small-screen testing.
+- Improve category mapping and batch correction during import.
+- Add optional OCR and natural-language transaction parsing while preserving
+  local validation and explicit confirmation.
+- Explore desktop management and iOS support.
 
-## 参与贡献
+Changes are documented in the [changelog](CHANGELOG.md).
 
-欢迎提交问题、改进建议和 Pull Request。开始前请阅读
-[CONTRIBUTING.md](CONTRIBUTING.md) 与 [SECURITY.md](SECURITY.md)。
+## Contributing and security
 
-## 许可证
+Issues, focused improvements, and pull requests are welcome. Read
+[CONTRIBUTING.md](CONTRIBUTING.md) before contributing and use the private
+contact guidance in [SECURITY.md](SECURITY.md) for sensitive reports.
 
-Summa 源码公开，并采用
-[PolyForm Noncommercial License 1.0.0](LICENSE) 授权。你可以在非商业目的下
-使用、研究、修改和再分发本软件；获得软件副本的人也必须同时获得许可证以及
-项目提供的署名声明。任何商业用途均不在此许可证授权范围内。
+## License
 
-这是一份非商业的源码可用许可证，并非 OSI 认证的开源许可证。具体权利和
-限制以英文 `LICENSE` 正文为准，作者与项目来源见 [NOTICE](NOTICE)。
+Summa is source-available under the
+[PolyForm Noncommercial License 1.0.0](LICENSE). Noncommercial use, study,
+modification, and redistribution are permitted under its terms, and the
+license and required attribution notice must accompany copies.
 
-## 致谢
+Commercial use is not granted. This is a noncommercial source-available
+license, not an OSI-approved open-source license. The English license text is
+controlling; attribution details are in [NOTICE](NOTICE).
 
-Summa 由 [ManiaAmaeOvo](https://github.com/ManiaAmaeOvo) 发起并维护，
-使用 OpenAI Codex 协作构建。
+## Credits
+
+Summa was initiated and is maintained by
+[ManiaAmaeOvo](https://github.com/ManiaAmaeOvo), with OpenAI Codex used as a
+development collaborator.

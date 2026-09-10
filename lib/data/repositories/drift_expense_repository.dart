@@ -9,6 +9,7 @@ import 'package:ledger_pro/domain/import_export/ledger_import.dart';
 import 'package:ledger_pro/domain/import_export/ledger_backup.dart';
 import 'package:ledger_pro/domain/transactions/expense_record.dart';
 import 'package:ledger_pro/domain/transactions/expense_repository.dart';
+import 'package:ledger_pro/domain/defaults/default_ledger_names.dart';
 import 'package:uuid/uuid.dart';
 
 class DriftExpenseRepository implements ExpenseRepository {
@@ -369,9 +370,19 @@ class DriftExpenseRepository implements ExpenseRepository {
     if (normalizedName.isEmpty || normalizedName.length > 30) {
       throw LedgerImportException('账户名称必须为 1 至 30 个字符');
     }
-    final existing = await (_database.select(
-      _database.ledgerAccounts,
-    )..where((table) => table.name.equals(normalizedName))).getSingleOrNull();
+    final accountRows = await _database.select(_database.ledgerAccounts).get();
+    final existing = accountRows
+        .where(
+          (row) => DefaultLedgerNames.accountMatches(
+            LedgerAccount(
+              id: row.id,
+              name: row.name,
+              kind: AccountKind.values.byName(row.kind),
+            ),
+            normalizedName,
+          ),
+        )
+        .firstOrNull;
     if (existing != null) {
       if (existing.kind != kind.name) {
         throw LedgerImportException(
@@ -392,8 +403,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       return existing.id;
     }
 
-    final rows = await _database.select(_database.ledgerAccounts).get();
-    final lastSortOrder = rows.fold<int>(
+    final lastSortOrder = accountRows.fold<int>(
       -1,
       (maximum, item) => math.max(maximum, item.sortOrder),
     );
@@ -558,7 +568,10 @@ class DriftExpenseRepository implements ExpenseRepository {
     );
     if (available < requiredMinor) {
       throw TransactionRuleException(
-        '$accountName余额不足，当前可用 ${_formatMinor(available)}',
+        TransactionRuleError.insufficientBalance,
+        accountId: accountId,
+        accountName: accountName,
+        amountMinor: available,
       );
     }
   }
@@ -575,7 +588,10 @@ class DriftExpenseRepository implements ExpenseRepository {
     );
     if (outstanding < requiredMinor) {
       throw TransactionRuleException(
-        '$accountName待偿负债仅 ${_formatMinor(outstanding)}，不能超额冲减',
+        TransactionRuleError.overpayment,
+        accountId: accountId,
+        accountName: accountName,
+        amountMinor: outstanding,
       );
     }
   }
@@ -717,7 +733,16 @@ class DriftExpenseRepository implements ExpenseRepository {
       );
     }
     final accounts = await _database.select(_database.ledgerAccounts).get();
-    if (accounts.any((account) => account.name.trim() == normalizedName)) {
+    if (accounts.any(
+      (row) => DefaultLedgerNames.accountMatches(
+        LedgerAccount(
+          id: row.id,
+          name: row.name,
+          kind: AccountKind.values.byName(row.kind),
+        ),
+        normalizedName,
+      ),
+    )) {
       throw StateError('An account with this name already exists');
     }
     final lastSortOrder = accounts.fold<int>(
@@ -823,7 +848,14 @@ class DriftExpenseRepository implements ExpenseRepository {
             (item) =>
                 item.transactionType == type.name &&
                 item.parentId == parentId &&
-                item.name.trim() == normalized,
+                DefaultLedgerNames.categoryMatches(
+                  LedgerCategory(
+                    id: item.id,
+                    name: item.name,
+                    parentId: item.parentId,
+                  ),
+                  normalized,
+                ),
           )
           .firstOrNull;
       if (duplicate != null) {
@@ -897,20 +929,39 @@ class DriftExpenseRepository implements ExpenseRepository {
     if (category == null || category.isArchived) {
       throw ArgumentError.value(id, 'id', 'category not found');
     }
-    if (category.parentId != null && category.name == '其他') {
-      throw const TransactionRuleException('“其他”是该主分类的固定兜底项');
+    if (DefaultLedgerNames.isProtectedOther(
+      LedgerCategory(
+        id: category.id,
+        name: category.name,
+        parentId: category.parentId,
+      ),
+    )) {
+      throw const TransactionRuleException(
+        TransactionRuleError.fixedOtherCategory,
+      );
     }
-    final duplicate =
+    final siblings =
         await (_database.select(_database.ledgerCategories)..where(
               (table) =>
                   table.transactionType.equals(category.transactionType) &
                   (category.parentId == null
                       ? table.parentId.isNull()
                       : table.parentId.equals(category.parentId!)) &
-                  table.name.equals(normalized) &
                   table.id.equals(id).not(),
             ))
-            .getSingleOrNull();
+            .get();
+    final duplicate = siblings
+        .where(
+          (item) => DefaultLedgerNames.categoryMatches(
+            LedgerCategory(
+              id: item.id,
+              name: item.name,
+              parentId: item.parentId,
+            ),
+            normalized,
+          ),
+        )
+        .firstOrNull;
     if (duplicate != null) {
       throw StateError('A category with this name already exists');
     }
@@ -933,8 +984,16 @@ class DriftExpenseRepository implements ExpenseRepository {
       if (category == null || category.isArchived) {
         throw ArgumentError.value(id, 'id', 'category not found');
       }
-      if (category.parentId != null && category.name == '其他') {
-        throw const TransactionRuleException('每个主分类必须保留“其他”子分类');
+      if (DefaultLedgerNames.isProtectedOther(
+        LedgerCategory(
+          id: category.id,
+          name: category.name,
+          parentId: category.parentId,
+        ),
+      )) {
+        throw const TransactionRuleException(
+          TransactionRuleError.otherCategoryRequired,
+        );
       }
       final now = DateTime.now();
       await (_database.update(_database.ledgerCategories)..where(
@@ -1294,12 +1353,6 @@ String _requiredEnum(
     throw LedgerBackupException('字段 $key 的值不受支持：$value');
   }
   return value;
-}
-
-String _formatMinor(int amountMinor) {
-  final sign = amountMinor < 0 ? '-' : '';
-  final absolute = amountMinor.abs();
-  return '$sign¥${absolute ~/ 100}.${(absolute % 100).toString().padLeft(2, '0')}';
 }
 
 String _validatedCategoryName(String name) {

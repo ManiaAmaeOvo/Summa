@@ -1,36 +1,84 @@
-# JSON 导入协议
+# JSON Import Protocol
 
-Summa 接受单个交易对象、交易数组或带 `schema_version` 的标准包装对象。
-界面会先解析并展示预览，只有用户确认后才会以单一事务写入数据库。
+**English** | [简体中文](zh-CN/json-import.md)
 
-## 通用字段
+Summa accepts one transaction object, an array of transactions, or the canonical
+`schema_version` envelope. The UI parses and previews every row before a single
+atomic database write occurs.
 
-| 字段 | 类型 | 说明 |
+Protocol field names and enum values are always English and do not change with
+the app language.
+
+## Common fields
+
+| Field | Type | Description |
 |---|---|---|
-| `type` | string | `expense`、`income`、`transfer`、`borrowing` 或 `repayment` |
-| `amount` | string | 正数十进制人民币金额，最多两位小数 |
-| `occurred_at` | string | ISO 8601 时间，建议携带时区偏移 |
-| `account` | string | 来源/记账账户名称 |
-| `account_kind` | string? | 新账户类型，可省略 |
-| `target_account` | string? | 转账、借入与还款必填 |
-| `target_account_kind` | string? | 新目标账户类型，可省略 |
-| `category` | string? | 支出与收入必填，格式为 `一级/二级` |
-| `note` | string? | 最多 200 字 |
+| `type` | string | `expense`, `income`, `transfer`, `borrowing`, or `repayment` |
+| `amount` | string | Positive decimal CNY amount with at most two decimal places |
+| `occurred_at` | string | ISO 8601 timestamp; include a timezone offset when possible |
+| `account` | string | Source or posting account name |
+| `account_kind` | string? | Type for a new account; optional |
+| `target_account` | string? | Required for transfer, borrowing, and repayment |
+| `target_account_kind` | string? | Type for a new target account; optional |
+| `category` | string? | Required for expense and income; `Primary/Secondary` |
+| `note` | string? | Up to 200 characters |
 
-账户类型可选值为 `cash`、`bank`、`wallet`、`creditLine` 和
-`entrustedFunds`。普通未知账户默认推断为 `wallet`；借入来源和还款目标
-推断为 `creditLine`。
+Allowed account kinds are `cash`, `bank`, `wallet`, `creditLine`, and
+`entrustedFunds`. An ordinary unknown account defaults to `wallet`. A borrowing
+source and repayment target default to `creditLine`.
 
-未知账户会在预览中标记为“将新建”。同一批次内同名未知账户只创建一次。
-新账户与账单处于同一事务，任意一条失败都不会留下孤立账户。
+Unknown accounts appear in preview as accounts to be created. The same unknown
+name is created only once within a batch. New accounts and transactions share
+the final database transaction, so a failed batch leaves no orphaned account.
 
-未知分类不会静默创建，以防 OCR 或语言模型的错别字污染分类列表。请先在
-分类管理中建立分类，或在预览前修改生成的 JSON。
+Unknown categories are never created silently because an OCR or model typo
+would pollute the category tree. Create the category first or correct the JSON
+or preview selection.
 
-## 交易流向
+Untouched default accounts and categories can be referenced using either their
+English or Simplified Chinese names. Custom and explicitly renamed items match
+their stored names exactly.
 
-- `expense`：从 `account` 支出。
-- `income`：收入进入 `account`；若账户是负债，则表示冲减负债。
-- `transfer`：个人余额账户 `account` 转入 `target_account`。
-- `borrowing`：负债账户 `account` 增加，同时资金进入个人余额目标账户。
-- `repayment`：个人余额账户 `account` 支付，目标负债账户减少。
+## Transaction flow
+
+- `expense`: spend from `account`.
+- `income`: add income to `account`; a liability account is reduced instead.
+- `transfer`: move money from personal asset `account` to personal asset
+  `target_account`.
+- `borrowing`: increase liability `account` and add the same amount to personal
+  asset `target_account`.
+- `repayment`: pay from personal asset `account` and reduce liability
+  `target_account`.
+
+## Canonical envelope
+
+```json
+{
+  "schema_version": 1,
+  "transactions": [
+    {
+      "type": "expense",
+      "amount": "28.50",
+      "occurred_at": "2026-09-09T12:30:00+08:00",
+      "category": "Food/Lunch",
+      "account": "Alipay",
+      "account_kind": "wallet",
+      "note": "Lunch"
+    },
+    {
+      "type": "borrowing",
+      "amount": "1000.00",
+      "occurred_at": "2026-09-09T13:00:00+08:00",
+      "account": "Loan from a friend",
+      "account_kind": "creditLine",
+      "target_account": "WeChat Pay",
+      "target_account_kind": "wallet",
+      "note": "Short-term loan"
+    }
+  ]
+}
+```
+
+Imports are limited to 500 transactions per batch. Balance validation runs
+again during final commit, even after preview, so JSON, OCR, or model output
+cannot bypass ledger safety rules.

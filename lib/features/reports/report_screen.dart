@@ -9,6 +9,8 @@ import 'package:ledger_pro/core/money/money.dart';
 import 'package:ledger_pro/domain/accounts/ledger_account.dart';
 import 'package:ledger_pro/domain/import_export/ledger_export.dart';
 import 'package:ledger_pro/domain/transactions/expense_record.dart';
+import 'package:ledger_pro/l10n/default_ledger_labels.dart';
+import 'package:ledger_pro/l10n/l10n.dart';
 import 'package:share_plus/share_plus.dart';
 
 enum _ReportPeriod { day, week, month, year }
@@ -30,7 +32,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
     final balances = ref.watch(accountBalancesProvider).asData?.value;
     return records.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, _) => const Center(child: Text('报表读取失败')),
+      error: (_, _) => Center(child: Text(context.l10n.reportReadFailed)),
       data: (all) {
         if (balances == null) {
           return const Center(child: CircularProgressIndicator());
@@ -47,11 +49,23 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
           children: [
             SegmentedButton<_ReportPeriod>(
-              segments: const [
-                ButtonSegment(value: _ReportPeriod.day, label: Text('日')),
-                ButtonSegment(value: _ReportPeriod.week, label: Text('周')),
-                ButtonSegment(value: _ReportPeriod.month, label: Text('月')),
-                ButtonSegment(value: _ReportPeriod.year, label: Text('年')),
+              segments: [
+                ButtonSegment(
+                  value: _ReportPeriod.day,
+                  label: Text(context.l10n.periodDay),
+                ),
+                ButtonSegment(
+                  value: _ReportPeriod.week,
+                  label: Text(context.l10n.periodWeek),
+                ),
+                ButtonSegment(
+                  value: _ReportPeriod.month,
+                  label: Text(context.l10n.periodMonth),
+                ),
+                ButtonSegment(
+                  value: _ReportPeriod.year,
+                  label: Text(context.l10n.periodYear),
+                ),
               ],
               selected: {_period},
               onSelectionChanged: (value) => setState(() {
@@ -68,7 +82,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                 ),
                 Expanded(
                   child: Text(
-                    _rangeLabel(_period, range),
+                    _rangeLabel(context, _period, range),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
@@ -85,15 +99,15 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             _TrendCard(records: selected, range: range, period: _period),
             const SizedBox(height: 16),
             _CategoryPieCard(
-              title: '支出分类',
-              emptyText: '此周期暂无支出分类数据',
+              title: context.l10n.expenseCategories,
+              emptyText: context.l10n.noExpenseCategoryData,
               type: LedgerTransactionType.expense,
               records: selected,
             ),
             const SizedBox(height: 16),
             _CategoryPieCard(
-              title: '收入分类',
-              emptyText: '此周期暂无收入分类数据',
+              title: context.l10n.incomeCategories,
+              emptyText: context.l10n.noIncomeCategoryData,
               type: LedgerTransactionType.income,
               records: selected,
             ),
@@ -111,7 +125,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                 builder: (_) => _ExportDialog(records: all),
               ),
               icon: const Icon(Icons.ios_share),
-              label: const Text('导出账单'),
+              label: Text(context.l10n.exportTransactions),
             ),
           ],
         );
@@ -144,13 +158,16 @@ class _SummaryGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
-      childAspectRatio: 1.75,
+      mainAxisExtent: 104,
       children: [
-        _Metric(label: '收入', value: income),
-        _Metric(label: '支出', value: expense),
-        _Metric(label: '收支结余', value: income - expense),
+        _Metric(label: context.l10n.income, value: income),
+        _Metric(label: context.l10n.expense, value: expense),
         _Metric(
-          label: '借入 / 还款',
+          label: context.l10n.incomeExpenseBalance,
+          value: income - expense,
+        ),
+        _Metric(
+          label: context.l10n.borrowingRepayment,
           text: '${formatCny(borrowing)} / ${formatCny(repayment)}',
         ),
       ],
@@ -172,8 +189,18 @@ class _Metric extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-          const SizedBox(height: 6),
+          Flexible(
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -221,13 +248,16 @@ class _TrendCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('支出趋势', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              context.l10n.expenseTrend,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             SizedBox(
               height: 150,
               width: double.infinity,
               child: points.isEmpty
-                  ? const Center(child: Text('此周期暂无支出'))
+                  ? Center(child: Text(context.l10n.noExpensesThisPeriod))
                   : CustomPaint(
                       painter: _TrendPainter(
                         points.map((e) => e.value).toList(),
@@ -302,9 +332,11 @@ class _CategoryPieCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totals = <String, int>{};
+    final storedNames = <String, String>{};
     for (final item in records.where((item) => item.type == type)) {
-      totals[item.parentCategoryName] =
-          (totals[item.parentCategoryName] ?? 0) + item.amountMinor;
+      totals[item.parentCategoryId] =
+          (totals[item.parentCategoryId] ?? 0) + item.amountMinor;
+      storedNames[item.parentCategoryId] = item.parentCategoryName;
     }
     final rows = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -354,7 +386,15 @@ class _CategoryPieCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(rows[index].key)),
+                    Expanded(
+                      child: Text(
+                        DefaultLedgerLabels.categoryName(
+                          Localizations.localeOf(context),
+                          rows[index].key,
+                          storedNames[rows[index].key]!,
+                        ),
+                      ),
+                    ),
                     Text(
                       '${(rows[index].value * 100 / total).toStringAsFixed(1)}%  '
                       '${formatCny(rows[index].value)}',
@@ -453,11 +493,11 @@ class _DebtTrendCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '负债走势',
+                    context.l10n.liabilityTrend,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                Text('期末 ${formatCny(running)}'),
+                Text(context.l10n.closingAmount(formatCny(running))),
               ],
             ),
             const SizedBox(height: 12),
@@ -465,7 +505,7 @@ class _DebtTrendCard extends StatelessWidget {
               height: 150,
               width: double.infinity,
               child: !hasLiabilityData
-                  ? const Center(child: Text('暂无负债账户或负债变动'))
+                  ? Center(child: Text(context.l10n.noLiabilityData))
                   : CustomPaint(
                       painter: _TrendPainter(
                         values,
@@ -475,7 +515,10 @@ class _DebtTrendCard extends StatelessWidget {
             ),
             if (hasLiabilityData)
               Text(
-                '期初 ${formatCny(opening)}  ·  当前总负债 ${formatCny(current)}',
+                context.l10n.liabilityRangeSummary(
+                  formatCny(opening),
+                  formatCny(current),
+                ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
           ],
@@ -521,19 +564,34 @@ class _ExportDialogState extends State<_ExportDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('导出账单'),
+    title: Text(context.l10n.exportTransactions),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         DropdownButtonFormField<_ExportRange>(
           initialValue: _range,
-          decoration: const InputDecoration(labelText: '时间范围'),
-          items: const [
-            DropdownMenuItem(value: _ExportRange.week, child: Text('本周')),
-            DropdownMenuItem(value: _ExportRange.month, child: Text('本月')),
-            DropdownMenuItem(value: _ExportRange.year, child: Text('本年')),
-            DropdownMenuItem(value: _ExportRange.all, child: Text('全部')),
-            DropdownMenuItem(value: _ExportRange.custom, child: Text('自定义时间段')),
+          decoration: InputDecoration(labelText: context.l10n.timeRange),
+          items: [
+            DropdownMenuItem(
+              value: _ExportRange.week,
+              child: Text(context.l10n.thisWeek),
+            ),
+            DropdownMenuItem(
+              value: _ExportRange.month,
+              child: Text(context.l10n.thisMonth),
+            ),
+            DropdownMenuItem(
+              value: _ExportRange.year,
+              child: Text(context.l10n.thisYear),
+            ),
+            DropdownMenuItem(
+              value: _ExportRange.all,
+              child: Text(context.l10n.allTime),
+            ),
+            DropdownMenuItem(
+              value: _ExportRange.custom,
+              child: Text(context.l10n.customRange),
+            ),
           ],
           onChanged: (value) async {
             if (value == null) return;
@@ -551,19 +609,19 @@ class _ExportDialogState extends State<_ExportDialog> {
         const SizedBox(height: 12),
         DropdownButtonFormField<LedgerExportFormat>(
           initialValue: _format,
-          decoration: const InputDecoration(labelText: '文件格式'),
-          items: const [
+          decoration: InputDecoration(labelText: context.l10n.fileFormat),
+          items: [
             DropdownMenuItem(
               value: LedgerExportFormat.json,
-              child: Text('JSON（完整、可重新导入）'),
+              child: Text(context.l10n.jsonFormatDescription),
             ),
             DropdownMenuItem(
               value: LedgerExportFormat.csv,
-              child: Text('CSV（表格分析）'),
+              child: Text(context.l10n.csvFormatDescription),
             ),
             DropdownMenuItem(
               value: LedgerExportFormat.markdown,
-              child: Text('Markdown（阅读）'),
+              child: Text(context.l10n.markdownFormatDescription),
             ),
           ],
           onChanged: (value) => setState(() => _format = value!),
@@ -573,11 +631,11 @@ class _ExportDialogState extends State<_ExportDialog> {
     actions: [
       TextButton(
         onPressed: _saving ? null : () => Navigator.pop(context),
-        child: const Text('取消'),
+        child: Text(context.l10n.cancel),
       ),
       FilledButton(
         onPressed: _saving ? null : _export,
-        child: Text(_saving ? '准备中…' : '导出'),
+        child: Text(_saving ? context.l10n.preparing : context.l10n.export),
       ),
     ],
   );
@@ -605,7 +663,11 @@ class _ExportDialogState extends State<_ExportDialog> {
                     item.occurredAt.isBefore(range.end),
               )
               .toList();
-    final content = exportLedgerRecords(selected, _format);
+    final content = exportLedgerRecords(
+      selected,
+      _format,
+      languageCode: Localizations.localeOf(context).languageCode,
+    );
     final extension = switch (_format) {
       LedgerExportFormat.json => 'json',
       LedgerExportFormat.csv => 'csv',
@@ -622,7 +684,7 @@ class _ExportDialogState extends State<_ExportDialog> {
       ShareParams(
         files: [XFile.fromData(utf8.encode(content), mimeType: mime)],
         fileNameOverrides: [name],
-        subject: 'Summa 账单导出',
+        subject: context.l10n.transactionExportSubject,
         sharePositionOrigin: box == null
             ? null
             : box.localToGlobal(Offset.zero) & box.size,
@@ -663,10 +725,18 @@ _DateRange _rangeFor(_ReportPeriod period, DateTime anchor) {
   };
 }
 
-String _rangeLabel(_ReportPeriod period, _DateRange range) => switch (period) {
-  _ReportPeriod.day => DateFormat('yyyy年MM月dd日').format(range.start),
-  _ReportPeriod.week =>
-    '${DateFormat('MM月dd日').format(range.start)} – ${DateFormat('MM月dd日').format(range.end.subtract(const Duration(days: 1)))}',
-  _ReportPeriod.month => DateFormat('yyyy年MM月').format(range.start),
-  _ReportPeriod.year => DateFormat('yyyy年').format(range.start),
-};
+String _rangeLabel(
+  BuildContext context,
+  _ReportPeriod period,
+  _DateRange range,
+) {
+  final locale = Localizations.localeOf(context).toLanguageTag();
+  return switch (period) {
+    _ReportPeriod.day => DateFormat.yMMMMd(locale).format(range.start),
+    _ReportPeriod.week =>
+      '${DateFormat.MMMd(locale).format(range.start)} – '
+          '${DateFormat.MMMd(locale).format(range.end.subtract(const Duration(days: 1)))}',
+    _ReportPeriod.month => DateFormat.yMMMM(locale).format(range.start),
+    _ReportPeriod.year => DateFormat.y(locale).format(range.start),
+  };
+}

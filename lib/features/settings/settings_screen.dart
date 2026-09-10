@@ -1,58 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:ledger_pro/app/locale_controller.dart';
 import 'package:ledger_pro/features/categories/category_management_screen.dart';
 import 'package:ledger_pro/features/settings/about_screen.dart';
 import 'package:ledger_pro/features/settings/data_management_screen.dart';
 import 'package:ledger_pro/features/settings/help_screen.dart';
+import 'package:ledger_pro/l10n/l10n.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('账本', style: Theme.of(context).textTheme.labelLarge),
+          Text(l10n.ledger, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 8),
           Card(
             child: Column(
               children: [
                 _SettingsTile(
                   icon: Icons.category_outlined,
-                  title: '分类管理',
-                  subtitle: '维护收入和支出的两级分类',
+                  title: l10n.categoryManagement,
+                  subtitle: l10n.categoryManagementSubtitle,
                   screen: const CategoryManagementScreen(),
                 ),
                 const Divider(height: 1),
                 _SettingsTile(
                   icon: Icons.storage_outlined,
-                  title: '数据与备份',
-                  subtitle: '本地节点、导出、恢复与重置',
+                  title: l10n.dataAndBackup,
+                  subtitle: l10n.dataAndBackupSubtitle,
                   screen: const DataManagementScreen(),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          Text('应用', style: Theme.of(context).textTheme.labelLarge),
+          Text(l10n.app, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 8),
-          const Card(
+          Card(
             child: Column(
               children: [
+                ListTile(
+                  leading: const Icon(Icons.language_outlined),
+                  title: Text(l10n.language),
+                  subtitle: Text(_languageLabel(context)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _chooseLanguage(context),
+                ),
+                const Divider(height: 1),
                 _SettingsTile(
                   icon: Icons.menu_book_outlined,
-                  title: '使用说明',
-                  subtitle: '功能介绍、操作方法与数据安全',
-                  screen: HelpScreen(),
+                  title: l10n.userGuide,
+                  subtitle: l10n.userGuideSubtitle,
+                  screen: const HelpScreen(),
                 ),
-                Divider(height: 1),
+                const Divider(height: 1),
                 _SettingsTile(
                   icon: Icons.info_outline,
-                  title: '关于 Summa',
-                  subtitle: '版本、简介与开发者信息',
-                  screen: AboutSummaScreen(),
+                  title: l10n.aboutSumma,
+                  subtitle: l10n.aboutSummaSubtitle,
+                  screen: const AboutSummaScreen(),
                 ),
               ],
             ),
@@ -60,6 +71,47 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _languageLabel(BuildContext context) =>
+      switch (LocaleController.instance.value) {
+        AppLanguage.system => context.l10n.languageSystem,
+        AppLanguage.english => context.l10n.languageEnglish,
+        AppLanguage.simplifiedChinese => context.l10n.languageSimplifiedChinese,
+      };
+
+  Future<void> _chooseLanguage(BuildContext context) async {
+    final l10n = context.l10n;
+    final selected = await showDialog<AppLanguage>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(l10n.language),
+        children: [
+          RadioGroup<AppLanguage>(
+            groupValue: LocaleController.instance.value,
+            onChanged: (value) => Navigator.pop(context, value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<AppLanguage>(
+                  value: AppLanguage.system,
+                  title: Text(l10n.languageSystem),
+                ),
+                RadioListTile<AppLanguage>(
+                  value: AppLanguage.english,
+                  title: Text(l10n.languageEnglish),
+                ),
+                RadioListTile<AppLanguage>(
+                  value: AppLanguage.simplifiedChinese,
+                  title: Text(l10n.languageSimplifiedChinese),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (selected != null) await LocaleController.instance.setLanguage(selected);
   }
 }
 

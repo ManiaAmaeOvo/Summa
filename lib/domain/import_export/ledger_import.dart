@@ -4,6 +4,7 @@ import 'package:ledger_pro/core/money/money.dart';
 import 'package:ledger_pro/domain/accounts/ledger_account.dart';
 import 'package:ledger_pro/domain/categories/ledger_category.dart';
 import 'package:ledger_pro/domain/transactions/expense_record.dart';
+import 'package:ledger_pro/domain/defaults/default_ledger_names.dart';
 
 class LedgerImportException implements Exception {
   const LedgerImportException(this.message);
@@ -84,29 +85,60 @@ List<LedgerImportDraft> parseLedgerImport(
   required List<LedgerAccount> accounts,
   required List<LedgerCategory> expenseCategories,
   required List<LedgerCategory> incomeCategories,
+  String languageCode = 'zh',
 }) {
-  final text = _stripFence(source);
+  final text = _stripFence(source, languageCode);
   dynamic root;
   try {
     root = jsonDecode(text);
   } on FormatException catch (error) {
-    throw LedgerImportException('JSON 格式错误：${error.message}');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        'JSON 格式错误：${error.message}',
+        'Invalid JSON: ${error.message}',
+      ),
+    );
   }
   late List<dynamic> rows;
   if (root is List) {
     rows = root;
   } else if (root is Map<String, dynamic> && root['transactions'] is List) {
     if (root['schema_version'] != 1) {
-      throw const LedgerImportException('仅支持 schema_version: 1');
+      throw LedgerImportException(
+        _localized(
+          languageCode,
+          '仅支持 schema_version: 1',
+          'Only schema_version: 1 is supported',
+        ),
+      );
     }
     rows = root['transactions'] as List<dynamic>;
   } else if (root is Map<String, dynamic> && root.containsKey('type')) {
     rows = [root];
   } else {
-    throw const LedgerImportException('代码块必须是账单对象、数组或 transactions 包装对象');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '代码块必须是账单对象、数组或 transactions 包装对象',
+        'The input must be a transaction object, an array, or a transactions wrapper object',
+      ),
+    );
   }
-  if (rows.isEmpty) throw const LedgerImportException('没有可导入的账单');
-  if (rows.length > 500) throw const LedgerImportException('单次最多导入 500 条账单');
+  if (rows.isEmpty) {
+    throw LedgerImportException(
+      _localized(languageCode, '没有可导入的账单', 'No transactions to import'),
+    );
+  }
+  if (rows.length > 500) {
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '单次最多导入 500 条账单',
+        'A single import is limited to 500 transactions',
+      ),
+    );
+  }
 
   final availableAccounts = [...accounts];
   return [
@@ -117,6 +149,7 @@ List<LedgerImportDraft> parseLedgerImport(
         availableAccounts,
         expenseCategories,
         incomeCategories,
+        languageCode,
       ),
   ];
 }
@@ -127,10 +160,17 @@ LedgerImportDraft _parseRow(
   List<LedgerAccount> accounts,
   List<LedgerCategory> expenseCategories,
   List<LedgerCategory> incomeCategories,
+  String languageCode,
 ) {
   final number = index + 1;
   if (value is! Map<String, dynamic>) {
-    throw LedgerImportException('第 $number 条不是 JSON 对象');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '第 $number 条不是 JSON 对象',
+        'Item $number is not a JSON object',
+      ),
+    );
   }
   final rawType = value['type'];
   final rawAmount = value['amount'];
@@ -141,7 +181,11 @@ LedgerImportDraft _parseRow(
       rawTime is! String ||
       rawAccount is! String) {
     throw LedgerImportException(
-      '第 $number 条缺少字符串字段 type、amount、occurred_at 或 account',
+      _localized(
+        languageCode,
+        '第 $number 条缺少字符串字段 type、amount、occurred_at 或 account',
+        'Item $number is missing a string field: type, amount, occurred_at, or account',
+      ),
     );
   }
   final type = LedgerTransactionType.values
@@ -149,26 +193,45 @@ LedgerImportDraft _parseRow(
       .firstOrNull;
   if (type == null) {
     throw LedgerImportException(
-      '第 $number 条 type 必须是 expense、income、transfer、borrowing 或 repayment',
+      _localized(
+        languageCode,
+        '第 $number 条 type 必须是 expense、income、transfer、borrowing 或 repayment',
+        'Item $number type must be expense, income, transfer, borrowing, or repayment',
+      ),
     );
   }
   int amountMinor;
   try {
     amountMinor = parseCnyMinorUnits(rawAmount);
   } on MoneyInputException catch (error) {
-    throw LedgerImportException('第 $number 条金额错误：${error.message}');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '第 $number 条金额错误：${error.message}',
+        'Item $number has an invalid amount: ${_moneyErrorEnglish(error)}',
+      ),
+    );
   }
   final occurredAt = DateTime.tryParse(rawTime);
   if (occurredAt == null) {
-    throw LedgerImportException('第 $number 条 occurred_at 不是 ISO 8601 时间');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '第 $number 条 occurred_at 不是 ISO 8601 时间',
+        'Item $number occurred_at is not an ISO 8601 timestamp',
+      ),
+    );
   }
-  var account = accounts.where((item) => item.name == rawAccount).firstOrNull;
+  var account = accounts
+      .where((item) => DefaultLedgerNames.accountMatches(item, rawAccount))
+      .firstOrNull;
   final accountIsNew = account == null;
   account ??= _newAccount(
     rawAccount,
     value['account_kind'],
     _inferredKind(type, isTarget: false),
     number,
+    languageCode,
   );
   if (accountIsNew) accounts.add(account);
 
@@ -176,15 +239,24 @@ LedgerImportDraft _parseRow(
   final rawTarget = value['target_account'];
   if (rawTarget != null) {
     if (rawTarget is! String) {
-      throw LedgerImportException('第 $number 条 target_account 必须是字符串');
+      throw LedgerImportException(
+        _localized(
+          languageCode,
+          '第 $number 条 target_account 必须是字符串',
+          'Item $number target_account must be a string',
+        ),
+      );
     }
-    target = accounts.where((item) => item.name == rawTarget).firstOrNull;
+    target = accounts
+        .where((item) => DefaultLedgerNames.accountMatches(item, rawTarget))
+        .firstOrNull;
     final isNew = target == null;
     target ??= _newAccount(
       rawTarget,
       value['target_account_kind'],
       _inferredKind(type, isTarget: true),
       number,
+      languageCode,
     );
     if (isNew) accounts.add(target);
   }
@@ -195,35 +267,65 @@ LedgerImportDraft _parseRow(
       type == LedgerTransactionType.income) {
     final rawCategory = value['category'];
     if (rawCategory is! String) {
-      throw LedgerImportException('第 $number 条缺少 category');
+      throw LedgerImportException(
+        _localized(
+          languageCode,
+          '第 $number 条缺少 category',
+          'Item $number is missing category',
+        ),
+      );
     }
     final categories = type == LedgerTransactionType.expense
         ? expenseCategories
         : incomeCategories;
     final parts = rawCategory.split('/');
     if (parts.length != 2) {
-      throw LedgerImportException('第 $number 条 category 应为“主分类/子分类”');
+      throw LedgerImportException(
+        _localized(
+          languageCode,
+          '第 $number 条 category 应为“主分类/子分类”',
+          'Item $number category must use “Primary/Secondary”',
+        ),
+      );
     }
     final parent = categories
-        .where((item) => item.isParent && item.name == parts.first)
+        .where(
+          (item) =>
+              item.isParent &&
+              DefaultLedgerNames.categoryMatches(item, parts.first),
+        )
         .firstOrNull;
     final child = parent == null
         ? null
         : categories
               .where(
-                (item) => item.parentId == parent.id && item.name == parts.last,
+                (item) =>
+                    item.parentId == parent.id &&
+                    DefaultLedgerNames.categoryMatches(item, parts.last),
               )
               .firstOrNull;
     if (child == null) {
-      throw LedgerImportException('第 $number 条找不到分类“$rawCategory”');
+      throw LedgerImportException(
+        _localized(
+          languageCode,
+          '第 $number 条找不到分类“$rawCategory”',
+          'Item $number category “$rawCategory” was not found',
+        ),
+      );
     }
     categoryId = child.id;
     categoryPath = rawCategory;
   }
-  _validateAccountRoles(number, type, account, target);
+  _validateAccountRoles(number, type, account, target, languageCode);
   final note = value['note'] ?? '';
   if (note is! String || note.length > 200) {
-    throw LedgerImportException('第 $number 条 note 必须是最多 200 字的字符串');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '第 $number 条 note 必须是最多 200 字的字符串',
+        'Item $number note must be a string of no more than 200 characters',
+      ),
+    );
   }
   return LedgerImportDraft(
     type: type,
@@ -248,18 +350,29 @@ LedgerAccount _newAccount(
   dynamic rawKind,
   AccountKind inferred,
   int number,
+  String languageCode,
 ) {
   var kind = inferred;
   if (rawKind != null) {
     if (rawKind is! String) {
-      throw LedgerImportException('第 $number 条账户类型必须是字符串');
+      throw LedgerImportException(
+        _localized(
+          languageCode,
+          '第 $number 条账户类型必须是字符串',
+          'Item $number account kind must be a string',
+        ),
+      );
     }
     final parsed = AccountKind.values
         .where((item) => item.name == rawKind)
         .firstOrNull;
     if (parsed == null) {
       throw LedgerImportException(
-        '第 $number 条账户类型必须是 cash、bank、wallet、creditLine 或 entrustedFunds',
+        _localized(
+          languageCode,
+          '第 $number 条账户类型必须是 cash、bank、wallet、creditLine 或 entrustedFunds',
+          'Item $number account kind must be cash, bank, wallet, creditLine, or entrustedFunds',
+        ),
       );
     }
     kind = parsed;
@@ -283,44 +396,74 @@ void _validateAccountRoles(
   LedgerTransactionType type,
   LedgerAccount account,
   LedgerAccount? target,
+  String languageCode,
 ) {
   if (type == LedgerTransactionType.borrowing &&
       (account.group != AccountGroup.liability ||
           target?.group != AccountGroup.personalAsset)) {
-    throw LedgerImportException('第 $number 条借入必须从负债账户流向个人余额账户');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '第 $number 条借入必须从负债账户流向个人余额账户',
+        'Item $number borrowing must flow from a liability to a personal asset account',
+      ),
+    );
   }
   if (type == LedgerTransactionType.repayment &&
       (account.group != AccountGroup.personalAsset ||
           target?.group != AccountGroup.liability)) {
-    throw LedgerImportException('第 $number 条还款必须从个人余额账户流向负债账户');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '第 $number 条还款必须从个人余额账户流向负债账户',
+        'Item $number repayment must flow from a personal asset to a liability account',
+      ),
+    );
   }
   if (type == LedgerTransactionType.transfer &&
       (account.id == target?.id ||
           account.group != AccountGroup.personalAsset ||
           target?.group != AccountGroup.personalAsset)) {
-    throw LedgerImportException('第 $number 条转账必须在两个不同的个人余额账户之间');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '第 $number 条转账必须在两个不同的个人余额账户之间',
+        'Item $number transfer must be between two different personal asset accounts',
+      ),
+    );
   }
   if ((type == LedgerTransactionType.expense ||
           type == LedgerTransactionType.income) &&
       target != null) {
-    throw LedgerImportException('第 $number 条支出或收入不能包含 target_account');
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '第 $number 条支出或收入不能包含 target_account',
+        'Item $number expense or income must not contain target_account',
+      ),
+    );
   }
 }
 
-String _stripFence(String input) {
+String _stripFence(String input, String languageCode) {
   var text = input.trim();
   if (text.startsWith('```')) {
     final firstLine = text.indexOf('\n');
     final lastFence = text.lastIndexOf('```');
     if (firstLine < 0 || lastFence <= firstLine) {
-      throw const LedgerImportException('代码块围栏不完整');
+      throw LedgerImportException(
+        _localized(languageCode, '代码块围栏不完整', 'The code fence is incomplete'),
+      );
     }
     text = text.substring(firstLine + 1, lastFence).trim();
   }
   return text;
 }
 
-const ledgerImportTemplate = '''{
+String ledgerImportTemplateFor(String languageCode) =>
+    languageCode == 'zh' ? _ledgerImportTemplateZh : _ledgerImportTemplateEn;
+
+const _ledgerImportTemplateZh = '''{
   "schema_version": 1,
   "transactions": [
     {
@@ -344,3 +487,43 @@ const ledgerImportTemplate = '''{
     }
   ]
 }''';
+
+const _ledgerImportTemplateEn = '''{
+  "schema_version": 1,
+  "transactions": [
+    {
+      "type": "expense",
+      "amount": "28.50",
+      "occurred_at": "2026-09-09T12:30:00+08:00",
+      "category": "Food/Lunch",
+      "account": "Alipay",
+      "account_kind": "wallet",
+      "note": "Lunch"
+    },
+    {
+      "type": "borrowing",
+      "amount": "1000.00",
+      "occurred_at": "2026-09-09T13:00:00+08:00",
+      "account": "Loan from a friend",
+      "account_kind": "creditLine",
+      "target_account": "WeChat Pay",
+      "target_account_kind": "wallet",
+      "note": "Short-term loan"
+    }
+  ]
+}''';
+
+String _localized(String languageCode, String zh, String en) =>
+    languageCode == 'zh' ? zh : en;
+
+String _moneyErrorEnglish(MoneyInputException error) => switch (error.error) {
+  MoneyInputError.invalidFormat =>
+    'enter a valid amount with up to two decimal places',
+  MoneyInputError.negative => 'amount must not be negative',
+  MoneyInputError.notPositive => 'amount must be greater than zero',
+};
+
+@Deprecated(
+  'Use ledgerImportTemplateFor so examples follow the selected language.',
+)
+const ledgerImportTemplate = _ledgerImportTemplateZh;

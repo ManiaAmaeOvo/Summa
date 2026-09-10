@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ledger_pro/l10n/l10n.dart';
 
 class AboutSummaScreen extends StatelessWidget {
   const AboutSummaScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('关于 Summa')),
+      appBar: AppBar(title: Text(l10n.aboutSumma)),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
@@ -45,44 +47,44 @@ class AboutSummaScreen extends StatelessWidget {
             future: PackageInfo.fromPlatform(),
             builder: (context, snapshot) => Text(
               snapshot.hasData
-                  ? '版本 ${snapshot.data!.version}  (${snapshot.data!.buildNumber})'
-                  : '正在读取版本信息…',
+                  ? l10n.versionLabel(
+                      snapshot.data!.version,
+                      snapshot.data!.buildNumber,
+                    )
+                  : l10n.readingVersion,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
           const SizedBox(height: 28),
           Card.filled(
-            child: const Padding(
-              padding: EdgeInsets.all(18),
-              child: Text(
-                '一款完全本地优先的个人记账工具。账户、负债、分类和账单默认只保存在你的设备上，无需登录，也不依赖后台服务器。',
-                textAlign: TextAlign.center,
-              ),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Text(l10n.aboutDescription, textAlign: TextAlign.center),
             ),
           ),
           const SizedBox(height: 16),
           ListTile(
             leading: const Icon(Icons.person_outline),
-            title: const Text('开发者'),
+            title: Text(l10n.developer),
             subtitle: const Text('ManiaAmaeOvo'),
             trailing: const Icon(Icons.open_in_new, size: 20),
             onTap: () => _openGitHub(context),
           ),
-          const ListTile(
-            leading: Icon(Icons.code),
-            title: Text('协作构建'),
-            subtitle: Text('OpenAI Codex · Flutter'),
+          ListTile(
+            leading: const Icon(Icons.code),
+            title: Text(l10n.builtWith),
+            subtitle: const Text('OpenAI Codex · Flutter'),
           ),
-          const ListTile(
-            leading: Icon(Icons.lock_outline),
-            title: Text('数据原则'),
-            subtitle: Text('本地存储、明确导出、由用户掌控'),
+          ListTile(
+            leading: const Icon(Icons.lock_outline),
+            title: Text(l10n.dataPrinciples),
+            subtitle: Text(l10n.dataPrinciplesValue),
           ),
-          const ListTile(
-            leading: Icon(Icons.balance_outlined),
-            title: Text('软件许可'),
-            subtitle: Text('PolyForm Noncommercial 1.0.0 · 仅限非商业用途'),
+          ListTile(
+            leading: const Icon(Icons.balance_outlined),
+            title: Text(l10n.softwareLicense),
+            subtitle: Text(l10n.softwareLicenseValue),
           ),
         ],
       ),
@@ -96,7 +98,7 @@ class AboutSummaScreen extends StatelessWidget {
     );
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('无法打开 GitHub 主页')));
+          .showSnackBar(SnackBar(content: Text(context.l10n.cannotOpenGitHub)));
     }
   }
 }

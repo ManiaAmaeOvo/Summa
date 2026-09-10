@@ -9,6 +9,10 @@ import 'package:ledger_pro/domain/categories/ledger_category.dart';
 import 'package:ledger_pro/domain/transactions/expense_record.dart';
 import 'package:ledger_pro/domain/transactions/expense_repository.dart';
 import 'package:ledger_pro/features/accounts/account_overview_screen.dart';
+import 'package:ledger_pro/l10n/default_ledger_labels.dart';
+import 'package:ledger_pro/l10n/input_error_labels.dart';
+import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:ledger_pro/l10n/transaction_rule_labels.dart';
 
 class TransactionEditorSheet extends ConsumerStatefulWidget {
   const TransactionEditorSheet({super.key, this.record});
@@ -82,14 +86,16 @@ class _TransactionEditorSheetState
               Row(
                 children: [
                   Text(
-                    _isEditing ? '编辑记录' : '记一笔',
+                    _isEditing
+                        ? context.l10n.editTransaction
+                        : context.l10n.addTransaction,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
-                    tooltip: '关闭',
+                    tooltip: context.l10n.close,
                   ),
                 ],
               ),
@@ -97,26 +103,26 @@ class _TransactionEditorSheetState
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SegmentedButton<LedgerTransactionType>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: LedgerTransactionType.expense,
-                      label: Text('支出'),
+                      label: Text(context.l10n.expense),
                     ),
                     ButtonSegment(
                       value: LedgerTransactionType.income,
-                      label: Text('收入'),
+                      label: Text(context.l10n.income),
                     ),
                     ButtonSegment(
                       value: LedgerTransactionType.transfer,
-                      label: Text('转账'),
+                      label: Text(context.l10n.transfer),
                     ),
                     ButtonSegment(
                       value: LedgerTransactionType.borrowing,
-                      label: Text('借入'),
+                      label: Text(context.l10n.borrowing),
                     ),
                     ButtonSegment(
                       value: LedgerTransactionType.repayment,
-                      label: Text('还款'),
+                      label: Text(context.l10n.repayment),
                     ),
                   ],
                   selected: {_type},
@@ -135,8 +141,8 @@ class _TransactionEditorSheetState
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 ],
-                decoration: const InputDecoration(
-                  labelText: '金额',
+                decoration: InputDecoration(
+                  labelText: context.l10n.amount,
                   prefixText: '¥ ',
                   hintText: '0.00',
                 ),
@@ -145,7 +151,7 @@ class _TransactionEditorSheetState
                     parseCnyMinorUnits(value ?? '');
                     return null;
                   } on MoneyInputException catch (error) {
-                    return error.message;
+                    return localizedMoneyInputError(context, error);
                   }
                 },
               ),
@@ -153,14 +159,14 @@ class _TransactionEditorSheetState
                 const SizedBox(height: 16),
                 categories.when(
                   loading: () => const LinearProgressIndicator(),
-                  error: (_, _) => const Text('分类加载失败'),
+                  error: (_, _) => Text(context.l10n.categoryLoadFailed),
                   data: _buildCategoryFields,
                 ),
               ],
               const SizedBox(height: 16),
               accounts.when(
                 loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('账户加载失败'),
+                error: (_, _) => Text(context.l10n.accountLoadFailed),
                 data: _buildAccountFields,
               ),
               const SizedBox(height: 16),
@@ -168,7 +174,9 @@ class _TransactionEditorSheetState
                 onPressed: _pickDateTime,
                 icon: const Icon(Icons.schedule),
                 label: Text(
-                  DateFormat('yyyy年MM月dd日 HH:mm').format(_occurredAt),
+                  DateFormat.yMMMd(
+                    Localizations.localeOf(context).toLanguageTag(),
+                  ).add_Hm().format(_occurredAt),
                 ),
               ),
               const SizedBox(height: 16),
@@ -176,8 +184,8 @@ class _TransactionEditorSheetState
                 controller: _noteController,
                 maxLength: 200,
                 decoration: InputDecoration(
-                  labelText: '备注（可选）',
-                  hintText: _noteHint,
+                  labelText: context.l10n.noteOptional,
+                  hintText: _noteHint(context),
                 ),
               ),
               const SizedBox(height: 8),
@@ -225,7 +233,11 @@ class _TransactionEditorSheetState
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.check),
-                label: Text(_isEditing ? '保存修改' : '保存记录'),
+                label: Text(
+                  _isEditing
+                      ? context.l10n.saveChanges
+                      : context.l10n.saveTransaction,
+                ),
               ),
             ],
           ),
@@ -234,12 +246,12 @@ class _TransactionEditorSheetState
     );
   }
 
-  String get _noteHint => switch (_type) {
-    LedgerTransactionType.expense => '这笔钱花在了哪里？',
-    LedgerTransactionType.income => '这笔钱来自哪里？',
-    LedgerTransactionType.transfer => '例如：支付宝转入微信',
-    LedgerTransactionType.borrowing => '例如：向朋友借款',
-    LedgerTransactionType.repayment => '例如：归还朋友欠款',
+  String _noteHint(BuildContext context) => switch (_type) {
+    LedgerTransactionType.expense => context.l10n.expenseNoteHint,
+    LedgerTransactionType.income => context.l10n.incomeNoteHint,
+    LedgerTransactionType.transfer => context.l10n.transferNoteHint,
+    LedgerTransactionType.borrowing => context.l10n.borrowingNoteHint,
+    LedgerTransactionType.repayment => context.l10n.repaymentNoteHint,
   };
 
   void _changeType(LedgerTransactionType value) {
@@ -274,10 +286,15 @@ class _TransactionEditorSheetState
           child: DropdownButtonFormField<String>(
             key: ValueKey('parent-${_type.name}'),
             initialValue: parentId,
-            decoration: const InputDecoration(labelText: '主分类'),
+            decoration: InputDecoration(
+              labelText: context.l10n.primaryCategory,
+            ),
             items: [
               for (final parent in parents)
-                DropdownMenuItem(value: parent.id, child: Text(parent.name)),
+                DropdownMenuItem(
+                  value: parent.id,
+                  child: Text(DefaultLedgerLabels.category(context, parent)),
+                ),
             ],
             onChanged: (value) => setState(() {
               _parentCategoryId = value;
@@ -290,10 +307,15 @@ class _TransactionEditorSheetState
           child: DropdownButtonFormField<String>(
             key: ValueKey('$parentId-${_type.name}'),
             initialValue: categoryId,
-            decoration: const InputDecoration(labelText: '子分类'),
+            decoration: InputDecoration(
+              labelText: context.l10n.secondaryCategory,
+            ),
             items: [
               for (final child in children)
-                DropdownMenuItem(value: child.id, child: Text(child.name)),
+                DropdownMenuItem(
+                  value: child.id,
+                  child: Text(DefaultLedgerLabels.category(context, child)),
+                ),
             ],
             onChanged: (value) => setState(() => _categoryId = value),
           ),
@@ -307,11 +329,11 @@ class _TransactionEditorSheetState
     return switch (_type) {
       LedgerTransactionType.expense => _singleAccountField(
         selectable,
-        label: '付款账户',
+        label: context.l10n.paymentAccount,
       ),
       LedgerTransactionType.income => _singleAccountField(
         selectable,
-        label: '收入计入账户',
+        label: context.l10n.incomeDestinationAccount,
       ),
       LedgerTransactionType.borrowing => _borrowingFields(selectable),
       LedgerTransactionType.repayment => _repaymentFields(selectable),
@@ -329,7 +351,7 @@ class _TransactionEditorSheetState
       result.add(
         LedgerAccount(
           id: record.accountId,
-          name: '${record.accountName}（已停用）',
+          name: context.l10n.archivedName(record.accountName),
           kind: AccountKind.values.byName(record.accountKind),
         ),
       );
@@ -339,7 +361,7 @@ class _TransactionEditorSheetState
       result.add(
         LedgerAccount(
           id: record.targetAccountId!,
-          name: '${record.targetAccountName}（已停用）',
+          name: context.l10n.archivedName(record.targetAccountName!),
           kind: AccountKind.values.byName(record.targetAccountKind!),
         ),
       );
@@ -385,7 +407,7 @@ class _TransactionEditorSheetState
           key: const ValueKey('borrowing-source'),
           accounts: liabilities,
           value: _accountId,
-          label: '负债账户',
+          label: context.l10n.liabilityAccounts,
           onChanged: (value) => setState(() => _accountId = value),
         ),
         Align(
@@ -397,7 +419,7 @@ class _TransactionEditorSheetState
                   const AddAccountDialog(initialKind: AccountKind.creditLine),
             ),
             icon: const Icon(Icons.add),
-            label: const Text('快捷添加负债账户'),
+            label: Text(context.l10n.quickAddLiability),
           ),
         ),
         const SizedBox(height: 4),
@@ -405,7 +427,7 @@ class _TransactionEditorSheetState
           key: const ValueKey('borrowing-target'),
           accounts: assets,
           value: _targetAccountId,
-          label: '资金存入账户',
+          label: context.l10n.fundsDestinationAccount,
           onChanged: (value) => setState(() => _targetAccountId = value),
         ),
       ],
@@ -431,7 +453,7 @@ class _TransactionEditorSheetState
           key: const ValueKey('repayment-source'),
           accounts: assets,
           value: _accountId,
-          label: '还款账户',
+          label: context.l10n.repaymentSourceAccount,
           onChanged: (value) => setState(() => _accountId = value),
         ),
         const SizedBox(height: 16),
@@ -439,7 +461,7 @@ class _TransactionEditorSheetState
           key: const ValueKey('repayment-target'),
           accounts: liabilities,
           value: _targetAccountId,
-          label: '偿还负债账户',
+          label: context.l10n.repaymentLiabilityAccount,
           onChanged: (value) => setState(() => _targetAccountId = value),
         ),
       ],
@@ -463,7 +485,7 @@ class _TransactionEditorSheetState
           key: const ValueKey('transfer-source'),
           accounts: assets,
           value: _accountId,
-          label: '转出账户',
+          label: context.l10n.transferFromAccount,
           onChanged: (value) => setState(() {
             _accountId = value;
             if (_targetAccountId == value) _targetAccountId = null;
@@ -474,7 +496,7 @@ class _TransactionEditorSheetState
           key: ValueKey('transfer-target-$_accountId'),
           accounts: targets,
           value: _targetAccountId,
-          label: '转入账户',
+          label: context.l10n.transferToAccount,
           onChanged: (value) => setState(() => _targetAccountId = value),
         ),
       ],
@@ -493,7 +515,9 @@ class _TransactionEditorSheetState
       initialValue: value,
       decoration: InputDecoration(
         labelText: label,
-        helperText: accounts.isEmpty ? '请先添加可用账户' : null,
+        helperText: accounts.isEmpty
+            ? context.l10n.addAvailableAccountFirst
+            : null,
       ),
       items: [
         for (final account in accounts)
@@ -501,8 +525,10 @@ class _TransactionEditorSheetState
             value: account.id,
             child: Text(
               account.kind == AccountKind.creditLine
-                  ? '${account.name}（负债）'
-                  : account.name,
+                  ? context.l10n.liabilityName(
+                      DefaultLedgerLabels.account(context, account),
+                    )
+                  : DefaultLedgerLabels.account(context, account),
             ),
           ),
       ],
@@ -545,7 +571,9 @@ class _TransactionEditorSheetState
         ((_type == LedgerTransactionType.expense ||
                 _type == LedgerTransactionType.income) &&
             _categoryId == null)) {
-      setState(() => _submissionError = '请先选择所需账户和分类');
+      setState(
+        () => _submissionError = context.l10n.selectRequiredAccountAndCategory,
+      );
       return;
     }
 
@@ -582,19 +610,25 @@ class _TransactionEditorSheetState
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
       messenger.showSnackBar(
-        SnackBar(content: Text(_isEditing ? '记录修改已保存' : '记录已保存到本地')),
+        SnackBar(
+          content: Text(
+            _isEditing
+                ? context.l10n.transactionChangesSaved
+                : context.l10n.transactionSavedLocally,
+          ),
+        ),
       );
     } on TransactionRuleException catch (error) {
       if (!mounted) return;
       setState(() {
         _isSaving = false;
-        _submissionError = error.message;
+        _submissionError = localizedTransactionRule(context, error);
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _isSaving = false;
-        _submissionError = '保存失败，请稍后重试';
+        _submissionError = context.l10n.saveLaterFailed;
       });
     }
   }

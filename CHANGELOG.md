@@ -1,44 +1,66 @@
 # Changelog
 
-本项目遵循语义化版本号；Android 构建号位于版本号 `+` 后。
+**English** | [简体中文](CHANGELOG.zh-CN.md)
+
+This project follows semantic versioning. The Android build number appears
+after `+` in the Flutter version.
+
+## [0.4.0] - 2026-09-10
+
+### Added
+
+- English and Simplified Chinese UI with follow-system and explicit language
+  selection.
+- Localized untouched default account and category labels without rewriting
+  user-authored names.
+- English and Chinese default-name aliases for JSON import.
+- Parallel English and Simplified Chinese repository documentation.
+
+### Changed
+
+- GitHub renders the English README and user guide by default, with language
+  links to the complete Chinese versions.
+- Human-readable reports, dates, import feedback, and exports follow the active
+  app language while JSON protocol keys remain stable.
 
 ## [0.3.0] - 2026-09-10
 
 ### Added
 
-- 每次启动后第一次成功修改前创建自动备份，滚动保留最近五个节点。
-- 手动本地备份，以及本地节点的回档、合并、重命名和删除。
-- 重置账单与账户和恢复出厂设置两种独立的数据清理范围。
-- 仓库完整使用说明与应用内离线帮助页面。
+- One automatic backup before the first successful change after each launch,
+  retaining the latest five snapshots.
+- Manual local snapshots with restore, merge, rename, and delete controls.
+- Separate reset-transactions-and-accounts and factory-reset scopes.
+- A complete repository user guide and offline in-app help.
 
 ### Changed
 
-- 数据与备份页面区分自动备份、手动本地备份和外部导入/导出，并显示应用
-  专属备份目录。
+- Data & Backup now separates automatic snapshots, manual local snapshots, and
+  external import/export, and displays the app-specific backup directory.
 
 ## [0.2.0] - 2026-09-09
 
 ### Added
 
-- 支出和收入两级分类管理。
-- 个人资产账户间转账。
-- 完整账本备份、预览、合并恢复和覆盖恢复。
-- 恢复前自动安全备份。
-- 收入/支出分类饼图与负债走势。
-- 设置、版本、简介和开发者信息页面。
-- Summa 品牌启动器图标。
+- Two-level expense and income category management.
+- Transfers between personal asset accounts.
+- Complete ledger backup with preview, merge restore, and replace restore.
+- Automatic safety backup before restoration.
+- Income and expense category charts and a liability trend.
+- Settings, version, overview, and developer information.
+- Summa launcher branding.
 
 ### Changed
 
-- 产品名称由开发期名称 LedgerPro 更改为 Summa，同时保留内部标识以兼容
-  已安装测试版本和既有备份。
-- JSON 导入可原子创建不存在的账户。
-- Material 3 主题、卡片、导航和输入控件视觉更新。
+- Renamed the development project from LedgerPro to Summa while preserving
+  internal compatibility identifiers.
+- JSON import can atomically create unknown accounts.
+- Updated Material 3 theme, cards, navigation, and form controls.
 
 ## [0.1.0] - 2026-09-09
 
 ### Added
 
-- 本地账户、负债、两级分类和基础账单。
-- 支出、收入、借入、还款以及编辑和软删除。
-- 周期汇总、JSON 批量导入和多格式账单导出。
+- Local accounts, liabilities, two-level categories, and transactions.
+- Expense, income, borrowing, repayment, editing, and soft deletion.
+- Period summaries, JSON batch import, and multi-format transaction export.

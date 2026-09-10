@@ -1,20 +1,38 @@
-# 开发与发布指南
+# Development and Release Guide
 
-## 环境
+**English** | [简体中文](zh-CN/development.md)
 
-- macOS（当前主要开发环境为 Apple Silicon）
-- Flutter stable 与配套 Dart SDK
-- Android SDK、platform-tools 和已接受的 SDK License
-- JDK 17
+## Environment
+
+- macOS; Apple Silicon is the primary development environment.
+- Flutter stable and its bundled Dart SDK.
+- Android SDK, platform-tools, and accepted Android SDK licenses.
+- JDK 17.
 
 ```bash
 flutter doctor -v
 flutter devices
 flutter pub get
+flutter gen-l10n
 flutter run
 ```
 
-## 质量检查
+## Localization workflow
+
+Fixed UI copy lives in `lib/l10n/app_en.arb` and `lib/l10n/app_zh.arb`.
+Add a key and its placeholder metadata to both files, regenerate localization
+code, and test both explicit languages. Do not localize JSON protocol keys,
+enum values, user notes, or custom account and category names.
+
+```bash
+flutter gen-l10n
+```
+
+Untouched default entity labels are resolved through their stable IDs in
+`lib/l10n/default_ledger_labels.dart`. When adding a new default entity, add its
+English and Chinese aliases there and cover import and duplicate detection.
+
+## Quality checks
 
 ```bash
 dart format --output=none --set-exit-if-changed lib test
@@ -22,23 +40,41 @@ flutter analyze
 flutter test
 ```
 
-测试覆盖金额精度、账户余额、借入/还款、转账、分类归档、批量导入、完整
-备份恢复和主要界面生命周期。
+Tests cover money precision, account balances, borrowing and repayment,
+transfers, category archiving, batch import, bilingual default aliases,
+localized UI layout, complete backup restoration, and key widget lifecycles.
 
-## 构建 Android APK
+## Build an Android APK
 
 ```bash
 flutter build apk --release
 ```
 
-输出位于 `build/app/outputs/flutter-apk/app-release.apk`。
+The output is `build/app/outputs/flutter-apk/app-release.apk`.
 
-在已有测试版上验证升级时，应使用 Android platform-tools 中的
-`adb install -r <apk>` 原位覆盖安装，以保留应用私有数据。不要使用
-`flutter install` 验证数据升级；该命令可能先卸载旧版本并清除本机测试数据。
+To validate an upgrade over an existing test build while preserving private app
+data, use Android platform-tools:
 
-当前 release 构建仍使用调试签名，只适合内部侧载。公开 Release 前应创建并
-安全保存独立上传密钥，通过不纳入 Git 的 `key.properties` 配置 release 签名。
+```bash
+adb install -r build/app/outputs/flutter-apk/app-release.apk
+```
 
-升级版本时修改 `pubspec.yaml` 中的 `version: x.y.z+build`，并同步更新
-`CHANGELOG.md`。
+Do not use `flutter install` for migration verification because it may uninstall
+the previous build and clear local test data.
+
+The current release build still uses a development signing configuration and is
+suitable for direct testing. Before wider distribution, create and securely
+store a dedicated upload key and reference it through an untracked
+`key.properties` file.
+
+## Version and release checklist
+
+1. Update `version: x.y.z+build` in `pubspec.yaml`.
+2. Update both `CHANGELOG.md` and `CHANGELOG.zh-CN.md`.
+3. Run localization generation, formatting, analysis, and all tests.
+4. Test English, Simplified Chinese, and follow-system behavior on an emulator.
+5. Install the APK over the previous version and verify existing data.
+6. Export a backup, restore it in both modes, and confirm language preference is
+   independent from financial data.
+7. Build the final APK, compute its SHA-256 digest, and publish a signed Git tag
+   and GitHub Release.

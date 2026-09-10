@@ -1,159 +1,163 @@
-# Product foundation
+# Product Foundation
+
+**English** | [简体中文](zh-CN/product-foundation.md)
 
 ## Product boundary
 
-Summa is an offline, single-user ledger. Android is the first delivery
-platform. No login, server, or network permission is required for core features.
+Summa is an offline, single-user ledger. Android is the first delivery platform.
+No login, backend server, or network permission is required for core features.
 
-The first useful version includes transaction entry and editing, hierarchical
-categories, accounts and liabilities, daily/weekly/monthly summaries, basic
-charts, strict JSON import with preview, and JSON/CSV/database export.
+The current product includes transaction entry and editing, hierarchical
+categories, assets and liabilities, daily through yearly summaries, basic
+charts, strict JSON import with editable preview, transaction export, complete
+backup and restore, and local backup snapshots.
 
 ## Accounting model
 
-Summa must not equate every cash inflow with earned income, or every debt
-repayment with a new expense.
+Summa must not equate every cash inflow with earned income or every debt payment
+with a new expense.
 
-### Transactions
+### Transaction types
 
-A transaction describes an economic event:
+A transaction describes one economic event:
 
 - `expense`: consumption or loss, such as food or transport.
-- `income`: an increase in the user's net assets, with an explicit source kind.
-- `borrowing`: increases a liability and a destination personal asset by the
-  same amount; it is not income and does not change liquid net assets.
-- `repayment`: decreases a personal asset and a target liability by the same
-  amount; it is not an expense and does not change liquid net assets.
+- `income`: an increase in net assets with an explicit source category.
+- `borrowing`: increases a liability and destination personal asset by the same
+  amount; it is not income and does not change liquid net worth.
+- `repayment`: decreases a personal asset and target liability by the same
+  amount; it is not an expense and does not change liquid net worth.
+- `transfer`: moves value between two different personal asset accounts and
+  affects neither income nor expense.
 
-A general account-to-account `transfer` and explicit balance-adjustment audit
-records remain later extensions.
-
-Income source kinds initially include earned income, family support, gift,
-reimbursement, refund, investment return, and other. They are reporting
-dimensions, not separate transaction mechanics.
+Income categories include earned income, family support, gifts, purchase
+remainder, reimbursement, refunds, investment returns, and other sources. They
+are reporting dimensions rather than separate transaction mechanics.
 
 ### Accounts and liabilities
 
-An account represents where value is held or owed. Version 1 keeps five stable
-accounting kinds so custom names never make balance formulas ambiguous:
+An account represents where value is held or owed. Stable accounting kinds keep
+custom names from changing balance formulas:
 
 - cash
 - bank account
 - payment wallet
-- credit line (for example Huabei or Baitiao)
-- entrusted funds or shared/authorized funds
+- credit line or personal payable
+- entrusted, shared, or authorized funds
 
-Users can add any account name under one of these kinds. The initial personal
-accounts are Cash, Bank Card, Alipay, and WeChat; the initial liability accounts
-are Huabei, Baitiao, Douyin Monthly Pay, and Meituan Monthly Pay. Family Card is
-seeded separately as entrusted/authorized funds. Personal payables can initially
-use named liability accounts. Receivables need the opposite balance direction,
-so they remain a later dedicated model rather than being misclassified as debt.
+Users may add any unique account name under one of those kinds. Default personal
+accounts are Cash, Bank Account, Alipay, and WeChat Pay. Default liability
+accounts are Huabei, JD Baitiao, Douyin Monthly Pay, and Meituan Monthly Pay.
+Family Card is entrusted or authorized funding.
 
-Buying food with Huabei records an expense paid from a credit-line account and
-therefore increases that account's liability. Paying Huabei later is a repayment
-from a bank or wallet account to the credit-line account, not another expense.
+Personal receivables have the opposite balance direction from liabilities and
+remain a future dedicated model instead of being misclassified as debt.
 
-Money received for a specific purchase may be recorded into an entrusted-funds
-account. Purchases reduce that account. Any remainder can stay attributed to the
-original entrusted funds, or be reclassified explicitly as family support/gift
-when the user decides it has become their money. This prevents all family money
-from being reported as earned income.
+Buying food with Huabei records an expense paid through a credit-line account,
+increasing the liability. Paying Huabei later is repayment from a bank or wallet
+account and must not duplicate the original expense.
 
-Installments are represented by a liability account plus installment metadata.
-The purchase is recognized once; principal repayments are transfers. Fees and
-interest are separate expenses.
+Money received for a specific purchase can enter an entrusted-funds account.
+Purchases reduce that account. A remainder can stay entrusted or be explicitly
+reclassified as family support or a gift when it becomes the user's own money.
+
+Installments are a liability account plus future installment metadata. The
+purchase is recognized once; principal payments reduce the liability, while
+fees and interest are separate expenses.
 
 ### Categories
 
-Expense and income categories have exactly two user-facing levels in version 1:
+Expense and income categories have two user-facing levels:
 
 ```text
-parent category -> child category
+Primary category → Secondary category
 ```
 
-Every categorized transaction selects a child category; the parent is derived
-from it. A built-in `Uncategorized` child remains available so entry is never
-blocked. Categories can be archived but are not hard-deleted while referenced.
+Every categorized transaction selects a secondary category, and its primary
+category is derived. Each primary category has an `Other` fallback. The global
+`Other → Uncategorized` path remains the final fallback when the primary
+category is also unknown.
 
-Accounts answer “where did the money move?” Categories answer “what was this
-economic event for?” They must remain independent.
-
-Every common expense parent category includes an `Other` child. The global
-`Other -> Uncategorized` path remains the final fallback when even the parent
-category is unknown.
+Accounts answer “where did value move?” Categories answer “what was the economic
+event for?” The two dimensions remain independent.
 
 ### Balance summaries
 
-The mobile balance overview keeps four totals separate:
+The mobile overview keeps four totals separate:
 
 - Personal liquid assets: cash, bank accounts, and wallets owned by the user.
-- Entrusted or authorized funds: family cards and purchase money that can be
-  spent but is not counted as personal property.
-- Outstanding liabilities: positive amounts currently owed on credit lines and
-  personal payables.
-- Liquid net assets: personal liquid assets minus outstanding liabilities.
+- Entrusted or authorized funds: spendable funds not counted as personal assets.
+- Outstanding liabilities: positive amounts currently owed.
+- Liquid net worth: personal liquid assets minus outstanding liabilities.
 
-Fixed assets are excluded from the version 1 daily balance. They may later be
-introduced as a separate non-liquid asset group with explicit valuation rules.
+Fixed assets are excluded from the daily balance. A future non-liquid asset group
+requires explicit valuation rules.
 
-The home dashboard prioritizes four immediately useful figures: spending this
-month, spending this week, cumulative recorded spending, and liquid net assets.
-Detailed account-group totals remain on the Accounts screen.
+The dashboard prioritizes spending this month, spending this week, cumulative
+recorded spending, and liquid net worth. Detailed groups remain under Accounts.
 
-### Correction and removal rules
+### Correction and removal
 
-Editing a record replaces its type, amount, date, category, involved accounts,
-and note as one operation; all affected balances are derived again from the
-resulting ledger. Deleting a record marks it as deleted rather than erasing the
-stored row, and deleted records no longer affect lists, reports, or balances.
+Editing replaces type, amount, time, category, accounts, and note as one
+operation. All affected balances are derived again. Deleting marks a transaction
+as deleted; it stops affecting lists, reports, and balances without erasing its
+historical row.
 
-Removing an account deactivates it. Historical entries continue to resolve its
-name, while new entries cannot select it. Restoring built-in accounts only
-reactivates their stable records and never resets balances or transaction links.
+Archiving an account or category prevents new use while preserving historical
+resolution. Restoring defaults reactivates stable default entities without
+resetting balances, custom entities, or transaction links.
 
-Soft deletion is an integrity mechanism and does not require a visible recycle
-bin. Active queries exclude deleted rows, so they do not accumulate in memory;
-only the local SQLite file grows slowly. A future maintenance action may purge
-old deleted rows after a verified backup and compact the database, but automatic
-purging is intentionally avoided while audit and restore requirements are still
-being decided.
+Soft deletion protects integrity and does not require a visible recycle bin.
+Active queries exclude deleted rows, so memory use does not grow with them; only
+the SQLite file grows slowly. Compaction can be considered after real-world use
+establishes an appropriate retention policy.
 
-### Balance safety rules
+### Balance safety
 
-Personal assets and entrusted funds cannot be spent below zero. A repayment
-cannot exceed either the selected payment account balance or the outstanding
-target liability. Income posted directly to a liability is treated as a debt
-reduction and likewise cannot reduce that liability below zero. These rules are
-enforced atomically in the repository rather than only in the UI, so future JSON,
-OCR, and language-model imports cannot bypass them. When editing, validation
-first excludes the old version of that record and then checks the replacement.
+Personal assets and entrusted funds cannot be spent below zero. Repayment cannot
+exceed either the source balance or target liability. Income posted to a
+liability reduces it and cannot cross zero. Repository-level atomic enforcement
+ensures future JSON, OCR, and model-assisted inputs cannot bypass the rules.
 
-## Money and time rules
+When editing, validation excludes the old record before testing the replacement.
 
-- Never store money as a binary floating-point value.
-- Store an integer minor-unit amount together with an ISO 4217 currency code.
-- Store timestamps as instants and retain the entry time-zone offset.
-- Give every persistent entity a UUID and created/updated timestamps.
-- Prefer soft deletion or an audit record for financial data.
+## Money and time
+
+- Store money as integer minor units with an ISO 4217 currency code.
+- Never use binary floating point for persisted amounts.
+- Store timestamps as instants and retain the entry timezone offset.
+- Give every persistent entity a stable ID and created/updated timestamps.
+- Prefer archival or audit-preserving deletion for financial data.
+
+## Language and naming
+
+Fixed UI copy is available in English and Simplified Chinese. The language can
+follow Android or be selected explicitly, and the preference is independent of
+the financial database and backups.
+
+Default account and category IDs are language-neutral. If a stored label still
+matches a known default alias, the UI renders it in the active language. Once a
+user supplies a custom name, it remains unchanged. Notes and all other
+user-authored content are never translated automatically.
+
+JSON protocol keys and enum values remain English in every locale. Untouched
+defaults can be referenced by either English or Chinese labels to make generated
+imports portable across language settings.
 
 ## Structured import contract
 
-JSON is the canonical interchange format. Every payload has a `schema_version`.
-Import follows: parse, validate, show a human-readable preview, confirm, then
-commit atomically. OCR and language models may produce this JSON later, but they
-never bypass validation or write directly to the database.
+JSON is the canonical transaction interchange format and includes a
+`schema_version`. Import follows: parse, validate, display a readable preview,
+confirm, and commit atomically. OCR and language models may produce the JSON but
+never write directly to the database.
 
-CSV is a convenience export for analysis, not a lossless backup. A database
-snapshot plus versioned JSON is the recovery format.
+CSV and Markdown are analysis formats, not lossless backups. Versioned complete
+JSON is the recovery format.
 
-The first import schema accepts a single transaction object, an array, or the
-canonical envelope below. Monetary values are decimal strings, timestamps are
-ISO 8601, and category paths are `parent/child`. If an account name does not
-exist, import creates it atomically. `account_kind` and `target_account_kind`
-may specify `cash`, `bank`, `wallet`, `creditLine`, or `entrustedFunds`;
-otherwise the importer infers a wallet for normal accounts and the required
-liability/wallet roles for borrowing and repayment.
+The first schema accepts a single transaction, an array, or a canonical
+envelope. Amounts are decimal strings, timestamps use ISO 8601, and category
+paths are `Primary/Secondary`. Unknown accounts may be created atomically using
+an explicit or inferred accounting kind. Unknown categories are rejected.
 
 ```json
 {
@@ -163,77 +167,49 @@ liability/wallet roles for borrowing and repayment.
       "type": "expense",
       "amount": "28.50",
       "occurred_at": "2026-09-09T12:30:00+08:00",
-      "category": "饮食/午餐",
-      "account": "支付宝",
+      "category": "Food/Lunch",
+      "account": "Alipay",
       "account_kind": "wallet",
-      "note": "午餐"
-    },
-    {
-      "type": "borrowing",
-      "amount": "1000.00",
-      "occurred_at": "2026-09-09T13:00:00+08:00",
-      "account": "朋友欠款",
-      "account_kind": "creditLine",
-      "target_account": "微信",
-      "target_account_kind": "wallet",
-      "note": "向朋友借款"
+      "note": "Lunch"
     }
   ]
 }
 ```
 
-Import is all-or-nothing. Parsed rows are shown in a preview where each row can
-be edited or removed; repository balance rules run again inside the final
-database transaction. New accounts are part of that same transaction, so a
-failed batch leaves neither transactions nor orphaned accounts behind. When a
-new asset account imports earlier spending, its opening balance is set to the
-minimum amount required to keep the imported history valid.
+The importer is all-or-nothing. Rows can be edited or removed in preview, and
+balance rules run again during the final database transaction. A failed batch
+leaves neither transactions nor orphaned accounts. When an unknown asset account
+imports earlier spending, its opening balance is set to the minimum required to
+keep the imported sequence valid.
 
-## Reports
+## Reports and exports
 
-Daily, weekly, and monthly reports are computed views over source transactions.
-The mobile report screen also includes yearly periods, income/expense balance,
-borrowing and repayment totals, an expense trend, expense and income category
-pie charts, and a liability trend.
-Exports can cover the current week, month, year, all records, or a custom date
-range in JSON, CSV, or Markdown, then use the platform share/save sheet.
-They are not duplicated archive rows. Immutable report snapshots may be added
-later if a real use case requires them.
+Daily, weekly, monthly, and yearly reports are computed views over source
+transactions. They include income and expense balance, borrowing and repayment
+totals, category pie charts, an expense trend, and a liability trend.
 
-## Category management
-
-Expense and income categories can be created, renamed, reordered, and archived
-at both levels. Creating a parent also creates a protected `其他` child. Archiving
-never deletes category rows, so historical entries keep their original labels.
-Restoring defaults only re-enables missing built-in categories and leaves custom
-categories untouched.
-
-## Transfers
-
-`transfer` is a first-class transaction type for moving money between two
-different personal asset accounts. It decreases the source and increases the
-target by the same amount, does not affect income or expense reports, and is
-rejected when the source balance is insufficient. Transfers to liabilities or
-entrusted funds use their respective bookkeeping flows instead of masquerading
-as account transfers.
+Exports can cover the current week, month, year, all records, or a custom range
+in JSON, CSV, or Markdown. Human-readable output follows the active language;
+JSON structure remains stable. Reports are not duplicated archive rows.
 
 ## Complete backup and restore
 
-The Summa full-backup JSON contains every account, opening balance,
-category, entry, stable ID, archive flag, and soft-deletion flag. Replacement
-restore recreates that snapshot exactly. Merge restore updates matching stable
-IDs while preserving local-only rows. Both modes run in a database transaction;
-the same session-level automatic-backup guard protects restore operations.
+A complete backup contains all accounts, opening balances, categories,
+transactions, stable IDs, archive flags, and soft-deletion flags. Replace restore
+recreates the snapshot exactly. Merge updates matching stable IDs while
+preserving local-only rows. Both execute inside a database transaction and are
+protected by the automatic snapshot guard.
 
-Local backup nodes are separated into automatic and manual groups. Once per app
-session, the first successful ledger mutation preserves the state immediately
-before that mutation; failed validation removes the tentative snapshot. The
-automatic group retains the newest five nodes. Manual local nodes do not rotate
-automatically and can be renamed, deleted, merged, or used for replacement
-restore. Both groups live in app-private documents and are deleted by uninstall
-or factory reset, so external export remains the durable off-device option.
+Automatic and manual local snapshots are separate. Once per app launch, the
+first successful ledger mutation preserves the state immediately before it;
+failed validation removes the tentative snapshot. Automatic snapshots retain
+the newest five. Manual snapshots do not rotate and can be renamed, deleted,
+merged, or restored.
 
-Ledger reset removes every transaction, removes custom accounts, and restores
-zero-balance default accounts while retaining categories and backup nodes.
-Factory reset additionally restores default categories and removes all local
-backup nodes. Both actions require an explicit destructive confirmation.
+Both groups live in private app documents and are removed by uninstall or
+factory reset. External export remains the durable off-device option.
+
+Reset transactions and accounts clears transactions and custom accounts and
+restores zero-balance defaults while keeping categories and backups. Factory
+reset also restores default categories and removes every in-app snapshot. Both
+require explicit destructive confirmation.

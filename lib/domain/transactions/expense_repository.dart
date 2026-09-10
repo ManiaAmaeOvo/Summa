@@ -4,13 +4,28 @@ import 'package:ledger_pro/domain/import_export/ledger_import.dart';
 import 'package:ledger_pro/domain/import_export/ledger_backup.dart';
 import 'package:ledger_pro/domain/transactions/expense_record.dart';
 
-class TransactionRuleException implements Exception {
-  const TransactionRuleException(this.message);
+enum TransactionRuleError {
+  insufficientBalance,
+  overpayment,
+  fixedOtherCategory,
+  otherCategoryRequired,
+}
 
-  final String message;
+class TransactionRuleException implements Exception {
+  const TransactionRuleException(
+    this.error, {
+    this.accountId,
+    this.accountName,
+    this.amountMinor,
+  });
+
+  final TransactionRuleError error;
+  final String? accountId;
+  final String? accountName;
+  final int? amountMinor;
 
   @override
-  String toString() => message;
+  String toString() => error.name;
 }
 
 abstract interface class ExpenseRepository {

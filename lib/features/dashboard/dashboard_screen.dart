@@ -10,6 +10,8 @@ import 'package:ledger_pro/features/import_export/structured_import_screen.dart'
 import 'package:ledger_pro/features/reports/report_screen.dart';
 import 'package:ledger_pro/features/settings/settings_screen.dart';
 import 'package:ledger_pro/features/transaction_editor/add_expense_sheet.dart';
+import 'package:ledger_pro/l10n/default_ledger_labels.dart';
+import 'package:ledger_pro/l10n/l10n.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -23,17 +25,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
         title: Text(switch (_selectedIndex) {
           0 => 'Summa',
-          1 => '账户余额',
-          _ => '报表',
+          1 => l10n.accountBalances,
+          _ => l10n.reports,
         }),
         actions: [
           if (_selectedIndex == 0)
             IconButton(
-              tooltip: '代码块导入',
+              tooltip: l10n.codeImport,
               onPressed: () => Navigator.push<void>(
                 context,
                 MaterialPageRoute(
@@ -43,7 +46,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: const Icon(Icons.data_object),
             ),
           IconButton(
-            tooltip: '设置',
+            tooltip: l10n.settings,
             onPressed: () => Navigator.push<void>(
               context,
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -69,28 +72,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 builder: (_) => const TransactionEditorSheet(),
               ),
               icon: const Icon(Icons.add),
-              label: const Text('记一笔'),
+              label: Text(l10n.addTransaction),
             )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (value) =>
             setState(() => _selectedIndex = value),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: '账单',
+            icon: const Icon(Icons.receipt_long_outlined),
+            selectedIcon: const Icon(Icons.receipt_long),
+            label: l10n.transactions,
           ),
           NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: '账户',
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: const Icon(Icons.account_balance_wallet),
+            label: l10n.accounts,
           ),
           NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
-            label: '报表',
+            icon: const Icon(Icons.insights_outlined),
+            selectedIcon: const Icon(Icons.insights),
+            label: l10n.reports,
           ),
         ],
       ),
@@ -163,27 +166,27 @@ class _TransactionList extends ConsumerWidget {
               crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              childAspectRatio: 1.75,
+              mainAxisExtent: 104,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 _DashboardSummaryCard(
-                  label: '本月支出',
+                  label: context.l10n.expenseThisMonth,
                   amount: monthTotal,
                   icon: Icons.calendar_month_outlined,
                 ),
                 _DashboardSummaryCard(
-                  label: '本周支出',
+                  label: context.l10n.expenseThisWeek,
                   amount: weekTotal,
                   icon: Icons.date_range_outlined,
                 ),
                 _DashboardSummaryCard(
-                  label: '累计支出',
+                  label: context.l10n.expenseAllTime,
                   amount: total,
                   icon: Icons.receipt_long_outlined,
                 ),
                 _DashboardSummaryCard(
-                  label: '流动净资产',
+                  label: context.l10n.liquidNetWorth,
                   amount: netAssets,
                   icon: Icons.account_balance_wallet_outlined,
                 ),
@@ -192,7 +195,9 @@ class _TransactionList extends ConsumerWidget {
           ),
         ),
         if (items.isEmpty)
-          const SliverFillRemaining(hasScrollBody: false, child: _EmptyState())
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 240, child: _EmptyState()),
+          )
         else
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
@@ -204,11 +209,13 @@ class _TransactionList extends ConsumerWidget {
                 return Card(
                   child: ListTile(
                     leading: CircleAvatar(child: Icon(_iconForType(item.type))),
-                    title: Text(_titleForRecord(item)),
+                    title: Text(_titleForRecord(context, item)),
                     subtitle: Text(
                       [
-                        DateFormat('MM月dd日 HH:mm').format(item.occurredAt),
-                        _accountDescription(item),
+                        DateFormat.MMMd(
+                          Localizations.localeOf(context).toLanguageTag(),
+                        ).add_Hm().format(item.occurredAt),
+                        _accountDescription(context, item),
                         if (item.note.isNotEmpty) item.note,
                       ].join(' · '),
                       maxLines: 2,
@@ -225,7 +232,7 @@ class _TransactionList extends ConsumerWidget {
                               ),
                         ),
                         PopupMenuButton<_RecordAction>(
-                          tooltip: '账单操作',
+                          tooltip: context.l10n.transactionActions,
                           onSelected: (action) {
                             if (action == _RecordAction.edit) {
                               editRecord(item);
@@ -233,14 +240,14 @@ class _TransactionList extends ConsumerWidget {
                               _confirmDeleteRecord(context, ref, item);
                             }
                           },
-                          itemBuilder: (_) => const [
+                          itemBuilder: (_) => [
                             PopupMenuItem(
                               value: _RecordAction.edit,
-                              child: Text('编辑'),
+                              child: Text(context.l10n.edit),
                             ),
                             PopupMenuItem(
                               value: _RecordAction.delete,
-                              child: Text('删除'),
+                              child: Text(context.l10n.delete),
                             ),
                           ],
                         ),
@@ -294,6 +301,8 @@ class _DashboardSummaryCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
@@ -323,19 +332,19 @@ Future<void> _confirmDeleteRecord(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('删除这笔记录？'),
+      title: Text(context.l10n.confirmDeleteTransaction),
       content: Text(
-        '${_titleForRecord(record)}  ${formatCny(record.amountMinor)}'
-        '\n删除后相关账户余额会自动回算。',
+        '${_titleForRecord(context, record)}  ${formatCny(record.amountMinor)}'
+        '\n${context.l10n.deleteRecalculatesBalances}',
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('取消'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(dialogContext, true),
-          child: const Text('删除'),
+          child: Text(context.l10n.delete),
         ),
       ],
     ),
@@ -344,33 +353,52 @@ Future<void> _confirmDeleteRecord(
   try {
     await ref.read(expenseRepositoryProvider).deleteTransaction(record.id);
     if (context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('记录已删除')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.transactionDeleted)));
     }
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('删除失败，请重试')));
+          .showSnackBar(SnackBar(content: Text(context.l10n.deleteFailed)));
     }
   }
 }
 
-String _titleForRecord(LedgerRecord record) => switch (record.type) {
+String _titleForRecord(
+  BuildContext context,
+  LedgerRecord record,
+) => switch (record.type) {
   LedgerTransactionType.expense || LedgerTransactionType.income =>
-    '${record.parentCategoryName} · ${record.categoryName}',
-  LedgerTransactionType.borrowing => '借入',
-  LedgerTransactionType.repayment => '还款',
-  LedgerTransactionType.transfer => '转账',
+    '${DefaultLedgerLabels.categoryName(Localizations.localeOf(context), record.parentCategoryId, record.parentCategoryName)} · '
+        '${DefaultLedgerLabels.categoryName(Localizations.localeOf(context), record.categoryId, record.categoryName)}',
+  LedgerTransactionType.borrowing => context.l10n.borrowing,
+  LedgerTransactionType.repayment => context.l10n.repayment,
+  LedgerTransactionType.transfer => context.l10n.transfer,
 };
 
-String _accountDescription(LedgerRecord record) => switch (record.type) {
-  LedgerTransactionType.expense => record.accountName,
-  LedgerTransactionType.income => '计入 ${record.accountName}',
-  LedgerTransactionType.borrowing || LedgerTransactionType.repayment =>
-    '${record.accountName} → ${record.targetAccountName}',
-  LedgerTransactionType.transfer =>
-    '${record.accountName} → ${record.targetAccountName}',
-};
+String _accountDescription(BuildContext context, LedgerRecord record) {
+  final locale = Localizations.localeOf(context);
+  final source = DefaultLedgerLabels.accountName(
+    locale,
+    record.accountId,
+    record.accountName,
+  );
+  final target = record.targetAccountId == null
+      ? null
+      : DefaultLedgerLabels.accountName(
+          locale,
+          record.targetAccountId!,
+          record.targetAccountName!,
+        );
+  return switch (record.type) {
+    LedgerTransactionType.expense => source,
+    LedgerTransactionType.income => context.l10n.creditedTo(source),
+    LedgerTransactionType.borrowing ||
+    LedgerTransactionType.repayment => '$source → $target',
+    LedgerTransactionType.transfer => '$source → $target',
+  };
+}
 
 String _amountForRecord(LedgerRecord record) => switch (record.type) {
   LedgerTransactionType.expense => '-${formatCny(record.amountMinor)}',
@@ -414,9 +442,12 @@ class _EmptyState extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 20),
-            Text('还没有账单', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              context.l10n.noTransactions,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 8),
-            const Text('点击“记一笔”，添加第一条本地记录。'),
+            Text(context.l10n.noTransactionsHint),
           ],
         ),
       ),
@@ -435,9 +466,9 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('账本读取失败'),
+          Text(context.l10n.ledgerReadFailed),
           const SizedBox(height: 8),
-          FilledButton(onPressed: onRetry, child: const Text('重试')),
+          FilledButton(onPressed: onRetry, child: Text(context.l10n.retry)),
         ],
       ),
     );

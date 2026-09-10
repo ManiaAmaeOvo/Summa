@@ -133,6 +133,70 @@ void main() {
     expect(draft.targetAccountIsNew, isTrue);
   });
 
+  test('accepts English aliases for untouched Chinese defaults', () {
+    const defaultAccounts = [
+      LedgerAccount(
+        id: 'account-alipay',
+        name: '支付宝',
+        kind: AccountKind.wallet,
+      ),
+    ];
+    const defaultExpenseCategories = [
+      LedgerCategory(id: 'expense-parent-0', name: '饮食'),
+      LedgerCategory(
+        id: 'expense-parent-0-child-1',
+        name: '午餐',
+        parentId: 'expense-parent-0',
+      ),
+    ];
+    const source = '''{
+      "type":"expense",
+      "amount":"28.50",
+      "occurred_at":"2026-09-09T12:00:00+08:00",
+      "category":"Food/Lunch",
+      "account":"Alipay"
+    }''';
+
+    final draft = parseLedgerImport(
+      source,
+      accounts: defaultAccounts,
+      expenseCategories: defaultExpenseCategories,
+      incomeCategories: const [],
+      languageCode: 'en',
+    ).single;
+
+    expect(draft.accountId, 'account-alipay');
+    expect(draft.accountIsNew, isFalse);
+    expect(draft.categoryId, 'expense-parent-0-child-1');
+  });
+
+  test('returns English validation feedback in English mode', () {
+    const source = '''{
+      "type":"expense",
+      "amount":"invalid",
+      "occurred_at":"2026-09-09T12:00:00+08:00",
+      "category":"饮食/午餐",
+      "account":"现金"
+    }''';
+
+    expect(
+      () => parseLedgerImport(
+        source,
+        accounts: accounts,
+        expenseCategories: expenseCategories,
+        incomeCategories: incomeCategories,
+        languageCode: 'en',
+      ),
+      throwsA(
+        isA<LedgerImportException>().having(
+          (error) => error.message,
+          'message',
+          contains('Item 1 has an invalid amount'),
+        ),
+      ),
+    );
+  });
+
   test('parses a transfer between two personal accounts', () {
     const source = '''{
       "type":"transfer",
@@ -201,4 +265,68 @@ void main() {
     expect(csv.startsWith('\uFEFF'), isTrue);
     expect(csv, contains('"饭,饮料"'));
   });
+
+  test(
+    'English export localizes untouched defaults and remains importable',
+    () {
+      final record = LedgerRecord(
+        id: 'record',
+        type: LedgerTransactionType.expense,
+        amountMinor: 2850,
+        occurredAt: DateTime.parse('2026-09-09T12:00:00+08:00'),
+        parentCategoryId: 'expense-parent-0',
+        parentCategoryName: '饮食',
+        categoryId: 'expense-parent-0-child-1',
+        categoryName: '午餐',
+        accountId: 'account-alipay',
+        accountName: '支付宝',
+        accountKind: AccountKind.wallet.name,
+        note: 'Lunch',
+      );
+
+      final markdown = exportLedgerRecords(
+        [record],
+        LedgerExportFormat.markdown,
+        languageCode: 'en',
+      );
+      final csv = exportLedgerRecords(
+        [record],
+        LedgerExportFormat.csv,
+        languageCode: 'en',
+      );
+      final json = exportLedgerRecords(
+        [record],
+        LedgerExportFormat.json,
+        languageCode: 'en',
+      );
+
+      expect(markdown, contains('# Summa Transaction Export'));
+      expect(markdown, contains('Food/Lunch'));
+      expect(markdown, contains('Alipay'));
+      expect(csv, contains('"type","amount","occurred_at"'));
+
+      final imported = parseLedgerImport(
+        json,
+        accounts: const [
+          LedgerAccount(
+            id: 'account-alipay',
+            name: '支付宝',
+            kind: AccountKind.wallet,
+          ),
+        ],
+        expenseCategories: const [
+          LedgerCategory(id: 'expense-parent-0', name: '饮食'),
+          LedgerCategory(
+            id: 'expense-parent-0-child-1',
+            name: '午餐',
+            parentId: 'expense-parent-0',
+          ),
+        ],
+        incomeCategories: const [],
+        languageCode: 'en',
+      );
+      expect(imported.single.accountId, 'account-alipay');
+      expect(imported.single.categoryId, 'expense-parent-0-child-1');
+    },
+  );
 }

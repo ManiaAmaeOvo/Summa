@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ledger_pro/app/providers.dart';
 import 'package:ledger_pro/core/money/money.dart';
 import 'package:ledger_pro/domain/accounts/ledger_account.dart';
+import 'package:ledger_pro/l10n/default_ledger_labels.dart';
+import 'package:ledger_pro/l10n/input_error_labels.dart';
+import 'package:ledger_pro/l10n/l10n.dart';
 
 class AccountOverviewScreen extends ConsumerWidget {
   const AccountOverviewScreen({super.key});
@@ -12,7 +15,8 @@ class AccountOverviewScreen extends ConsumerWidget {
     final balances = ref.watch(accountBalancesProvider);
     return balances.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, _) => const Center(child: Text('账户余额读取失败')),
+      error: (_, _) =>
+          Center(child: Text(context.l10n.accountBalanceReadFailed)),
       data: (items) => _AccountOverview(items: items),
     );
   }
@@ -40,21 +44,20 @@ class _AccountOverview extends ConsumerWidget {
     }
 
     Future<void> deleteAccount(AccountBalance account) async {
+      final accountName = DefaultLedgerLabels.balance(context, account);
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text('停用${account.name}？'),
-          content: const Text(
-            '账户会从可选列表和余额汇总中移除，但历史账单仍会保留。默认账户之后可以通过“恢复默认账户”重新启用。',
-          ),
+          title: Text(context.l10n.archiveAccountTitle(accountName)),
+          content: Text(context.l10n.archiveAccountDescription),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('取消'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('停用'),
+              child: Text(context.l10n.archive),
             ),
           ],
         ),
@@ -63,13 +66,15 @@ class _AccountOverview extends ConsumerWidget {
       try {
         await ref.read(expenseRepositoryProvider).archiveAccount(account.id);
         if (context.mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('${account.name}已停用')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.accountArchived(accountName))),
+          );
         }
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('停用失败，请重试')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(context.l10n.archiveFailed)));
         }
       }
     }
@@ -78,13 +83,15 @@ class _AccountOverview extends ConsumerWidget {
       try {
         await ref.read(expenseRepositoryProvider).restoreDefaultAccounts();
         if (context.mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('默认账户已恢复，原有余额没有被重置')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.defaultAccountsRestored)),
+          );
         }
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('恢复失败，请重试')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(context.l10n.restoreFailed)));
         }
       }
     }
@@ -101,14 +108,26 @@ class _AccountOverview extends ConsumerWidget {
           crossAxisCount: 2,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          childAspectRatio: 1.7,
+          mainAxisExtent: 104,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            _SummaryCard(label: '个人流动资产', amountMinor: personalAssets),
-            _SummaryCard(label: '待偿负债', amountMinor: liabilities),
-            _SummaryCard(label: '流动净资产', amountMinor: netAssets),
-            _SummaryCard(label: '受托/授权资金', amountMinor: entrustedFunds),
+            _SummaryCard(
+              label: context.l10n.personalLiquidAssets,
+              amountMinor: personalAssets,
+            ),
+            _SummaryCard(
+              label: context.l10n.outstandingLiabilities,
+              amountMinor: liabilities,
+            ),
+            _SummaryCard(
+              label: context.l10n.liquidNetWorth,
+              amountMinor: netAssets,
+            ),
+            _SummaryCard(
+              label: context.l10n.entrustedFunds,
+              amountMinor: entrustedFunds,
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -118,7 +137,7 @@ class _AccountOverview extends ConsumerWidget {
               child: OutlinedButton.icon(
                 onPressed: addAccount,
                 icon: const Icon(Icons.add),
-                label: const Text('添加账户'),
+                label: Text(context.l10n.addAccount),
               ),
             ),
             const SizedBox(width: 8),
@@ -126,36 +145,36 @@ class _AccountOverview extends ConsumerWidget {
               child: TextButton.icon(
                 onPressed: restoreDefaults,
                 icon: const Icon(Icons.restore),
-                label: const Text('恢复默认'),
+                label: Text(context.l10n.restoreDefaults),
               ),
             ),
           ],
         ),
         const SizedBox(height: 24),
         _AccountGroup(
-          title: '个人账户',
-          description: '属于你的现金、银行卡与钱包余额',
+          title: context.l10n.personalAccounts,
+          description: context.l10n.personalAccountsDescription,
           items: _itemsFor(AccountGroup.personalAsset),
           onEdit: editBalance,
           onDelete: deleteAccount,
         ),
         _AccountGroup(
-          title: '受托/授权资金',
-          description: '可以使用，但不计入个人资产',
+          title: context.l10n.entrustedFunds,
+          description: context.l10n.entrustedFundsDescription,
           items: _itemsFor(AccountGroup.entrustedFunds),
           onEdit: editBalance,
           onDelete: deleteAccount,
         ),
         _AccountGroup(
-          title: '负债账户',
-          description: '显示当前应偿还金额',
+          title: context.l10n.liabilityAccounts,
+          description: context.l10n.liabilityAccountsDescription,
           items: _itemsFor(AccountGroup.liability),
           onEdit: editBalance,
           onDelete: deleteAccount,
         ),
         const SizedBox(height: 8),
         Text(
-          '点击账户可校准当前余额。之后的支出会从资产账户扣除，或增加负债账户欠款。',
+          context.l10n.accountCalibrationHint,
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
@@ -204,7 +223,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   Widget build(BuildContext context) {
     final isLiability = _kind == AccountKind.creditLine;
     return AlertDialog(
-      title: const Text('添加账户或负债'),
+      title: Text(context.l10n.addAccountOrLiability),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -215,20 +234,24 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               maxLength: 30,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
-                labelText: '名称',
-                hintText: isLiability ? '例如：朋友欠款' : '例如：储蓄卡',
+                labelText: context.l10n.name,
+                hintText: isLiability
+                    ? context.l10n.liabilityNameExample
+                    : context.l10n.assetNameExample,
                 errorText: _nameError,
               ),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<AccountKind>(
               initialValue: _kind,
-              decoration: const InputDecoration(labelText: '核算类型'),
+              decoration: InputDecoration(
+                labelText: context.l10n.accountingType,
+              ),
               items: AccountKind.values
                   .map(
                     (kind) => DropdownMenuItem(
                       value: kind,
-                      child: Text(_labelForKind(kind)),
+                      child: Text(_labelForKind(context, kind)),
                     ),
                   )
                   .toList(growable: false),
@@ -246,9 +269,11 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 decimal: true,
               ),
               decoration: InputDecoration(
-                labelText: isLiability ? '当前待偿金额' : '当前余额',
+                labelText: isLiability
+                    ? context.l10n.currentAmountOwed
+                    : context.l10n.currentBalance,
                 prefixText: '¥ ',
-                helperText: '可先填 0，之后随时校准',
+                helperText: context.l10n.zeroThenCalibrate,
                 errorText: _amountError,
               ),
             ),
@@ -258,11 +283,11 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _save,
-          child: Text(_saving ? '添加中…' : '添加'),
+          child: Text(_saving ? context.l10n.adding : context.l10n.add),
         ),
       ],
     );
@@ -272,14 +297,14 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
     final name = _nameController.text.trim();
     int amountMinor;
     setState(() {
-      _nameError = name.isEmpty ? '请输入名称' : null;
+      _nameError = name.isEmpty ? context.l10n.enterName : null;
       _amountError = null;
     });
     if (name.isEmpty) return;
     try {
       amountMinor = parseCnyMinorUnits(_amountController.text, allowZero: true);
     } on MoneyInputException catch (error) {
-      setState(() => _amountError = error.message);
+      setState(() => _amountError = localizedMoneyInputError(context, error));
       return;
     }
 
@@ -297,24 +322,24 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _nameError = '这个名称已经存在';
+        _nameError = context.l10n.nameAlreadyExists;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _nameError = '添加失败，请重试';
+        _nameError = context.l10n.addFailed;
       });
     }
   }
 }
 
-String _labelForKind(AccountKind kind) => switch (kind) {
-  AccountKind.cash => '现金',
-  AccountKind.bank => '银行卡',
-  AccountKind.wallet => '支付钱包',
-  AccountKind.entrustedFunds => '受托/授权资金',
-  AccountKind.creditLine => '负债账户',
+String _labelForKind(BuildContext context, AccountKind kind) => switch (kind) {
+  AccountKind.cash => context.l10n.accountKindCash,
+  AccountKind.bank => context.l10n.accountKindBank,
+  AccountKind.wallet => context.l10n.accountKindWallet,
+  AccountKind.entrustedFunds => context.l10n.accountKindEntrustedFunds,
+  AccountKind.creditLine => context.l10n.accountKindLiability,
 };
 
 class _BalanceDialog extends ConsumerStatefulWidget {
@@ -347,11 +372,12 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final accountName = DefaultLedgerLabels.balance(context, widget.account);
     return AlertDialog(
       title: Text(
         widget.account.group == AccountGroup.liability
-            ? '校准${widget.account.name}当前负债'
-            : '校准${widget.account.name}当前余额',
+            ? context.l10n.calibrateLiability(accountName)
+            : context.l10n.calibrateBalance(accountName),
       ),
       content: TextField(
         controller: _controller,
@@ -360,17 +386,17 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
         decoration: InputDecoration(
           prefixText: '¥ ',
           errorText: _errorText,
-          helperText: '不能为负数，最多两位小数',
+          helperText: context.l10n.nonNegativeTwoDecimals,
         ),
       ),
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _save,
-          child: Text(_saving ? '保存中…' : '保存'),
+          child: Text(_saving ? context.l10n.saving : context.l10n.save),
         ),
       ],
     );
@@ -381,7 +407,7 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
     try {
       amountMinor = parseCnyMinorUnits(_controller.text, allowZero: true);
     } on MoneyInputException catch (error) {
-      setState(() => _errorText = error.message);
+      setState(() => _errorText = localizedMoneyInputError(context, error));
       return;
     }
     setState(() => _saving = true);
@@ -397,7 +423,7 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _errorText = '保存失败，请重试';
+        _errorText = context.l10n.saveFailed;
       });
     }
   }
@@ -418,8 +444,18 @@ class _SummaryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(label, style: Theme.of(context).textTheme.labelMedium),
-            const SizedBox(height: 6),
+            Flexible(
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
@@ -466,9 +502,13 @@ class _AccountGroup extends StatelessWidget {
               for (var index = 0; index < items.length; index++) ...[
                 if (index > 0) const Divider(height: 1),
                 ListTile(
-                  title: Text(items[index].name),
+                  title: Text(
+                    DefaultLedgerLabels.balance(context, items[index]),
+                  ),
                   subtitle: Text(
-                    items[index].group == AccountGroup.liability ? '负债' : '余额',
+                    items[index].group == AccountGroup.liability
+                        ? context.l10n.liability
+                        : context.l10n.balance,
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -478,7 +518,7 @@ class _AccountGroup extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       PopupMenuButton<_AccountAction>(
-                        tooltip: '账户操作',
+                        tooltip: context.l10n.accountActions,
                         onSelected: (action) {
                           if (action == _AccountAction.editBalance) {
                             onEdit(items[index]);
@@ -486,14 +526,14 @@ class _AccountGroup extends StatelessWidget {
                             onDelete(items[index]);
                           }
                         },
-                        itemBuilder: (_) => const [
+                        itemBuilder: (_) => [
                           PopupMenuItem(
                             value: _AccountAction.editBalance,
-                            child: Text('校准余额'),
+                            child: Text(context.l10n.calibrateBalanceAction),
                           ),
                           PopupMenuItem(
                             value: _AccountAction.delete,
-                            child: Text('停用账户'),
+                            child: Text(context.l10n.archiveAccount),
                           ),
                         ],
                       ),

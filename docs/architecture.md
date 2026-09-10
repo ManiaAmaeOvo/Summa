@@ -1,68 +1,99 @@
-# 架构说明
+# Architecture
 
-## 技术栈
+**English** | [简体中文](zh-CN/architecture.md)
 
-- Flutter / Dart：Android UI 与未来跨平台基础。
-- Material 3：视觉组件和动态深浅色主题。
-- Riverpod：依赖注入和响应式数据订阅。
-- Drift / SQLite：本地持久化、迁移和事务。
-- share_plus：使用系统分享/保存面板导出文件。
-- file_picker：从系统文件选择器读取完整备份。
-- package_info_plus：读取应用版本信息。
+## Technology
 
-## 依赖方向
+- Flutter and Dart for Android UI and the future cross-platform foundation.
+- Material 3 for components and system-aware light and dark themes.
+- Riverpod for dependency injection and reactive data subscriptions.
+- Drift and SQLite for local persistence, migrations, and transactions.
+- Flutter localization resources (ARB) for English and Simplified Chinese.
+- Shared Preferences for the explicit language preference.
+- `share_plus` for platform share and save flows.
+- `file_picker` for selecting external complete backups.
+- `package_info_plus` for installed version information.
+
+## Dependency direction
 
 ```text
 features -> app/providers -> domain <- data
+                       \-> l10n
 ```
 
-- `domain` 保存账户、分类、交易和导入导出协议，不依赖 Flutter UI。
-- `data` 使用 Drift 实现仓库接口和账本约束。
-- `features` 只通过仓库和 Provider 读取或修改数据。
-- 数据库是本地唯一事实来源，报表均从原始交易计算，不另存重复汇总。
-- 仓库外层的自动备份装饰器在本次启动的第一次成功写入前保存完整快照；失败
-  写入会撤销暂存节点，因此余额校验失败等无效操作不会消耗自动备份名额。
+- `domain` defines accounts, categories, transactions, and interchange models.
+- `data` implements repository contracts and accounting constraints with Drift.
+- `features` reads and mutates data only through repositories and providers.
+- SQLite is the local source of truth. Reports are computed from transactions
+  instead of storing duplicate summaries.
+- A repository decorator creates a complete snapshot before the first
+  successful mutation in an app session. Failed mutations remove the tentative
+  snapshot, so rejected validation does not consume an automatic slot.
+- ARB resources own fixed UI copy. Stable default entity IDs let the
+  presentation layer display untouched defaults in either language without
+  changing user-authored names or breaking existing backups.
 
-## 目录结构
+## Source layout
 
 ```text
 lib/
-  app/                       # 应用入口、Provider 与主题
-  core/                      # 金额等通用基础能力
-  domain/                    # 账户、分类、交易及导入导出协议
-  data/                      # Drift 表结构、迁移与仓库实现
-  features/                  # 首页、编辑器、账户、分类、报表与设置
+  app/                       # App entry, providers, locale state, and theme
+  core/                      # Money and other shared primitives
+  domain/                    # Accounts, categories, transactions, import/export
+  data/                      # Drift schema, migrations, backup store, repositories
+  features/                  # Dashboard, editor, accounts, reports, and settings
+  l10n/                      # ARB resources and localization helpers
 ```
 
-## 核心账本约束
+## Core ledger constraints
 
-- 金额以人民币分的整数存储，不使用二进制浮点数。
-- 支出和转账不能超过来源资产账户余额。
-- 还款不能超过付款账户余额，也不能超过目标负债余额。
-- 转账仅发生在两个不同的个人资产账户之间，不污染收入和支出。
-- 分类、账户与账单使用软删除/归档保证历史引用不断裂。
-- 批量导入与备份恢复必须在单一数据库事务中完成。
+- CNY amounts are stored as integer minor units, never binary floating point.
+- Expenses and transfers cannot exceed the source asset balance.
+- Repayment cannot exceed either the payment balance or target liability.
+- Transfers are limited to two different personal asset accounts and do not
+  affect income or expense totals.
+- Archived accounts, categories, and soft-deleted transactions retain stable
+  historical references.
+- Batch import and backup restore execute inside one database transaction.
 
-## 数据库版本
+## Localization model
 
-当前 schema 版本为 6：
+The language selector supports system, English, and Simplified Chinese. The
+choice is persisted outside the financial database so a ledger restore does not
+silently change interface preferences.
 
-- v1：账户、两级支出分类和账单。
-- v2：受托资金账户与“其他”子分类。
-- v3：补充默认负债账户。
-- v4：账单软删除。
-- v5：目标账户以及收入、借入和还款系统分类。
-- v6：个人账户间转账系统分类。
+Default accounts and categories retain stable IDs and stored fallback names.
+When a stored name still matches a known English or Chinese default alias, the
+UI renders the label in the active language. Once a user renames it to a custom
+value, that exact name is preserved across language changes. JSON import accepts
+both default-language aliases while protocol keys and enum values stay English.
 
-任何 schema 变更都必须增加版本号、提供向前迁移并补自动化测试。
+## Database version
 
-## 本地备份
+The current schema version is 6:
 
-完整备份继续使用版本化 JSON。应用专属文档目录下的 `summa_backups/automatic`
-保存最多五个跨启动快照，`summa_backups/manual` 保存不自动轮换的用户节点。
-两类节点均可覆盖回档、合并和删除，手动节点还可重命名。恢复账单数据不会把
-备份文件本身写入数据库，避免备份递归包含自身。
+- v1: accounts, two-level expense categories, and transactions.
+- v2: entrusted funds and `Other` secondary categories.
+- v3: additional default liability accounts.
+- v4: transaction soft deletion.
+- v5: target accounts and income, borrowing, and repayment system categories.
+- v6: personal account transfer categories.
 
-“重置账单与账户”清除所有账单、删除自定义账户并将默认账户归零，但保留分类
-和本地备份；“恢复出厂设置”还会恢复默认分类并删除所有软件内备份。导出到
-应用外部的文件不受恢复出厂影响。
+The `0.4.0` localization design does not rewrite financial rows or require a
+schema migration. Any future schema change must increment the version, include a
+forward migration, and add automated coverage.
+
+## Local backups
+
+Complete backups use versioned JSON. The app-specific documents directory keeps
+up to five cross-launch snapshots under `summa_backups/automatic` and unlimited
+user-managed snapshots under `summa_backups/manual`.
+
+Both groups support replace restore, merge, and delete; manual snapshots can
+also be renamed. Backup files are not stored inside the ledger database, which
+prevents a backup from recursively containing itself.
+
+Resetting transactions and accounts clears transactions, removes custom
+accounts, and restores zero-balance defaults while preserving categories and
+local backups. Factory reset also restores default categories and deletes all
+in-app snapshots. Files exported outside the app are not affected.

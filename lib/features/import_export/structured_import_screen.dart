@@ -9,6 +9,10 @@ import 'package:ledger_pro/domain/categories/ledger_category.dart';
 import 'package:ledger_pro/domain/import_export/ledger_import.dart';
 import 'package:ledger_pro/domain/transactions/expense_record.dart';
 import 'package:ledger_pro/domain/transactions/expense_repository.dart';
+import 'package:ledger_pro/l10n/default_ledger_labels.dart';
+import 'package:ledger_pro/l10n/input_error_labels.dart';
+import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:ledger_pro/l10n/transaction_rule_labels.dart';
 
 class StructuredImportScreen extends ConsumerStatefulWidget {
   const StructuredImportScreen({super.key});
@@ -40,7 +44,11 @@ class _StructuredImportScreenState
     final drafts = _drafts;
     return Scaffold(
       appBar: AppBar(
-        title: Text(drafts == null ? '代码块导入' : '是否导入 ${drafts.length} 条账单？'),
+        title: Text(
+          drafts == null
+              ? context.l10n.codeImport
+              : context.l10n.confirmImportCount(drafts.length),
+        ),
       ),
       body: SafeArea(
         child: drafts == null
@@ -63,7 +71,7 @@ class _StructuredImportScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '粘贴单笔、数组或 schema_version 1 批量 JSON。金额必须是字符串，分类使用“主分类/子分类”。',
+            context.l10n.jsonImportInstructions,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -75,8 +83,8 @@ class _StructuredImportScreenState
               maxLines: null,
               textAlignVertical: TextAlignVertical.top,
               keyboardType: TextInputType.multiline,
-              decoration: const InputDecoration(
-                labelText: 'JSON 代码块',
+              decoration: InputDecoration(
+                labelText: context.l10n.jsonCode,
                 alignLabelWithHint: true,
                 hintText: '```json\n{ ... }\n```',
               ),
@@ -96,16 +104,22 @@ class _StructuredImportScreenState
                 child: OutlinedButton.icon(
                   onPressed: () async {
                     await Clipboard.setData(
-                      const ClipboardData(text: ledgerImportTemplate),
+                      ClipboardData(
+                        text: ledgerImportTemplateFor(
+                          Localizations.localeOf(context).languageCode,
+                        ),
+                      ),
                     );
                     if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('导入模板已复制')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(context.l10n.importTemplateCopied),
+                        ),
+                      );
                     }
                   },
                   icon: const Icon(Icons.copy_outlined),
-                  label: const Text('复制模板'),
+                  label: Text(context.l10n.copyTemplate),
                 ),
               ),
               const SizedBox(width: 10),
@@ -115,7 +129,9 @@ class _StructuredImportScreenState
                       ? () => _parse(accounts!, expenses!, incomes!)
                       : null,
                   icon: const Icon(Icons.preview_outlined),
-                  label: Text(ready ? '解析并预览' : '正在加载…'),
+                  label: Text(
+                    ready ? context.l10n.parseAndPreview : context.l10n.loading,
+                  ),
                 ),
               ),
             ],
@@ -145,19 +161,33 @@ class _StructuredImportScreenState
                 child: ListTile(
                   leading: CircleAvatar(child: Text('${index + 1}')),
                   title: Text(
-                    '${_typeLabel(draft.type)}  ${formatCny(draft.amountMinor)}',
+                    '${_typeLabel(context, draft.type)}  ${formatCny(draft.amountMinor)}',
                   ),
                   subtitle: Text(
                     [
                       DateFormat('yyyy-MM-dd HH:mm').format(draft.occurredAt),
-                      if (draft.categoryPath != null) draft.categoryPath!,
+                      if (draft.categoryPath != null)
+                        _localizedDraftCategory(
+                          context,
+                          draft,
+                          draft.type == LedgerTransactionType.expense
+                              ? expenses
+                              : incomes,
+                        ),
                       draft.targetAccountName == null
-                          ? draft.accountName
-                          : '${draft.accountName} → ${draft.targetAccountName}',
+                          ? _draftAccountName(context, draft, target: false)
+                          : '${_draftAccountName(context, draft, target: false)} → '
+                                '${_draftAccountName(context, draft, target: true)}',
                       if (draft.accountIsNew)
-                        '将新建${_accountKindLabel(draft.accountKind)}账户：${draft.accountName}',
+                        context.l10n.willCreateAccount(
+                          _accountKindLabel(context, draft.accountKind),
+                          draft.accountName,
+                        ),
                       if (draft.targetAccountIsNew)
-                        '将新建${_accountKindLabel(draft.targetAccountKind!)}账户：${draft.targetAccountName}',
+                        context.l10n.willCreateAccount(
+                          _accountKindLabel(context, draft.targetAccountKind!),
+                          draft.targetAccountName!,
+                        ),
                       if (draft.note.isNotEmpty) draft.note,
                     ].join(' · '),
                     maxLines: 3,
@@ -171,9 +201,15 @@ class _StructuredImportScreenState
                         setState(() => drafts.removeAt(index));
                       }
                     },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('编辑')),
-                      PopupMenuItem(value: 'remove', child: Text('移除此条')),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text(context.l10n.edit),
+                      ),
+                      PopupMenuItem(
+                        value: 'remove',
+                        child: Text(context.l10n.removeItem),
+                      ),
                     ],
                   ),
                   onTap: () =>
@@ -203,14 +239,18 @@ class _StructuredImportScreenState
                           _drafts = null;
                           _error = null;
                         }),
-                  child: const Text('返回修改代码'),
+                  child: Text(context.l10n.backToCode),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: FilledButton(
                   onPressed: _saving || drafts.isEmpty ? null : _confirmImport,
-                  child: Text(_saving ? '导入中…' : '确认导入 ${drafts.length} 条'),
+                  child: Text(
+                    _saving
+                        ? context.l10n.importing
+                        : context.l10n.confirmImportButton(drafts.length),
+                  ),
                 ),
               ),
             ],
@@ -231,6 +271,7 @@ class _StructuredImportScreenState
         accounts: accounts,
         expenseCategories: expenses,
         incomeCategories: incomes,
+        languageCode: Localizations.localeOf(context).languageCode,
       );
       setState(() {
         _drafts = drafts;
@@ -274,11 +315,19 @@ class _StructuredImportScreenState
       final count = _drafts!.length;
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
-      messenger.showSnackBar(SnackBar(content: Text('已导入 $count 条账单')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(context.l10n.importedCount(count))),
+      );
     } on TransactionRuleException catch (error) {
-      if (mounted) setState(() => _error = '整批未导入：${error.message}');
+      if (mounted) {
+        setState(
+          () => _error = context.l10n.batchNotImportedReason(
+            localizedTransactionRule(context, error),
+          ),
+        );
+      }
     } catch (_) {
-      if (mounted) setState(() => _error = '整批未导入，请检查内容后重试');
+      if (mounted) setState(() => _error = context.l10n.batchNotImported);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -364,7 +413,7 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
     final targetAccounts = _accountsForTarget(type, accounts);
     final children = widget.categories.where((item) => !item.isParent).toList();
     return AlertDialog(
-      title: Text('编辑${_typeLabel(type)}记录'),
+      title: Text(context.l10n.editTypedTransaction(_typeLabel(context, type))),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -374,29 +423,29 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              decoration: const InputDecoration(
-                labelText: '金额',
+              decoration: InputDecoration(
+                labelText: context.l10n.amount,
                 prefixText: '¥ ',
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _time,
-              decoration: const InputDecoration(labelText: 'ISO 8601 时间'),
+              decoration: InputDecoration(labelText: context.l10n.isoTimestamp),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _accountId,
               decoration: InputDecoration(
                 labelText: type == LedgerTransactionType.borrowing
-                    ? '负债账户'
-                    : '账户',
+                    ? context.l10n.liabilityAccounts
+                    : context.l10n.account,
               ),
               items: [
                 for (final account in primaryAccounts)
                   DropdownMenuItem(
                     value: account.id,
-                    child: Text(account.name),
+                    child: Text(DefaultLedgerLabels.account(context, account)),
                   ),
               ],
               onChanged: (value) => setState(() => _accountId = value!),
@@ -405,12 +454,16 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _targetId,
-                decoration: const InputDecoration(labelText: '目标账户'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.targetAccount,
+                ),
                 items: [
                   for (final account in targetAccounts)
                     DropdownMenuItem(
                       value: account.id,
-                      child: Text(account.name),
+                      child: Text(
+                        DefaultLedgerLabels.account(context, account),
+                      ),
                     ),
                 ],
                 onChanged: (value) => setState(() => _targetId = value),
@@ -421,12 +474,14 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _categoryId,
-                decoration: const InputDecoration(labelText: '分类'),
+                decoration: InputDecoration(labelText: context.l10n.category),
                 items: [
                   for (final child in children)
                     DropdownMenuItem(
                       value: child.id,
-                      child: Text(_categoryPath(child, widget.categories)),
+                      child: Text(
+                        _categoryPath(context, child, widget.categories),
+                      ),
                     ),
                 ],
                 onChanged: (value) => setState(() => _categoryId = value),
@@ -436,7 +491,7 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
             TextField(
               controller: _note,
               maxLength: 200,
-              decoration: const InputDecoration(labelText: '备注'),
+              decoration: InputDecoration(labelText: context.l10n.note),
             ),
             if (_error != null)
               Text(
@@ -449,9 +504,9 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(context.l10n.cancel),
         ),
-        FilledButton(onPressed: _save, child: const Text('保存修改')),
+        FilledButton(onPressed: _save, child: Text(context.l10n.saveChanges)),
       ],
     );
   }
@@ -460,7 +515,9 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
     try {
       final amount = parseCnyMinorUnits(_amount.text);
       final time = DateTime.tryParse(_time.text.trim());
-      if (time == null) throw const LedgerImportException('时间格式不正确');
+      if (time == null) {
+        throw LedgerImportException(context.l10n.invalidTimestamp);
+      }
       final account = _accounts.singleWhere((item) => item.id == _accountId);
       final target = _targetId == null
           ? null
@@ -484,10 +541,12 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
           categoryId: category?.id,
           categoryPath: category == null
               ? null
-              : _categoryPath(category, widget.categories),
+              : _categoryPath(context, category, widget.categories),
           note: _note.text.trim(),
         ),
       );
+    } on MoneyInputException catch (error) {
+      setState(() => _error = localizedMoneyInputError(context, error));
     } catch (error) {
       setState(() => _error = error.toString());
     }
@@ -520,23 +579,53 @@ List<LedgerAccount> _accountsForTarget(
   _ => const [],
 };
 
-String _categoryPath(LedgerCategory child, List<LedgerCategory> categories) {
+String _categoryPath(
+  BuildContext context,
+  LedgerCategory child,
+  List<LedgerCategory> categories,
+) {
   final parent = categories.singleWhere((item) => item.id == child.parentId);
-  return '${parent.name}/${child.name}';
+  return '${DefaultLedgerLabels.category(context, parent)}/'
+      '${DefaultLedgerLabels.category(context, child)}';
 }
 
-String _typeLabel(LedgerTransactionType type) => switch (type) {
-  LedgerTransactionType.expense => '支出',
-  LedgerTransactionType.income => '收入',
-  LedgerTransactionType.transfer => '转账',
-  LedgerTransactionType.borrowing => '借入',
-  LedgerTransactionType.repayment => '还款',
-};
+String _typeLabel(BuildContext context, LedgerTransactionType type) =>
+    switch (type) {
+      LedgerTransactionType.expense => context.l10n.expense,
+      LedgerTransactionType.income => context.l10n.income,
+      LedgerTransactionType.transfer => context.l10n.transfer,
+      LedgerTransactionType.borrowing => context.l10n.borrowing,
+      LedgerTransactionType.repayment => context.l10n.repayment,
+    };
 
-String _accountKindLabel(AccountKind kind) => switch (kind) {
-  AccountKind.cash => '现金',
-  AccountKind.bank => '银行卡',
-  AccountKind.wallet => '电子钱包',
-  AccountKind.creditLine => '负债',
-  AccountKind.entrustedFunds => '委托/授权资金',
-};
+String _accountKindLabel(BuildContext context, AccountKind kind) =>
+    switch (kind) {
+      AccountKind.cash => context.l10n.accountKindCash,
+      AccountKind.bank => context.l10n.accountKindBank,
+      AccountKind.wallet => context.l10n.accountKindElectronicWallet,
+      AccountKind.creditLine => context.l10n.liability,
+      AccountKind.entrustedFunds => context.l10n.accountKindEntrustedShort,
+    };
+
+String _draftAccountName(
+  BuildContext context,
+  LedgerImportDraft draft, {
+  required bool target,
+}) => DefaultLedgerLabels.accountName(
+  Localizations.localeOf(context),
+  target ? draft.targetAccountId! : draft.accountId,
+  target ? draft.targetAccountName! : draft.accountName,
+);
+
+String _localizedDraftCategory(
+  BuildContext context,
+  LedgerImportDraft draft,
+  List<LedgerCategory> categories,
+) {
+  final child = categories
+      .where((item) => item.id == draft.categoryId)
+      .firstOrNull;
+  return child == null
+      ? draft.categoryPath!
+      : _categoryPath(context, child, categories);
+}

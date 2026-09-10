@@ -1,135 +1,189 @@
-# Summa 使用说明
+# Summa User Guide
 
-Summa 是一款本地优先的个人记账应用。它不要求登录，也不依赖后台服务器；
-账户、分类、账单和软件内备份默认只保存在当前设备中。
+**English** | [简体中文](USER_GUIDE.zh-CN.md)
 
-> 本文对应 Summa `0.3.0`。账本和完整备份可能包含敏感财务信息，请不要把
-> 未脱敏的截图、JSON 或数据库文件发布到公开 Issue。
+Summa is a local-first personal ledger. It requires no sign-in and no backend
+server. Accounts, categories, transactions, and in-app backups remain on the
+current device unless you explicitly export or share them.
 
-## 1. 开始使用
+> This guide covers Summa `0.4.0`. A ledger and its complete backups may contain
+> sensitive financial information. Do not publish real screenshots, JSON, or
+> backup files in a public issue without removing private data.
 
-第一次打开 Summa 时，软件会准备默认账户、负债账户以及支出和收入分类。
-建议按以下顺序开始：
+## 1. Getting started
 
-1. 打开底部“账户”，校准现金、银行卡、支付宝和微信等账户的当前余额。
-2. 删除或停用自己不用的默认账户，并添加实际使用的账户。
-3. 打开“设置 → 分类管理”，检查两级分类是否符合自己的记账习惯。
-4. 返回首页，点击“记一笔”录入第一笔账单。
-5. 录入一段时间后，在“报表”中检查分类和账户流向是否合理。
-6. 重要数据录入完成后，在“设置 → 数据与备份”导出一份外部完整备份。
+On first launch, Summa creates default asset accounts, liability accounts, and
+two-level income and expense categories. A practical setup order is:
 
-Summa 中的金额按人民币“分”精确保存，不使用浮点数。支出、还款和转账会
-检查账户余额，不能把个人余额账户支出成负数；还款也不能超过待偿负债。
+1. Open **Accounts** and calibrate the actual balance of Cash, Bank Account,
+   Alipay, WeChat Pay, and any other accounts you use.
+2. Archive defaults you do not need and add your own accounts.
+3. Open **Settings → Category management** and review both category trees.
+4. Return to the home screen and tap **Add transaction**.
+5. After recording several transactions, inspect **Reports** to verify the
+   categories and account flows.
+6. Export a complete backup from **Settings → Data & backup** after entering
+   important information.
 
-## 2. 账户与负债管理
+Amounts are stored as integer minor units rather than floating-point values.
+Expenses, repayments, and transfers validate available balances. A personal
+asset account cannot be spent below zero, and a liability cannot be repaid by
+more than its outstanding amount.
 
-底部“账户”页面把资金分为四组：
+## 2. Language
 
-- 个人流动资产：现金、银行卡、支付宝、微信等属于自己的可用余额。
-- 待偿负债：花呗、白条、月付或朋友借款等尚未偿还的金额。
-- 流动净资产：个人流动资产减去待偿负债。
-- 受托/授权资金：亲情卡、代购款等可以使用但不完全属于自己的资金。
+Open **Settings → Language** and choose:
 
-### 校准余额
+- **Follow system**: use the Android system language.
+- **English**: always display the English interface.
+- **Simplified Chinese**: always display the Simplified Chinese interface.
 
-点击一个账户，在余额窗口中填写当前实际余额并保存。校准会调整该账户的
-期初余额，不会伪造一笔收入或支出，因此报表不会因为余额校准而产生虚假流水。
+The selection is stored locally and takes effect immediately. Untouched default
+account and category names follow the selected language. A name you explicitly
+rename, as well as every custom name and transaction note, remains exactly as
+you entered it and is never machine-translated.
 
-### 添加账户
+## 3. Accounts and liabilities
 
-点击“添加账户”，填写名称、核算类型和当前余额。核算类型决定余额方向：
+The Accounts tab separates money into four summaries:
 
-- 现金：随身现金。
-- 银行账户：银行卡或银行电子账户。
-- 支付钱包：支付宝、微信或其他电子钱包。
-- 负债账户：信用支付、分期或个人借款。
-- 受托/授权资金：亲情卡、代管资金或指定用途款项。
+- **Personal liquid assets**: cash, bank accounts, Alipay, WeChat Pay, and other
+  balances that belong to you.
+- **Outstanding liabilities**: Huabei, Baitiao, monthly-pay services, personal
+  loans, and other amounts that still need to be repaid.
+- **Liquid net worth**: personal liquid assets minus outstanding liabilities.
+- **Entrusted / authorized funds**: family cards, purchasing budgets, and other
+  money you may use but do not fully own.
 
-账户名称不能重复。JSON 导入遇到不存在的账户时，也能按输入中的类型自动创建。
+Fixed assets are intentionally outside the current default balance model.
+Summa's headline balance focuses on available liquid money. This avoids making
+a phone, computer, or other hard-to-sell property look like spendable cash.
 
-### 停用与恢复
+### Calibrate a balance
 
-账户操作菜单可以停用账户。停用不会删除历史记录，只会让它不再出现在新账单
-的选择列表中。点击“恢复默认”只会重新启用缺失的默认账户，不会覆盖余额、
-自定义账户或历史账单。
+Tap an account, enter its actual current balance, and save. Calibration adjusts
+the opening balance. It does not fabricate an income or expense transaction, so
+reports are not distorted.
 
-## 3. 记一笔
+### Add an account
 
-首页点击“记一笔”后，可以在五种交易类型间切换。日期默认使用当前时间，也可
-手动修改；备注用于记录商家、用途或其他上下文。
+Tap **Add account**, enter a unique name, select an account type, and optionally
+enter its current balance:
 
-### 支出
+- Cash
+- Bank account
+- Payment wallet
+- Liability account
+- Entrusted / authorized funds
 
-选择金额、二级支出分类和付款账户。例如“饮食 / 午餐，支付宝，28.50 元”。
-普通资产或受托资金余额不足时会阻止保存；使用负债账户付款则会增加对应负债。
+An account name must be unique. Summa treats the English and Chinese labels of
+an untouched default account as the same name, preventing accidental duplicates
+after a language switch.
 
-### 收入
+### Archive and restore defaults
 
-选择金额、二级收入分类和到账账户。收入分类不仅包含劳动所得，还可以记录家庭
-支持、生活费、亲属赠予、采购结余、退款和报销等来源。
+The account action menu can archive an account. Archiving removes it from new
+transaction selectors and current balance summaries without breaking historical
+transactions. **Restore defaults** re-enables missing defaults without changing
+existing balances, custom accounts, or transaction history.
 
-如果收入直接记入负债账户，它表示冲减负债，而不是增加现金；冲减金额不能超过
-该账户当前待偿金额。
+## 4. Add a transaction
 
-### 借入
+Tap **Add transaction** on the home screen and choose one of five transaction
+types. The current time is selected by default and can be edited. Notes can
+store a merchant, purpose, explanation, or other context.
 
-“借入”同时选择负债来源和资金进入的个人账户。例如：
+### Expense
 
-```text
-朋友借款 → 微信，1000 元
-```
+Choose a positive amount, a secondary expense category, and a payment account.
+For example: `Food / Lunch`, Alipay, `28.50`.
 
-保存后，微信余额增加 1000 元，朋友借款负债也增加 1000 元。这不是收入，
-不会提高流动净资产。编辑器中也可以快捷创建新的负债账户。
+An expense from a personal asset or entrusted-fund account requires a sufficient
+balance. An expense paid through a liability account increases the amount owed.
 
-### 还款
+### Income
 
-“还款”选择付款的个人账户和要减少的负债账户。例如“银行卡 → 花呗”。还款
-既不是新支出，也不是收入；付款余额不足或还款超过负债时，软件会拒绝保存。
+Choose a positive amount, a secondary income category, and the destination
+account. Income categories include earned income as well as family support,
+living allowance, gifts, purchase remainder, refunds, and reimbursements.
 
-### 转账
+Recording income directly into a liability account reduces that liability
+instead of increasing cash. The reduction cannot exceed the outstanding amount.
 
-“转账”用于两个个人资产账户之间移动资金，例如“银行卡 → 支付宝”。它不会
-进入收入或支出统计。来源和目标必须不同，来源账户必须有足够余额。
+### Borrowing
 
-## 4. 编辑与删除账单
-
-在首页点击一条已有账单即可打开编辑器。金额、日期、分类、账户流向和备注会
-作为一个整体更新，Summa 会按修改后的完整账本重新校验余额。
-
-删除账单采用软删除：它会立即从首页、报表和余额计算中消失，但数据库中保留
-必要的历史状态，以支持完整备份和数据一致性。软删除记录不会常驻内存，只会让
-SQLite 文件缓慢增长。
-
-## 5. 两级分类
-
-打开“设置 → 分类管理”，可分别维护支出和收入分类。结构为：
-
-```text
-一级分类 → 二级分类
-```
-
-实际账单选择二级分类，一级分类由软件自动推导。一级和二级分类均可新增、改名、
-排序和停用。每个一级分类会保留“其他”作为兜底项；历史账单引用的分类被停用后
-仍能正常显示。
-
-“恢复默认分类”只补回或重新启用默认项目，不会删除自定义分类。
-
-## 6. JSON 代码块导入
-
-首页右上角点击代码图标进入导入页。它适合把支付宝或微信账单截图交给 OCR/LLM
-整理为严格 JSON，再一次粘贴多笔记录。
-
-导入流程为：
+Borrowing connects a liability source to the personal asset account receiving
+the money. For example:
 
 ```text
-粘贴 JSON → 解析校验 → 逐条预览/编辑 → 确认数量 → 原子写入
+Loan from a friend → WeChat Pay, ¥1,000.00
 ```
 
-在最终确认前，可以点击任意条目修改，也可以移除不需要的条目。整个批次要么
-全部成功，要么全部不写入，不会留下半批账单或孤立账户。
+After saving, the WeChat Pay balance increases by ¥1,000.00 and the personal
+loan liability also increases by ¥1,000.00. This is not income and therefore
+does not increase liquid net worth. A new liability account can be quick-added
+from the editor.
 
-### 批量示例
+### Repayment
+
+Repayment connects a personal asset account to the liability being reduced. For
+example: `Bank Account → Huabei`. It is neither new income nor a new expense.
+Summa rejects the transaction if the payment balance is insufficient or the
+amount exceeds the outstanding liability.
+
+### Transfer
+
+A transfer moves money between two different personal asset accounts, such as
+`Bank Account → Alipay`. It does not appear in income or expense totals. The
+source account must have enough money.
+
+## 5. Edit and delete transactions
+
+Tap an existing transaction on the home screen to open it in the editor. Amount,
+time, category, accounts, flow direction, and note are updated as one operation.
+Summa recalculates and validates the complete affected ledger before accepting
+the change.
+
+Deleting a transaction uses a soft delete. It disappears immediately from the
+home screen, reports, and balance calculations, while the database retains the
+minimum historical state required for backup compatibility and consistency.
+Soft-deleted rows do not remain in memory; they only cause gradual SQLite file
+growth over long-term use.
+
+## 6. Two-level categories
+
+Open **Settings → Category management** to maintain separate trees for income
+and expenses:
+
+```text
+Primary category → Secondary category
+```
+
+A transaction selects a secondary category; Summa derives its primary category
+for summaries and charts. Both levels support adding, renaming, ordering, and
+archiving. Every primary category retains an **Other** fallback. Historical
+transactions continue displaying an archived category.
+
+**Restore default categories** only re-enables or recreates missing defaults. It
+does not delete custom categories.
+
+## 7. JSON code import
+
+Tap the code icon in the top-right of the home screen. This workflow is designed
+for transaction screenshots that have been converted to strict JSON by OCR or a
+language model.
+
+The import sequence is:
+
+```text
+Paste JSON → Parse and validate → Preview and edit → Confirm count → Atomic write
+```
+
+Before confirmation, tap any item to edit it or remove it from the batch. The
+write is atomic: either every valid item and confirmed new account is committed,
+or nothing is written.
+
+### Batch example
 
 ```json
 {
@@ -138,116 +192,150 @@ SQLite 文件缓慢增长。
     {
       "type": "expense",
       "amount": "28.50",
-      "occurred_at": "2026-09-10T12:30:00+08:00",
-      "category": "饮食/午餐",
-      "account": "支付宝",
+      "occurred_at": "2026-09-09T12:30:00+08:00",
+      "category": "Food/Lunch",
+      "account": "Alipay",
       "account_kind": "wallet",
-      "note": "午餐"
+      "note": "Lunch"
     },
     {
       "type": "borrowing",
       "amount": "1000.00",
-      "occurred_at": "2026-09-10T18:00:00+08:00",
-      "account": "朋友借款",
+      "occurred_at": "2026-09-09T13:00:00+08:00",
+      "account": "Loan from a friend",
       "account_kind": "creditLine",
-      "target_account": "微信",
+      "target_account": "WeChat Pay",
       "target_account_kind": "wallet",
-      "note": "临时借款"
+      "note": "Short-term loan"
     }
   ]
 }
 ```
 
-支持的 `type` 为 `expense`、`income`、`transfer`、`borrowing` 和
-`repayment`。金额必须是正数十进制字符串，时间使用 ISO 8601，分类使用
-“一级/二级”。完整字段、账户类型和推断规则见
-[JSON 导入协议](docs/json-import.md)。
+Supported `type` values are `expense`, `income`, `transfer`, `borrowing`, and
+`repayment`. Amounts are positive decimal strings, timestamps use ISO 8601, and
+categories use `Primary/Secondary`. Protocol field names and enum values always
+remain English so JSON is stable across language settings.
 
-未知账户会在预览中标记为“将新建”；未知分类不会静默创建，以免 OCR 错别字
-污染分类列表，应先创建分类或在预览中修改。
+Both English and Chinese aliases are accepted for untouched default accounts and
+categories. Unknown accounts are marked for creation in the preview. Unknown
+categories are not silently created because OCR spelling errors would pollute
+the category tree; create the category first or correct it in preview.
 
-## 7. 报表与账单导出
+See the [complete JSON import protocol](docs/json-import.md).
 
-底部“报表”可以查看日报、周报、月报和年报，包括：
+## 8. Reports and transaction export
 
-- 周期收入、支出、借入和还款汇总。
-- 收入与支出分类饼图。
-- 支出趋势和负债走势。
+The Reports tab provides daily, weekly, monthly, and yearly views including:
 
-报表中的导出功能支持本周、本月、本年、全部记录和自选时间段，并可选择：
+- Income, expense, borrowing, and repayment totals.
+- Income and expense category pie charts.
+- Expense trend and liability trend.
 
-- JSON：结构化，适合程序处理和后续导入。
-- CSV：适合 Excel、Numbers 或其他表格软件分析。
-- Markdown：适合直接阅读、写笔记或交给语言模型分析。
+Export transactions for this week, month, year, all time, or a custom date range:
 
-账单导出只包含所选范围的流水，不等同于完整备份。迁移或恢复整个软件时，应
-使用“数据与备份”中的完整 JSON 备份。
+- **JSON**: structured and re-importable.
+- **CSV**: suitable for Excel, Numbers, and other spreadsheet tools.
+- **Markdown**: readable in notes and convenient for language-model analysis.
 
-## 8. 自动备份与手动备份
+Human-readable headings and untouched default labels follow the selected app
+language. JSON protocol keys remain language-neutral English. A transaction
+export contains only the chosen transaction range and is not a complete app
+backup.
 
-打开“设置 → 数据与备份”可以看到实际备份目录、自动节点和手动节点。
+## 9. Automatic and manual backups
 
-### 自动备份
+Open **Settings → Data & backup** to view the actual backup directory and both
+automatic and manual local snapshots.
 
-每次启动 Summa 后，第一次成功修改账本、账户或分类之前，软件会保存修改前的
-完整状态。校验失败等无效操作不会留下节点。同一次启动期间后续修改不会重复
-生成节点；再次启动并发生有效修改时生成下一个节点，自动区最多保留最近 5 个，
-第 6 个会淘汰最旧节点。
+### Automatic snapshots
 
-### 手动本地备份
+Before the first successful change to transactions, accounts, or categories
+after each launch, Summa saves the complete previous state. Invalid or rejected
+operations do not leave a snapshot. Later changes during the same launch do not
+create more automatic snapshots. The newest five launch snapshots are retained;
+the sixth removes the oldest.
 
-点击“备份到软件本地”，为节点填写名称后保存。手动节点不受自动区五个上限
-影响。点击节点可预览并覆盖回档；右侧菜单还可合并、重命名或删除。
+### Manual local snapshots
 
-### 导出或分享备份
+Tap **Back up inside the app**, enter a name, and save. Manual snapshots are not
+limited by the five automatic slots. Tap a snapshot to preview and replace the
+current ledger. Its menu also supports merge, rename, and delete.
 
-点击“导出或分享备份”，通过 Android 系统面板保存到下载目录、网盘或其他
-位置。外部文件不会因 Summa 卸载或恢复出厂而删除，是长期保存的重要方式。
+### Export or share a complete backup
 
-### 覆盖回档与合并
+Tap **Export or share backup** and use the Android system sheet to save it to a
+downloads folder, cloud drive, or other trusted destination. An external file
+survives Summa uninstall and factory reset and is therefore the correct choice
+for long-term retention.
 
-- 覆盖回档：当前账本被准确替换为备份节点的状态，适合回到明确时间点。
-- 合并：同一稳定 ID 的项目按备份更新，同时保留当前设备独有的数据，适合汇入
-  另一份相关账本。
+### Replace versus merge
 
-自动和手动本地节点位于应用专属文档目录的 `summa_backups` 下，设置页会显示
-设备上的实际路径。Android 11 及更新系统通常限制普通文件管理器浏览应用私有
-目录，因此请在 Summa 内管理；卸载应用前务必另行导出。
+- **Replace & restore** makes the current ledger exactly match the snapshot.
+- **Merge** updates items with the same stable ID and preserves data unique to
+  the current device. Use it when combining related copies of a ledger.
 
-## 9. 重置数据
+Automatic and manual snapshots are stored under the app-specific
+`summa_backups` directory shown on the page. Android 11 and later normally
+restrict ordinary file managers from browsing private app storage. Manage these
+snapshots inside Summa, and export externally before uninstalling.
 
-“设置 → 数据与备份”底部提供两种具有不同范围的操作，都会要求再次确认：
+## 10. Reset data
 
-- 重置账单与账户：永久清空全部账单，删除自定义账户，默认账户恢复为零余额；
-  保留支出/收入分类以及所有自动、手动本地备份。
-- 恢复出厂设置：清空账单、账户和自定义分类，并删除全部软件内备份，恢复首次
-  安装状态。已经导出到应用外部的文件不受影响。
+The bottom of **Settings → Data & backup** offers two separately confirmed
+operations:
 
-若只是想回到之前的状态，应优先使用备份节点回档，而不是重置。
+- **Reset transactions & accounts** permanently clears every transaction,
+  deletes custom accounts, and restores default accounts with zero balances. It
+  preserves income and expense categories and all local backups.
+- **Factory reset** clears transactions, accounts, custom categories, and every
+  in-app backup, returning Summa to first-install state. Files already exported
+  outside the app are not affected.
 
-## 10. 数据安全与常见问题
+If the goal is to return to a known earlier state, restore a backup snapshot
+instead of resetting.
 
-### 是否需要网络或服务器？
+## 11. Data safety and common questions
 
-核心功能不需要。打开开发者 GitHub 页面、把文件分享到网络应用等操作由用户
-主动触发，不影响离线记账。
+### Does Summa require a network connection or server?
 
-### 卸载后数据还在吗？
+No for core functionality. Opening the developer's GitHub profile or choosing a
+network share target is an explicit user action and does not affect offline
+ledger use.
 
-通常不在。Android 会删除应用数据库和软件内备份。卸载或换机前请导出完整
-备份，并确认文件已经保存到 Summa 之外。
+### Does data survive uninstall?
 
-### 为什么余额不能变成负数？
+Normally not. Android removes the app database and in-app snapshots. Export a
+complete backup and verify that it exists outside Summa before uninstalling or
+changing devices.
 
-个人资产和受托资金不允许透支；信用消费应选择负债账户。这样能区分“现金不够”
-与“新增负债”，也能避免导入错误悄悄破坏账本。
+### Why can an account not become negative?
 
-### 为什么借入不算收入、还款不算支出？
+For a personal liquid asset, a negative value usually means the payment source
+was recorded incorrectly or the opening balance was not calibrated. Liabilities
+are modeled separately so debt is not hidden inside a negative asset balance.
 
-借入同时增加资产和负债，还款同时减少资产和负债，两者都不会改变净资产。
-真正的消费在购买发生时记录一次，避免还款时重复计算支出。
+### Does soft deletion eventually use storage?
 
-### 备份和普通账单导出有什么区别？
+Yes, slowly. Deleted rows remain in SQLite for consistency and backup history,
+but they are not loaded into active transaction lists. Ordinary personal use is
+unlikely to create meaningful storage pressure. A future maintenance tool can
+compact old deleted records if real-world usage shows a need.
 
-完整备份包含账户、期初余额、分类、全部账单、停用状态和软删除状态，能够还原
-整个账本；JSON/CSV/Markdown 账单导出主要用于查看、分析或交换选定流水。
+### Which format should I use with a language model?
+
+Use strict JSON for importing because Summa validates it field by field. Use a
+Markdown or CSV transaction export when asking a model to summarize or analyze
+a period. Never upload a complete real backup to an untrusted service.
+
+## 12. Troubleshooting
+
+- If a save is rejected, read the message inside the open editor. It identifies
+  insufficient balance, overpayment, or a missing selection.
+- If JSON cannot be parsed, copy the in-app template, keep numeric amounts inside
+  quotes, and use ISO 8601 timestamps with a timezone offset.
+- If a default English account or category is not found, verify that the default
+  was not explicitly renamed. Custom names are matched exactly.
+- If a local backup is not visible in a file manager, manage it inside Summa or
+  use **Export or share backup**.
+- If an external backup fails validation, the current database is left unchanged.

@@ -1,18 +1,27 @@
 # Contributing to Summa
 
-感谢你愿意帮助改进 Summa。
+**English** | [简体中文](CONTRIBUTING.zh-CN.md)
 
-## 提交问题
+Thank you for helping improve Summa.
 
-请说明设备型号、Android 版本、Summa 版本、复现步骤、预期结果和实际
-结果。账本截图及备份可能包含隐私，请先脱敏，不要公开上传真实完整备份。
+## Reporting an issue
 
-## 提交代码
+Include the device model, Android version, Summa version, reproduction steps,
+expected result, and actual result. Ledger screenshots and backups may contain
+private information. Redact them first and never upload a real complete backup
+to a public issue.
 
-1. 从最新默认分支创建短期功能分支。
-2. 保持领域层不依赖 Flutter 和数据库实现。
-3. 为账本规则、迁移或修复补充测试。
-4. 运行 `dart format`、`flutter analyze` 和 `flutter test`。
-5. 在 Pull Request 中解释行为变化、数据迁移和人工验证结果。
+## Contributing code
 
-请勿提交 APK、SDK 缓存、签名密钥、真实账本或任何个人财务数据。
+1. Create a short-lived feature branch from the latest default branch.
+2. Keep accounting rules in the repository/domain boundary rather than only in
+   widgets.
+3. Add tests for ledger rules, migrations, localization, or bug fixes.
+4. Add every fixed UI message to both English and Chinese ARB resources.
+5. Preserve stable JSON protocol keys and existing backup compatibility.
+6. Run `flutter gen-l10n`, formatting, analysis, and all tests.
+7. Explain behavior changes, data compatibility, and manual verification in the
+   pull request.
+
+Do not commit APKs, SDK caches, signing keys, real ledgers, or personal financial
+data.
