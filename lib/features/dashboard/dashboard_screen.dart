@@ -57,10 +57,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [
-          _TransactionBody(),
-          AccountOverviewScreen(),
-          ReportScreen(),
+        children: [
+          _TransactionBody(
+            onOpenAccounts: () => setState(() => _selectedIndex = 1),
+          ),
+          const AccountOverviewScreen(),
+          const ReportScreen(),
         ],
       ),
       floatingActionButton: _selectedIndex == 0
@@ -102,7 +104,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 }
 
 class _TransactionBody extends ConsumerWidget {
-  const _TransactionBody();
+  const _TransactionBody({required this.onOpenAccounts});
+
+  final VoidCallback onOpenAccounts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -114,19 +118,31 @@ class _TransactionBody extends ConsumerWidget {
           _ErrorState(onRetry: () => ref.invalidate(transactionsProvider)),
       data: (items) => balances.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => _TransactionList(items: items, balances: const []),
-        data: (accountItems) =>
-            _TransactionList(items: items, balances: accountItems),
+        error: (_, _) => _TransactionList(
+          items: items,
+          balances: const [],
+          onOpenAccounts: onOpenAccounts,
+        ),
+        data: (accountItems) => _TransactionList(
+          items: items,
+          balances: accountItems,
+          onOpenAccounts: onOpenAccounts,
+        ),
       ),
     );
   }
 }
 
 class _TransactionList extends ConsumerWidget {
-  const _TransactionList({required this.items, required this.balances});
+  const _TransactionList({
+    required this.items,
+    required this.balances,
+    required this.onOpenAccounts,
+  });
 
   final List<LedgerRecord> items;
   final List<AccountBalance> balances;
+  final VoidCallback onOpenAccounts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -189,6 +205,7 @@ class _TransactionList extends ConsumerWidget {
                   label: context.l10n.liquidNetWorth,
                   amount: netAssets,
                   icon: Icons.account_balance_wallet_outlined,
+                  onTap: onOpenAccounts,
                 ),
               ],
             ),
@@ -275,49 +292,55 @@ class _DashboardSummaryCard extends StatelessWidget {
     required this.label,
     required this.amount,
     required this.icon,
+    this.onTap,
   });
 
   final String label;
   final int amount;
   final IconData icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card.filled(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 17,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    icon,
+                    size: 17,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                formatCny(amount),
-                style: Theme.of(context).textTheme.titleLarge,
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  formatCny(amount),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

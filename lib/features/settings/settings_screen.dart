@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ledger_pro/app/locale_controller.dart';
+import 'package:ledger_pro/app/text_scale_controller.dart';
 import 'package:ledger_pro/features/categories/category_management_screen.dart';
 import 'package:ledger_pro/features/settings/about_screen.dart';
 import 'package:ledger_pro/features/settings/data_management_screen.dart';
@@ -52,6 +53,14 @@ class SettingsScreen extends StatelessWidget {
                   onTap: () => _chooseLanguage(context),
                 ),
                 const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.text_fields_outlined),
+                  title: Text(l10n.fontSize),
+                  subtitle: Text(_textSizeLabel(context)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _chooseTextSize(context),
+                ),
+                const Divider(height: 1),
                 _SettingsTile(
                   icon: Icons.menu_book_outlined,
                   title: l10n.userGuide,
@@ -78,6 +87,15 @@ class SettingsScreen extends StatelessWidget {
         AppLanguage.system => context.l10n.languageSystem,
         AppLanguage.english => context.l10n.languageEnglish,
         AppLanguage.simplifiedChinese => context.l10n.languageSimplifiedChinese,
+      };
+
+  String _textSizeLabel(BuildContext context) =>
+      switch (TextScaleController.instance.value) {
+        AppTextSize.system => context.l10n.fontSizeSystem,
+        AppTextSize.small => context.l10n.fontSizeSmall,
+        AppTextSize.standard => context.l10n.fontSizeStandard,
+        AppTextSize.large => context.l10n.fontSizeLarge,
+        AppTextSize.extraLarge => context.l10n.fontSizeExtraLarge,
       };
 
   Future<void> _chooseLanguage(BuildContext context) async {
@@ -112,6 +130,50 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (selected != null) await LocaleController.instance.setLanguage(selected);
+  }
+
+  Future<void> _chooseTextSize(BuildContext context) async {
+    final l10n = context.l10n;
+    final selected = await showDialog<AppTextSize>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(l10n.fontSize),
+        children: [
+          RadioGroup<AppTextSize>(
+            groupValue: TextScaleController.instance.value,
+            onChanged: (value) => Navigator.pop(context, value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<AppTextSize>(
+                  value: AppTextSize.system,
+                  title: Text(l10n.fontSizeSystem),
+                ),
+                RadioListTile<AppTextSize>(
+                  value: AppTextSize.small,
+                  title: Text(l10n.fontSizeSmall),
+                ),
+                RadioListTile<AppTextSize>(
+                  value: AppTextSize.standard,
+                  title: Text(l10n.fontSizeStandard),
+                ),
+                RadioListTile<AppTextSize>(
+                  value: AppTextSize.large,
+                  title: Text(l10n.fontSizeLarge),
+                ),
+                RadioListTile<AppTextSize>(
+                  value: AppTextSize.extraLarge,
+                  title: Text(l10n.fontSizeExtraLarge),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (selected != null) {
+      await TextScaleController.instance.setTextSize(selected);
+    }
   }
 }
 

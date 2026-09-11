@@ -41,6 +41,8 @@ and backups remain compatible.
   with the latest five automatic snapshots retained.
 - Named manual local snapshots with preview, rename, merge, restore, and delete.
 - English and Simplified Chinese UI with a persistent in-app language selector.
+- Persistent app font-size controls from small through extra large, or follow
+  the Android system setting.
 - Fully offline core functionality.
 
 ## Install
@@ -73,6 +75,8 @@ Android currently requires `minSdk 24` and targets SDK 36.
    external backups, restore, merge, and reset operations.
 7. Open **Settings → Language** to follow the system language or explicitly use
    English or Simplified Chinese.
+8. Open **Settings → Font size** to follow Android or choose a size used only
+   inside Summa. Tap **Liquid net worth** on the home screen to open Accounts.
 
 See the [complete user guide](USER_GUIDE.md) for ledger semantics, import
 examples, backup behavior, recovery options, and common questions. The same

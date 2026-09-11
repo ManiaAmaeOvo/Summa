@@ -176,6 +176,48 @@ abstract class AppLocalizations {
   /// **'Simplified Chinese'**
   String get languageSimplifiedChinese;
 
+  /// No description provided for @fontSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Font size'**
+  String get fontSize;
+
+  /// No description provided for @fontSizeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust text size throughout Summa'**
+  String get fontSizeSubtitle;
+
+  /// No description provided for @fontSizeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow system'**
+  String get fontSizeSystem;
+
+  /// No description provided for @fontSizeSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get fontSizeSmall;
+
+  /// No description provided for @fontSizeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get fontSizeStandard;
+
+  /// No description provided for @fontSizeLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get fontSizeLarge;
+
+  /// No description provided for @fontSizeExtraLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra large'**
+  String get fontSizeExtraLarge;
+
   /// No description provided for @userGuide.
   ///
   /// In en, this message translates to:

@@ -6,7 +6,7 @@ Summa is a local-first personal ledger. It requires no sign-in and no backend
 server. Accounts, categories, transactions, and in-app backups remain on the
 current device unless you explicitly export or share them.
 
-> This guide covers Summa `0.4.0`. A ledger and its complete backups may contain
+> This guide covers Summa `0.4.1`. A ledger and its complete backups may contain
 > sensitive financial information. Do not publish real screenshots, JSON, or
 > backup files in a public issue without removing private data.
 
@@ -42,6 +42,13 @@ The selection is stored locally and takes effect immediately. Untouched default
 account and category names follow the selected language. A name you explicitly
 rename, as well as every custom name and transaction note, remains exactly as
 you entered it and is never machine-translated.
+
+Open **Settings → Font size** to follow the Android system setting or choose
+Small, Standard, Large, or Extra large for Summa only. The selection takes
+effect immediately and is retained after restarting the app.
+
+Tapping the **Liquid net worth** summary card on the home screen opens the
+Accounts page, where all four balance groups and individual accounts are shown.
 
 ## 3. Accounts and liabilities
 

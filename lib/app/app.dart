@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ledger_pro/app/locale_controller.dart';
+import 'package:ledger_pro/app/text_scale_controller.dart';
 import 'package:ledger_pro/app/theme/ledger_scroll_behavior.dart';
 import 'package:ledger_pro/app/theme/ledger_theme.dart';
 import 'package:ledger_pro/features/dashboard/dashboard_screen.dart';
@@ -27,6 +28,20 @@ class SummaApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
         ],
+        builder: (context, child) => ValueListenableBuilder<AppTextSize>(
+          valueListenable: TextScaleController.instance,
+          builder: (context, textSize, _) {
+            final mediaQuery = MediaQuery.of(context);
+            return MediaQuery(
+              data: mediaQuery.copyWith(
+                textScaler: TextScaleController.instance.apply(
+                  mediaQuery.textScaler,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        ),
         scrollBehavior: const LedgerScrollBehavior(),
         home: const DashboardScreen(),
       ),

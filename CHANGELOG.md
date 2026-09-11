@@ -5,6 +5,14 @@
 This project follows semantic versioning. The Android build number appears
 after `+` in the Flutter version.
 
+## [0.4.1] - 2026-09-11
+
+### Added
+
+- Persistent app font-size settings with system, small, standard, large, and
+  extra-large options.
+- Tapping the Liquid net worth dashboard card now opens Account balances.
+
 ## [0.4.0] - 2026-09-10
 
 ### Added

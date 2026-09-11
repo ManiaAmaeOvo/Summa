@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ledger_pro/app/app.dart';
 import 'package:ledger_pro/app/locale_controller.dart';
 import 'package:ledger_pro/app/providers.dart';
+import 'package:ledger_pro/app/text_scale_controller.dart';
 import 'package:ledger_pro/app/theme/ledger_scroll_behavior.dart';
 import 'package:ledger_pro/data/database/app_database.dart';
 import 'package:ledger_pro/data/repositories/drift_expense_repository.dart';
@@ -20,9 +21,13 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     LocaleController.instance.resetForTesting();
     LocaleController.instance.value = AppLanguage.simplifiedChinese;
+    TextScaleController.instance.resetForTesting();
   });
 
-  tearDown(LocaleController.instance.resetForTesting);
+  tearDown(() {
+    LocaleController.instance.resetForTesting();
+    TextScaleController.instance.resetForTesting();
+  });
 
   final cashBalance = AccountBalance(
     id: 'cash',
@@ -82,6 +87,28 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('opens Accounts from the liquid net worth card', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          transactionsProvider.overrideWith(
+            (ref) => Stream.value(<LedgerRecord>[]),
+          ),
+          accountBalancesProvider.overrideWith(
+            (ref) => Stream.value(<AccountBalance>[]),
+          ),
+        ],
+        child: const SummaApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('流动净资产'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('账户余额'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('changes and persists language from Settings', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -109,6 +136,42 @@ void main() {
     expect(LocaleController.instance.value, AppLanguage.english);
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getString('app_language'), 'english');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('changes and persists the app font size', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          transactionsProvider.overrideWith(
+            (ref) => Stream.value(<LedgerRecord>[]),
+          ),
+          accountBalancesProvider.overrideWith(
+            (ref) => Stream.value(<AccountBalance>[]),
+          ),
+        ],
+        child: const SummaApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('设置'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('字体大小'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('特大'));
+    await tester.pumpAndSettle();
+
+    expect(TextScaleController.instance.value, AppTextSize.extraLarge);
+    expect(
+      TextScaleController.instance.apply(TextScaler.noScaling).scale(10),
+      13,
+    );
+    final preferences = await SharedPreferences.getInstance();
+    expect(
+      preferences.getString(TextScaleController.preferenceKey),
+      'extraLarge',
+    );
+    expect(find.text('设置'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

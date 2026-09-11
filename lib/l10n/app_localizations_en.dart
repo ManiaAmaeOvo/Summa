@@ -51,6 +51,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageSimplifiedChinese => 'Simplified Chinese';
 
   @override
+  String get fontSize => 'Font size';
+
+  @override
+  String get fontSizeSubtitle => 'Adjust text size throughout Summa';
+
+  @override
+  String get fontSizeSystem => 'Follow system';
+
+  @override
+  String get fontSizeSmall => 'Small';
+
+  @override
+  String get fontSizeStandard => 'Standard';
+
+  @override
+  String get fontSizeLarge => 'Large';
+
+  @override
+  String get fontSizeExtraLarge => 'Extra large';
+
+  @override
   String get userGuide => 'User guide';
 
   @override

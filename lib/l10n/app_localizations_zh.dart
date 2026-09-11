@@ -49,6 +49,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get languageSimplifiedChinese => '简体中文';
 
   @override
+  String get fontSize => '字体大小';
+
+  @override
+  String get fontSizeSubtitle => '调整 Summa 全局文字大小';
+
+  @override
+  String get fontSizeSystem => '跟随系统';
+
+  @override
+  String get fontSizeSmall => '小';
+
+  @override
+  String get fontSizeStandard => '标准';
+
+  @override
+  String get fontSizeLarge => '大';
+
+  @override
+  String get fontSizeExtraLarge => '特大';
+
+  @override
   String get userGuide => '使用说明';
 
   @override
