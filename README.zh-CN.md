@@ -7,8 +7,8 @@
 Summa 不要求登录，不依赖后台服务器。账户、负债、分类和账单默认只
 保存在设备上的 SQLite 数据库中，并可随时导出为人类可读格式或完整备份。
 
-> 当前稳定版本：[`v0.4.0`](https://github.com/ManiaAmaeOvo/Summa/releases/tag/v0.4.0)
-> （`0.4.0+4`）。项目处于早期公开测试阶段，建议在录入重要数据后定期导出完整备份。
+> 当前稳定版本：[`v0.4.1`](https://github.com/ManiaAmaeOvo/Summa/releases/tag/v0.4.1)
+> （`0.4.1+5`）。项目处于早期公开测试阶段，建议在录入重要数据后定期导出完整备份。
 
 ## 为什么做 Summa
 
