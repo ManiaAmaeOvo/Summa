@@ -102,22 +102,28 @@ class _StructuredImportScreenState
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () async {
-                    await Clipboard.setData(
-                      ClipboardData(
-                        text: ledgerImportTemplateFor(
-                          Localizations.localeOf(context).languageCode,
-                        ),
-                      ),
-                    );
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(context.l10n.importTemplateCopied),
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: ready
+                      ? () async {
+                          await Clipboard.setData(
+                            ClipboardData(
+                              text: ledgerImportTemplateFor(
+                                Localizations.localeOf(context).languageCode,
+                                expenseCategories: expenses!,
+                                incomeCategories: incomes!,
+                              ),
+                            ),
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  context.l10n.importTemplateCopied,
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      : null,
                   icon: const Icon(Icons.copy_outlined),
                   label: Text(context.l10n.copyTemplate),
                 ),

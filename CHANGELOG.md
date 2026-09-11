@@ -12,6 +12,11 @@ after `+` in the Flutter version.
 - Persistent app font-size settings with system, small, standard, large, and
   extra-large options.
 - Tapping the Liquid net worth dashboard card now opens Account balances.
+- The copied JSON template now includes an LLM-oriented comment prompt with
+  the current income and expense category paths and category formatting rules.
+- Primary and secondary `Other` categories remain last when custom categories
+  are added or reordered.
+- Expense and liability trend charts now show approximate date and amount axes.
 
 ## [0.4.0] - 2026-09-10
 

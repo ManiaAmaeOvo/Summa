@@ -113,8 +113,9 @@ class DriftExpenseRepository implements ExpenseRepository {
             table.isArchived.equals(false),
       )
       ..orderBy([(table) => OrderingTerm.asc(table.sortOrder)]);
-    return query.watch().map(
-      (rows) => rows
+    return query.watch().map((rows) {
+      final ordered = [...rows]..sort(_compareCategoryRows);
+      return ordered
           .map(
             (row) => LedgerCategory(
               id: row.id,
@@ -122,8 +123,8 @@ class DriftExpenseRepository implements ExpenseRepository {
               parentId: row.parentId,
             ),
           )
-          .toList(growable: false),
-    );
+          .toList(growable: false);
+    });
   }
 
   @override
@@ -1021,6 +1022,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       if (category == null || category.isArchived) {
         throw ArgumentError.value(id, 'id', 'category not found');
       }
+      if (_isOtherCategoryRow(category)) return;
       final query = _database.select(_database.ledgerCategories)
         ..where(
           (table) =>
@@ -1031,13 +1033,15 @@ class DriftExpenseRepository implements ExpenseRepository {
                   : table.parentId.equals(category.parentId!)),
         )
         ..orderBy([(table) => OrderingTerm.asc(table.sortOrder)]);
-      final siblings = await query.get();
+      final siblings = await query.get()
+        ..sort(_compareCategoryRows);
       final index = siblings.indexWhere((item) => item.id == id);
       final targetIndex = index + (moveUp ? -1 : 1);
       if (index < 0 || targetIndex < 0 || targetIndex >= siblings.length) {
         return;
       }
       final other = siblings[targetIndex];
+      if (_isOtherCategoryRow(other)) return;
       final now = DateTime.now();
       await (_database.update(
         _database.ledgerCategories,
@@ -1363,6 +1367,17 @@ String _validatedCategoryName(String name) {
     throw ArgumentError.value(name, 'name', 'must be 1-20 chars without /');
   }
   return normalized;
+}
+
+bool _isOtherCategoryRow(CategoryRow row) => DefaultLedgerNames.isOtherCategory(
+  LedgerCategory(id: row.id, name: row.name, parentId: row.parentId),
+);
+
+int _compareCategoryRows(CategoryRow left, CategoryRow right) {
+  final leftIsOther = _isOtherCategoryRow(left);
+  final rightIsOther = _isOtherCategoryRow(right);
+  if (leftIsOther != rightIsOther) return leftIsOther ? 1 : -1;
+  return left.sortOrder.compareTo(right.sortOrder);
 }
 
 List<({String id, String name, String type, String? parentId, int order})>

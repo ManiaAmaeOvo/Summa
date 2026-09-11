@@ -89,9 +89,14 @@ class DefaultLedgerNames {
       category.name == input ||
       _matches(categories[category.id], category.name, input);
 
+  static bool isOtherCategory(LedgerCategory category) =>
+      category.name == '其他' ||
+      category.name == 'Other' ||
+      category.name == '其他收入' ||
+      category.name == 'Other Income';
+
   static bool isProtectedOther(LedgerCategory category) =>
-      category.parentId != null &&
-      (category.name == '其他' || category.name == 'Other');
+      category.parentId != null && isOtherCategory(category);
 
   static String _localized(
     String languageCode,

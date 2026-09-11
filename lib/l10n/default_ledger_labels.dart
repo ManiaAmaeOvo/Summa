@@ -35,4 +35,7 @@ class DefaultLedgerLabels {
 
   static bool isProtectedOther(LedgerCategory category) =>
       DefaultLedgerNames.isProtectedOther(category);
+
+  static bool isOtherCategory(LedgerCategory category) =>
+      DefaultLedgerNames.isOtherCategory(category);
 }

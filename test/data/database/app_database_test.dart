@@ -660,6 +660,42 @@ void main() {
     );
   });
 
+  test('keeps Other last for both category levels', () async {
+    await repository.addCategory(
+      type: LedgerTransactionType.expense,
+      name: '学习',
+    );
+    await repository.addCategory(
+      type: LedgerTransactionType.income,
+      name: '补助',
+    );
+
+    var expenses = await repository.watchExpenseCategories().first;
+    var income = await repository.watchIncomeCategories().first;
+    expect(expenses.where((item) => item.isParent).last.name, '其他');
+    expect(income.where((item) => item.isParent).last.name, '其他收入');
+
+    final food = expenses.singleWhere((item) => item.name == '饮食');
+    await repository.addCategory(
+      type: LedgerTransactionType.expense,
+      parentId: food.id,
+      name: '夜宵',
+    );
+    expenses = await repository.watchExpenseCategories().first;
+    var foodChildren = expenses
+        .where((item) => item.parentId == food.id)
+        .toList();
+    expect(foodChildren.last.name, '其他');
+    expect(foodChildren[foodChildren.length - 2].name, '夜宵');
+
+    final lateSnack = foodChildren.singleWhere((item) => item.name == '夜宵');
+    await repository.moveCategory(lateSnack.id, moveUp: false);
+    expenses = await repository.watchExpenseCategories().first;
+    foodChildren = expenses.where((item) => item.parentId == food.id).toList();
+    expect(foodChildren.last.name, '其他');
+    expect(foodChildren[foodChildren.length - 2].name, '夜宵');
+  });
+
   test('full backup previews and restores soft-deleted data', () async {
     final categories = await repository.watchExpenseCategories().first;
     final lunch = categories.singleWhere((item) => item.name == '午餐');

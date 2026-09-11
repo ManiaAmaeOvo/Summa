@@ -27,12 +27,13 @@ and backups remain compatible.
 
 - Expense, income, borrowing, repayment, and personal-account transfers.
 - Separate two-level category trees for income and expenses, with add, rename,
-  ordering, and archive controls.
+  ordering, and archive controls; `Other` always stays last.
 - Cash, bank, wallet, entrusted or authorized funds, and liability accounts.
 - Hard validation for insufficient balances and liability overpayment.
-- Daily, weekly, monthly, and yearly summaries; category pie charts, expense
-  trends, and liability trends.
-- Strict single or batch JSON import with editable preview and atomic writes.
+- Daily, weekly, monthly, and yearly summaries; category pie charts and scaled
+  expense/liability trend charts.
+- Strict single or batch JSON import with an LLM-ready template, editable
+  preview, and atomic writes.
 - Automatic creation of confirmed unknown accounts during JSON import.
 - Transaction export by date range in JSON, CSV, or Markdown.
 - Complete backup with replace or merge restore and a safety snapshot before

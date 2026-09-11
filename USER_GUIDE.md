@@ -169,7 +169,8 @@ Primary category → Secondary category
 A transaction selects a secondary category; Summa derives its primary category
 for summaries and charts. Both levels support adding, renaming, ordering, and
 archiving. Every primary category retains an **Other** fallback. Historical
-transactions continue displaying an archived category.
+transactions continue displaying an archived category. At both levels,
+**Other** remains the final item; a newly created category is inserted above it.
 
 **Restore default categories** only re-enables or recreates missing defaults. It
 does not delete custom categories.
@@ -185,6 +186,12 @@ The import sequence is:
 ```text
 Paste JSON → Parse and validate → Preview and edit → Confirm count → Atomic write
 ```
+
+**Copy template** copies an LLM-ready prompt followed by valid fenced JSON. The
+prompt includes the category paths currently available in this ledger and tells
+the model that `/` is reserved as the separator in `Primary/Secondary`; an
+individual category name cannot contain `/`. The whole copied text can be pasted
+back into Summa because import ignores the prompt comment around the JSON fence.
 
 Before confirmation, tap any item to edit it or remove it from the batch. The
 write is atomic: either every valid item and confirmed new account is committed,
@@ -237,7 +244,8 @@ The Reports tab provides daily, weekly, monthly, and yearly views including:
 
 - Income, expense, borrowing, and repayment totals.
 - Income and expense category pie charts.
-- Expense trend and liability trend.
+- Expense trend and liability trend, with approximate dates on the horizontal
+  axis and amounts on the vertical axis.
 
 Export transactions for this week, month, year, all time, or a custom date range:
 

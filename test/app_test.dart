@@ -261,14 +261,35 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    final expense = LedgerRecord(
+      id: 'report-expense',
+      type: LedgerTransactionType.expense,
+      amountMinor: 12345,
+      occurredAt: DateTime.now(),
+      parentCategoryId: 'expense-parent-0',
+      parentCategoryName: '饮食',
+      categoryId: 'expense-parent-0-child-1',
+      categoryName: '午餐',
+      accountId: 'account-cash',
+      accountName: '现金',
+      accountKind: AccountKind.cash.name,
+      note: '',
+    );
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          transactionsProvider.overrideWith(
-            (ref) => Stream.value(<LedgerRecord>[]),
-          ),
+          transactionsProvider.overrideWith((ref) => Stream.value([expense])),
           accountBalancesProvider.overrideWith(
-            (ref) => Stream.value(<AccountBalance>[]),
+            (ref) => Stream.value([
+              cashBalance,
+              const AccountBalance(
+                id: 'account-huabei',
+                name: '花呗',
+                kind: AccountKind.creditLine,
+                openingBalanceMinor: 0,
+                currentBalanceMinor: 0,
+              ),
+            ]),
           ),
         ],
         child: const SummaApp(),
@@ -282,7 +303,8 @@ void main() {
     expect(find.text('收入分类'), findsOneWidget);
     expect(find.text('此周期暂无收入分类数据'), findsOneWidget);
     expect(find.text('负债走势'), findsOneWidget);
-    expect(find.text('暂无负债账户或负债变动'), findsOneWidget);
+    expect(find.text('暂无负债账户或负债变动'), findsNothing);
+    expect(find.byType(CustomPaint), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 

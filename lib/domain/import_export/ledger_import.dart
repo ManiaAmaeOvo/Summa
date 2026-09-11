@@ -447,21 +447,68 @@ void _validateAccountRoles(
 
 String _stripFence(String input, String languageCode) {
   var text = input.trim();
-  if (text.startsWith('```')) {
-    final firstLine = text.indexOf('\n');
-    final lastFence = text.lastIndexOf('```');
-    if (firstLine < 0 || lastFence <= firstLine) {
+  final openingFence = text.indexOf('```');
+  if (openingFence >= 0) {
+    final firstLine = text.indexOf('\n', openingFence);
+    final closingFence = firstLine < 0 ? -1 : text.indexOf('```', firstLine);
+    if (firstLine < 0 || closingFence <= firstLine) {
       throw LedgerImportException(
         _localized(languageCode, '代码块围栏不完整', 'The code fence is incomplete'),
       );
     }
-    text = text.substring(firstLine + 1, lastFence).trim();
+    text = text.substring(firstLine + 1, closingFence).trim();
   }
   return text;
 }
 
-String ledgerImportTemplateFor(String languageCode) =>
-    languageCode == 'zh' ? _ledgerImportTemplateZh : _ledgerImportTemplateEn;
+String ledgerImportTemplateFor(
+  String languageCode, {
+  List<LedgerCategory> expenseCategories = const [],
+  List<LedgerCategory> incomeCategories = const [],
+}) {
+  final isChinese = languageCode == 'zh';
+  final expenseLines = _categoryPromptLines(expenseCategories, languageCode);
+  final incomeLines = _categoryPromptLines(incomeCategories, languageCode);
+  final instructions = isChinese
+      ? '''<!-- 给 LLM 的简单指令：
+请把账单文字、截图 OCR 结果或自然语言整理成下方 schema_version: 1 的 JSON。
+category 必须严格使用“一级分类/二级分类”格式；分类名称自身不能包含“/”，“/”只用于分隔两级。不要生成当前列表以外的分类。
+
+当前支出分类（一级：二级）：
+${expenseLines.isEmpty ? '- 暂无' : expenseLines.join('\n')}
+
+当前收入分类（一级：二级）：
+${incomeLines.isEmpty ? '- 暂无' : incomeLines.join('\n')}
+
+amount 使用最多两位小数的字符串，occurred_at 使用带时区的 ISO 8601 时间。type 仅可为 expense、income、transfer、borrowing 或 repayment。只返回有效 JSON，不要附加解释。
+-->'''
+      : '''<!-- Simple prompt for an LLM:
+Convert transaction text, OCR output, or natural language into the schema_version: 1 JSON shown below.
+category must strictly use the “Primary/Secondary” format. A category name itself must not contain “/”; the slash is only the separator between the two levels. Do not invent categories outside the current lists.
+
+Current expense categories (primary: secondary):
+${expenseLines.isEmpty ? '- None' : expenseLines.join('\n')}
+
+Current income categories (primary: secondary):
+${incomeLines.isEmpty ? '- None' : incomeLines.join('\n')}
+
+Use a string with no more than two decimal places for amount and a timezone-aware ISO 8601 timestamp for occurred_at. type must be expense, income, transfer, borrowing, or repayment. Return valid JSON only, without additional explanation.
+-->''';
+  final json = isChinese ? _ledgerImportTemplateZh : _ledgerImportTemplateEn;
+  return '$instructions\n```json\n$json\n```';
+}
+
+List<String> _categoryPromptLines(
+  List<LedgerCategory> categories,
+  String languageCode,
+) {
+  final parents = categories.where((item) => item.isParent);
+  return [
+    for (final parent in parents)
+      '- ${DefaultLedgerNames.categoryName(languageCode, parent.id, parent.name)}: '
+          '${categories.where((item) => item.parentId == parent.id).map((child) => DefaultLedgerNames.categoryName(languageCode, child.id, child.name)).join(', ')}',
+  ];
+}
 
 const _ledgerImportTemplateZh = '''{
   "schema_version": 1,

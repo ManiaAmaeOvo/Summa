@@ -35,6 +35,13 @@ Unknown categories are never created silently because an OCR or model typo
 would pollute the category tree. Create the category first or correct the JSON
 or preview selection.
 
+Use **Copy template** in the import screen to obtain an LLM-oriented comment
+prompt containing the ledger's current income and expense category paths,
+followed by valid fenced JSON. `/` is reserved for separating the primary and
+secondary names; neither individual name may contain `/`. Summa accepts the
+entire copied text and extracts the JSON fence, so the prompt does not need to
+be removed before import.
+
 Untouched default accounts and categories can be referenced using either their
 English or Simplified Chinese names. Custom and explicitly renamed items match
 their stored names exactly.

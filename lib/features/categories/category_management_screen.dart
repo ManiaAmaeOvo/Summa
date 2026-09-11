@@ -154,8 +154,10 @@ class _ParentCategoryTile extends ConsumerWidget {
           onSelected: (action) => _parentAction(context, ref, action),
           itemBuilder: (_) => [
             PopupMenuItem(value: 'rename', child: Text(context.l10n.rename)),
-            PopupMenuItem(value: 'up', child: Text(context.l10n.moveUp)),
-            PopupMenuItem(value: 'down', child: Text(context.l10n.moveDown)),
+            if (!DefaultLedgerLabels.isOtherCategory(parent)) ...[
+              PopupMenuItem(value: 'up', child: Text(context.l10n.moveUp)),
+              PopupMenuItem(value: 'down', child: Text(context.l10n.moveDown)),
+            ],
             PopupMenuItem(
               value: 'archive',
               child: Text(context.l10n.archiveCategory),
@@ -180,11 +182,16 @@ class _ParentCategoryTile extends ConsumerWidget {
                       value: 'rename',
                       child: Text(context.l10n.rename),
                     ),
-                  PopupMenuItem(value: 'up', child: Text(context.l10n.moveUp)),
-                  PopupMenuItem(
-                    value: 'down',
-                    child: Text(context.l10n.moveDown),
-                  ),
+                  if (!DefaultLedgerLabels.isOtherCategory(children[index]))
+                    PopupMenuItem(
+                      value: 'up',
+                      child: Text(context.l10n.moveUp),
+                    ),
+                  if (!DefaultLedgerLabels.isOtherCategory(children[index]))
+                    PopupMenuItem(
+                      value: 'down',
+                      child: Text(context.l10n.moveDown),
+                    ),
                   if (!DefaultLedgerLabels.isProtectedOther(children[index]))
                     PopupMenuItem(
                       value: 'archive',

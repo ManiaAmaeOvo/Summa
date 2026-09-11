@@ -329,4 +329,27 @@ void main() {
       expect(imported.single.categoryId, 'expense-parent-0-child-1');
     },
   );
+
+  test('copied template includes current categories and stays importable', () {
+    final template = ledgerImportTemplateFor(
+      'zh',
+      expenseCategories: expenseCategories,
+      incomeCategories: incomeCategories,
+    );
+
+    expect(template, contains('给 LLM 的简单指令'));
+    expect(template, contains('当前支出分类（一级：二级）'));
+    expect(template, contains('- 饮食: 午餐'));
+    expect(template, contains('分类名称自身不能包含“/”'));
+    expect(template, contains('```json'));
+
+    final imported = parseLedgerImport(
+      template,
+      accounts: accounts,
+      expenseCategories: expenseCategories,
+      incomeCategories: incomeCategories,
+    );
+    expect(imported, hasLength(2));
+    expect(imported.first.categoryId, 'lunch');
+  });
 }

@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:ledger_pro/app/providers.dart';
 import 'package:ledger_pro/core/money/money.dart';
 import 'package:ledger_pro/domain/accounts/ledger_account.dart';
@@ -254,14 +255,24 @@ class _TrendCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 150,
+              height: 190,
               width: double.infinity,
               child: points.isEmpty
                   ? Center(child: Text(context.l10n.noExpensesThisPeriod))
                   : CustomPaint(
                       painter: _TrendPainter(
-                        points.map((e) => e.value).toList(),
-                        Theme.of(context).colorScheme.primary,
+                        values: points.map((e) => e.value).toList(),
+                        xLabels: _axisDateLabels(
+                          points.map((e) => e.key).toList(),
+                          context,
+                          useMonths: period == _ReportPeriod.year,
+                        ),
+                        lineColor: Theme.of(context).colorScheme.primary,
+                        gridColor: Theme.of(context).colorScheme.outlineVariant,
+                        labelColor: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant,
+                        textDirection: Directionality.of(context),
                       ),
                     ),
             ),
@@ -273,47 +284,169 @@ class _TrendCard extends StatelessWidget {
 }
 
 class _TrendPainter extends CustomPainter {
-  _TrendPainter(this.values, this.color);
+  _TrendPainter({
+    required this.values,
+    required this.xLabels,
+    required this.lineColor,
+    required this.gridColor,
+    required this.labelColor,
+    required this.textDirection,
+  });
+
   final List<int> values;
-  final Color color;
+  final List<String> xLabels;
+  final Color lineColor;
+  final Color gridColor;
+  final Color labelColor;
+  final TextDirection textDirection;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
+    const leftAxisWidth = 52.0;
+    const bottomAxisHeight = 26.0;
+    const topPadding = 8.0;
+    const rightPadding = 8.0;
+    final plot = Rect.fromLTRB(
+      leftAxisWidth,
+      topPadding,
+      size.width - rightPadding,
+      size.height - bottomAxisHeight,
+    );
+    final gridPaint = Paint()
+      ..color = gridColor
+      ..strokeWidth = 1;
+    final linePaint = Paint()
+      ..color = lineColor
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     final fill = Paint()
       ..shader = LinearGradient(
-        colors: [color.withValues(alpha: .28), color.withValues(alpha: .02)],
+        colors: [
+          lineColor.withValues(alpha: .28),
+          lineColor.withValues(alpha: .02),
+        ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Offset.zero & size);
+      ).createShader(plot);
     final maxValue = math.max(1, values.reduce(math.max));
+
+    for (var tick = 0; tick < 3; tick++) {
+      final fraction = tick / 2;
+      final y = plot.top + plot.height * fraction;
+      canvas.drawLine(Offset(plot.left, y), Offset(plot.right, y), gridPaint);
+      final value = (maxValue * (1 - fraction)).round();
+      _paintAxisLabel(
+        canvas,
+        _compactAxisAmount(value),
+        Offset(plot.left - 6, y),
+        alignRight: true,
+        centerVertically: true,
+      );
+    }
+    canvas.drawLine(plot.topLeft, plot.bottomLeft, gridPaint);
+
     final path = Path();
+    final offsets = <Offset>[];
     for (var i = 0; i < values.length; i++) {
       final x = values.length == 1
-          ? size.width / 2
-          : size.width * i / (values.length - 1);
-      final y = size.height - 12 - (size.height - 24) * values[i] / maxValue;
+          ? plot.center.dx
+          : plot.left + plot.width * i / (values.length - 1);
+      final y = plot.bottom - plot.height * values[i] / maxValue;
+      offsets.add(Offset(x, y));
       if (i == 0) {
         path.moveTo(x, y);
       } else {
         path.lineTo(x, y);
       }
     }
-    final area = Path.from(path)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(area, fill);
-    canvas.drawPath(path, paint);
+    if (offsets.length > 1) {
+      final area = Path.from(path)
+        ..lineTo(offsets.last.dx, plot.bottom)
+        ..lineTo(offsets.first.dx, plot.bottom)
+        ..close();
+      canvas.drawPath(area, fill);
+      canvas.drawPath(path, linePaint);
+    } else {
+      canvas.drawCircle(offsets.single, 3.5, Paint()..color = lineColor);
+    }
+
+    for (var i = 0; i < xLabels.length; i++) {
+      if (xLabels[i].isEmpty) continue;
+      final x = xLabels.length == 1
+          ? plot.center.dx
+          : plot.left + plot.width * i / (xLabels.length - 1);
+      _paintAxisLabel(
+        canvas,
+        xLabels[i],
+        Offset(x, plot.bottom + 6),
+        centerHorizontally: true,
+      );
+    }
+  }
+
+  void _paintAxisLabel(
+    Canvas canvas,
+    String text,
+    Offset anchor, {
+    bool alignRight = false,
+    bool centerHorizontally = false,
+    bool centerVertically = false,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(color: labelColor, fontSize: 10),
+      ),
+      textDirection: textDirection,
+      maxLines: 1,
+    )..layout();
+    var dx = anchor.dx;
+    var dy = anchor.dy;
+    if (alignRight) dx -= painter.width;
+    if (centerHorizontally) dx -= painter.width / 2;
+    if (centerVertically) dy -= painter.height / 2;
+    final maxWidth = canvas.getLocalClipBounds().width;
+    dx = dx.clamp(0.0, math.max(0.0, maxWidth - painter.width)).toDouble();
+    painter.paint(canvas, Offset(dx, dy));
   }
 
   @override
   bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
-      oldDelegate.values != values || oldDelegate.color != color;
+      !listEquals(oldDelegate.values, values) ||
+      !listEquals(oldDelegate.xLabels, xLabels) ||
+      oldDelegate.lineColor != lineColor ||
+      oldDelegate.gridColor != gridColor ||
+      oldDelegate.labelColor != labelColor ||
+      oldDelegate.textDirection != textDirection;
+}
+
+List<String> _axisDateLabels(
+  List<DateTime> dates,
+  BuildContext context, {
+  required bool useMonths,
+}) {
+  if (dates.isEmpty) return const [];
+  final locale = Localizations.localeOf(context).toLanguageTag();
+  final format = useMonths ? DateFormat.MMM(locale) : DateFormat.Md(locale);
+  final visibleIndices = <int>{0, dates.length ~/ 2, dates.length - 1};
+  return [
+    for (var index = 0; index < dates.length; index++)
+      visibleIndices.contains(index) ? format.format(dates[index]) : '',
+  ];
+}
+
+String _compactAxisAmount(int minor) {
+  final yuan = minor / 100;
+  if (yuan.abs() >= 1000) {
+    final thousands = yuan / 1000;
+    final text = thousands == thousands.roundToDouble()
+        ? thousands.toStringAsFixed(0)
+        : thousands.toStringAsFixed(1);
+    return '¥${text}k';
+  }
+  if (yuan == yuan.roundToDouble()) return '¥${yuan.toStringAsFixed(0)}';
+  return '¥${yuan.toStringAsFixed(1)}';
 }
 
 class _CategoryPieCard extends StatelessWidget {
@@ -472,13 +605,23 @@ class _DebtTrendCard extends StatelessWidget {
         }
       }
     }
-    final ordered = [...selectedRecords]
-      ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+    final ordered =
+        selectedRecords
+            .where((item) => _liabilityDelta(item, liabilityIds) != 0)
+            .toList()
+          ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
     final values = <int>[opening];
+    final dates = <DateTime>[range.start];
     var running = opening;
     for (final record in ordered) {
       running += _liabilityDelta(record, liabilityIds);
       values.add(running);
+      dates.add(record.occurredAt);
+    }
+    final closingDate = range.end.subtract(const Duration(milliseconds: 1));
+    if (dates.last != closingDate) {
+      values.add(running);
+      dates.add(closingDate);
     }
     final hasLiabilityData =
         liabilityIds.isNotEmpty ||
@@ -502,14 +645,25 @@ class _DebtTrendCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 150,
+              height: 190,
               width: double.infinity,
               child: !hasLiabilityData
                   ? Center(child: Text(context.l10n.noLiabilityData))
                   : CustomPaint(
                       painter: _TrendPainter(
-                        values,
-                        Theme.of(context).colorScheme.error,
+                        values: values,
+                        xLabels: _axisDateLabels(
+                          dates,
+                          context,
+                          useMonths:
+                              range.end.difference(range.start).inDays > 200,
+                        ),
+                        lineColor: Theme.of(context).colorScheme.error,
+                        gridColor: Theme.of(context).colorScheme.outlineVariant,
+                        labelColor: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant,
+                        textDirection: Directionality.of(context),
                       ),
                     ),
             ),

@@ -76,7 +76,8 @@ Primary category → Secondary category
 Every categorized transaction selects a secondary category, and its primary
 category is derived. Each primary category has an `Other` fallback. The global
 `Other → Uncategorized` path remains the final fallback when the primary
-category is also unknown.
+category is also unknown. `Other` stays last at both levels, so custom entries
+are always inserted above the fallback.
 
 Accounts answer “where did value move?” Categories answer “what was the economic
 event for?” The two dimensions remain independent.
@@ -186,7 +187,8 @@ keep the imported sequence valid.
 
 Daily, weekly, monthly, and yearly reports are computed views over source
 transactions. They include income and expense balance, borrowing and repayment
-totals, category pie charts, an expense trend, and a liability trend.
+totals, category pie charts, and expense/liability trends with approximate date
+and amount axes.
 
 Exports can cover the current week, month, year, all records, or a custom range
 in JSON, CSV, or Markdown. Human-readable output follows the active language;
