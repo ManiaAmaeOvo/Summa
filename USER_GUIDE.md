@@ -62,6 +62,11 @@ The Accounts tab separates money into four summaries:
 - **Entrusted / authorized funds**: family cards, purchasing budgets, and other
   money you may use but do not fully own.
 
+Entrusted funds can pay liabilities and transfer to or from another non-liability
+account. They remain in the entrusted-funds group and are excluded from your
+personal liquid assets and liquid net worth. A transfer to a personal account
+therefore changes which balance group holds the money; it does not create income.
+
 Fixed assets are intentionally outside the current default balance model.
 Summa's headline balance focuses on available liquid money. This avoids making
 a phone, computer, or other hard-to-sell property look like spendable cash.

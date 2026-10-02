@@ -60,6 +60,9 @@ account and must not duplicate the original expense.
 Money received for a specific purchase can enter an entrusted-funds account.
 Purchases reduce that account. A remainder can stay entrusted or be explicitly
 reclassified as family support or a gift when it becomes the user's own money.
+Entrusted funds may also pay a liability or transfer to or from another
+non-liability account. The entrusted account retains its kind and reporting
+group; only the destination account's own group affects the balance summaries.
 
 Installments are a liability account plus future installment metadata. The
 purchase is recognized once; principal payments reduce the liability, while

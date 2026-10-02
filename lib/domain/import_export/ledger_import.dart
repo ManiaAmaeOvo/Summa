@@ -410,25 +410,25 @@ void _validateAccountRoles(
     );
   }
   if (type == LedgerTransactionType.repayment &&
-      (account.group != AccountGroup.personalAsset ||
+      (account.group == AccountGroup.liability ||
           target?.group != AccountGroup.liability)) {
     throw LedgerImportException(
       _localized(
         languageCode,
-        '第 $number 条还款必须从个人余额账户流向负债账户',
-        'Item $number repayment must flow from a personal asset to a liability account',
+        '第 $number 条还款必须从非负债资金账户流向负债账户',
+        'Item $number repayment must flow from a non-liability funds account to a liability account',
       ),
     );
   }
   if (type == LedgerTransactionType.transfer &&
       (account.id == target?.id ||
-          account.group != AccountGroup.personalAsset ||
-          target?.group != AccountGroup.personalAsset)) {
+          account.group == AccountGroup.liability ||
+          target?.group == AccountGroup.liability)) {
     throw LedgerImportException(
       _localized(
         languageCode,
-        '第 $number 条转账必须在两个不同的个人余额账户之间',
-        'Item $number transfer must be between two different personal asset accounts',
+        '第 $number 条转账必须在两个不同的非负债资金账户之间',
+        'Item $number transfer must be between two different non-liability funds accounts',
       ),
     );
   }

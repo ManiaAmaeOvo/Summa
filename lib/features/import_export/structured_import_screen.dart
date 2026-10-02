@@ -566,9 +566,9 @@ List<LedgerAccount> _accountsForPrimary(
   LedgerTransactionType.borrowing =>
     accounts.where((item) => item.group == AccountGroup.liability).toList(),
   LedgerTransactionType.repayment =>
-    accounts.where((item) => item.group == AccountGroup.personalAsset).toList(),
+    accounts.where((item) => item.group != AccountGroup.liability).toList(),
   LedgerTransactionType.transfer =>
-    accounts.where((item) => item.group == AccountGroup.personalAsset).toList(),
+    accounts.where((item) => item.group != AccountGroup.liability).toList(),
   _ => accounts,
 };
 
@@ -581,7 +581,7 @@ List<LedgerAccount> _accountsForTarget(
   LedgerTransactionType.repayment =>
     accounts.where((item) => item.group == AccountGroup.liability).toList(),
   LedgerTransactionType.transfer =>
-    accounts.where((item) => item.group == AccountGroup.personalAsset).toList(),
+    accounts.where((item) => item.group != AccountGroup.liability).toList(),
   _ => const [],
 };
 

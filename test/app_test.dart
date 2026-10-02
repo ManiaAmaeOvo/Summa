@@ -426,6 +426,16 @@ void main() {
                 name: '朋友欠款',
                 kind: AccountKind.creditLine,
               ),
+              const LedgerAccount(
+                id: 'family-card',
+                name: '亲情卡',
+                kind: AccountKind.entrustedFunds,
+              ),
+              const LedgerAccount(
+                id: 'wechat',
+                name: '微信',
+                kind: AccountKind.wallet,
+              ),
             ]),
           ),
           expenseCategoriesProvider.overrideWith(
@@ -462,6 +472,29 @@ void main() {
     expect(find.text('资金存入账户'), findsOneWidget);
     expect(find.text('快捷添加负债账户'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    await tester.ensureVisible(find.text('还款'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('还款'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('repayment-source')));
+    await tester.pumpAndSettle();
+    expect(find.text('亲情卡'), findsWidgets);
+    await tester.tap(find.text('亲情卡').last);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('转账'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('转账'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('transfer-source')));
+    await tester.pumpAndSettle();
+    expect(find.text('亲情卡'), findsWidgets);
+    await tester.tap(find.text('亲情卡').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('transfer-target-family-card')));
+    await tester.pumpAndSettle();
+    expect(find.text('微信'), findsOneWidget);
   });
 
   testWidgets('shows insufficient balance inside the open editor', (

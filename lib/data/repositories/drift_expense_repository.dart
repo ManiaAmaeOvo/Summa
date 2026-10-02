@@ -520,25 +520,24 @@ class DriftExpenseRepository implements ExpenseRepository {
         }
         break;
       case LedgerTransactionType.transfer:
-        if (accountKind != AccountKind.creditLine &&
-            accountKind != AccountKind.entrustedFunds &&
-            targetKind != null &&
-            targetKind != AccountKind.creditLine &&
-            targetKind != AccountKind.entrustedFunds) {
-          await _requireAvailableBalance(
-            accountId: account.id,
-            accountName: account.name,
-            requiredMinor: amountMinor,
-            excludingEntryId: excludingEntryId,
-          );
-          break;
+        if (accountKind == AccountKind.creditLine ||
+            targetKind == null ||
+            targetKind == AccountKind.creditLine) {
+          throw ArgumentError('transfer requires two non-liability accounts');
         }
-        throw ArgumentError('transfer requires two personal asset accounts');
+        await _requireAvailableBalance(
+          accountId: account.id,
+          accountName: account.name,
+          requiredMinor: amountMinor,
+          excludingEntryId: excludingEntryId,
+        );
+        break;
       case LedgerTransactionType.repayment:
         if (accountKind == AccountKind.creditLine ||
-            accountKind == AccountKind.entrustedFunds ||
             targetKind != AccountKind.creditLine) {
-          throw ArgumentError('repayment requires personal asset to liability');
+          throw ArgumentError(
+            'repayment requires a non-liability account to liability',
+          );
         }
         await _requireAvailableBalance(
           accountId: account.id,

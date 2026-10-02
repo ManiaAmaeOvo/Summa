@@ -9,6 +9,11 @@ void main() {
   const accounts = [
     LedgerAccount(id: 'cash', name: '现金', kind: AccountKind.cash),
     LedgerAccount(id: 'wechat', name: '微信', kind: AccountKind.wallet),
+    LedgerAccount(
+      id: 'account-family-card',
+      name: '亲情卡',
+      kind: AccountKind.entrustedFunds,
+    ),
     LedgerAccount(id: 'debt', name: '朋友欠款', kind: AccountKind.creditLine),
   ];
   const expenseCategories = [
@@ -215,6 +220,54 @@ void main() {
     expect(draft.accountId, 'cash');
     expect(draft.targetAccountId, 'wechat');
   });
+
+  test(
+    'allows entrusted funds as a repayment source and transfer endpoint',
+    () {
+      const source = '''{
+      "schema_version": 1,
+      "transactions": [
+        {
+          "type":"repayment",
+          "amount":"50.00",
+          "occurred_at":"2026-09-09T12:00:00+08:00",
+          "account":"亲情卡",
+          "target_account":"朋友欠款"
+        },
+        {
+          "type":"transfer",
+          "amount":"20.00",
+          "occurred_at":"2026-09-09T13:00:00+08:00",
+          "account":"亲情卡",
+          "target_account":"微信"
+        },
+        {
+          "type":"transfer",
+          "amount":"10.00",
+          "occurred_at":"2026-09-09T14:00:00+08:00",
+          "account":"微信",
+          "target_account":"亲情卡"
+        }
+      ]
+    }''';
+      final drafts = parseLedgerImport(
+        source,
+        accounts: accounts,
+        expenseCategories: expenseCategories,
+        incomeCategories: incomeCategories,
+      );
+
+      expect(drafts.map((item) => item.type), [
+        LedgerTransactionType.repayment,
+        LedgerTransactionType.transfer,
+        LedgerTransactionType.transfer,
+      ]);
+      expect(drafts.first.accountKind, AccountKind.entrustedFunds);
+      expect(drafts[1].targetAccountId, 'wechat');
+      expect(drafts[2].accountId, 'wechat');
+      expect(drafts[2].targetAccountId, 'account-family-card');
+    },
+  );
 
   test('JSON export is losslessly accepted by the import parser', () {
     final record = LedgerRecord(

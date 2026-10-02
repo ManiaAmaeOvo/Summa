@@ -5,6 +5,16 @@
 This project follows semantic versioning. The Android build number appears
 after `+` in the Flutter version.
 
+## [0.4.2] - 2026-10-02
+
+### Changed
+
+- Entrusted or authorized funds can now be used as a repayment source and as
+  either endpoint of a transfer, while remaining excluded from personal liquid
+  assets and net worth.
+- Existing account kinds, database schema, and transaction records remain
+  unchanged for in-place app upgrades.
+
 ## [0.4.1] - 2026-09-11
 
 ### Added

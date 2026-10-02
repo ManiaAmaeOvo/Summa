@@ -118,6 +118,77 @@ void main() {
     );
   });
 
+  test('uses entrusted funds for repayment and transfers without changing account identity or history', () async {
+    final categories = await repository.watchExpenseCategories().first;
+    final lunch = categories.singleWhere((category) => category.name == '午餐');
+    await repository.setCurrentBalance(
+      accountId: 'account-family-card',
+      amountMinor: 5000,
+    );
+    await repository.setCurrentBalance(
+      accountId: 'account-huabei',
+      amountMinor: 3000,
+    );
+    await repository.setCurrentBalance(
+      accountId: 'account-wechat',
+      amountMinor: 0,
+    );
+
+    await repository.addExpense(
+      amountMinor: 500,
+      occurredAt: DateTime(2026, 9, 8),
+      categoryId: lunch.id,
+      accountId: 'account-family-card',
+      note: '更新前的历史支出',
+    );
+    await repository.addTransaction(
+      type: LedgerTransactionType.repayment,
+      amountMinor: 1000,
+      occurredAt: DateTime(2026, 9, 9),
+      accountId: 'account-family-card',
+      targetAccountId: 'account-huabei',
+      note: '亲情卡还款',
+    );
+    await repository.addTransaction(
+      type: LedgerTransactionType.transfer,
+      amountMinor: 1200,
+      occurredAt: DateTime(2026, 9, 10),
+      accountId: 'account-family-card',
+      targetAccountId: 'account-wechat',
+      note: '亲情卡转入微信',
+    );
+    await repository.addTransaction(
+      type: LedgerTransactionType.transfer,
+      amountMinor: 200,
+      occurredAt: DateTime(2026, 9, 11),
+      accountId: 'account-wechat',
+      targetAccountId: 'account-family-card',
+      note: '微信转回亲情卡',
+    );
+
+    final familyCard = (await repository.watchAccountBalances().first)
+        .singleWhere((item) => item.id == 'account-family-card');
+    final liability = (await repository.watchAccountBalances().first)
+        .singleWhere((item) => item.id == 'account-huabei');
+    final records = await repository.watchTransactions().first;
+    expect(familyCard.kind, AccountKind.entrustedFunds);
+    expect(familyCard.group, AccountGroup.entrustedFunds);
+    expect(familyCard.currentBalanceMinor, 2500);
+    expect(liability.currentBalanceMinor, 2000);
+    expect(
+      records.singleWhere((item) => item.note == '更新前的历史支出').accountId,
+      'account-family-card',
+    );
+    expect(
+      records.map((item) => item.type),
+      containsAll([
+        LedgerTransactionType.expense,
+        LedgerTransactionType.repayment,
+        LedgerTransactionType.transfer,
+      ]),
+    );
+  });
+
   test(
     'calibrates the displayed current balance after prior expenses',
     () async {

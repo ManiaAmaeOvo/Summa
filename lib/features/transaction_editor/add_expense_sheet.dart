@@ -436,7 +436,7 @@ class _TransactionEditorSheetState
 
   Widget _repaymentFields(List<LedgerAccount> accounts) {
     final assets = accounts
-        .where((item) => item.group == AccountGroup.personalAsset)
+        .where((item) => item.group != AccountGroup.liability)
         .toList();
     final liabilities = accounts
         .where((item) => item.group == AccountGroup.liability)
@@ -470,7 +470,7 @@ class _TransactionEditorSheetState
 
   Widget _transferFields(List<LedgerAccount> accounts) {
     final assets = accounts
-        .where((item) => item.group == AccountGroup.personalAsset)
+        .where((item) => item.group != AccountGroup.liability)
         .toList();
     _accountId = assets.any((item) => item.id == _accountId)
         ? _accountId
