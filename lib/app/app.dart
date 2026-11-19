@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:ledger_pro/app/locale_controller.dart';
-import 'package:ledger_pro/app/text_scale_controller.dart';
-import 'package:ledger_pro/app/theme/ledger_scroll_behavior.dart';
-import 'package:ledger_pro/app/theme/ledger_theme.dart';
-import 'package:ledger_pro/features/dashboard/dashboard_screen.dart';
-import 'package:ledger_pro/l10n/app_localizations.dart';
+import 'package:summa/app/locale_controller.dart';
+import 'package:summa/app/text_scale_controller.dart';
+import 'package:summa/app/theme/ledger_scroll_behavior.dart';
+import 'package:summa/app/theme/ledger_theme.dart';
+import 'package:summa/features/dashboard/dashboard_screen.dart';
+import 'package:summa/l10n/app_localizations.dart';
 
 class SummaApp extends StatelessWidget {
   const SummaApp({super.key});

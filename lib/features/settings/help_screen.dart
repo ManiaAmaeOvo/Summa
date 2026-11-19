@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:summa/l10n/l10n.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});

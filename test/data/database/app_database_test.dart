@@ -2,13 +2,13 @@ import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ledger_pro/data/database/app_database.dart';
-import 'package:ledger_pro/data/repositories/drift_expense_repository.dart';
-import 'package:ledger_pro/domain/accounts/ledger_account.dart';
-import 'package:ledger_pro/domain/import_export/ledger_backup.dart';
-import 'package:ledger_pro/domain/import_export/ledger_import.dart';
-import 'package:ledger_pro/domain/transactions/expense_record.dart';
-import 'package:ledger_pro/domain/transactions/expense_repository.dart';
+import 'package:summa/data/database/app_database.dart';
+import 'package:summa/data/repositories/drift_expense_repository.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/import_export/ledger_import.dart';
+import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/expense_repository.dart';
 
 void main() {
   late AppDatabase database;
@@ -789,11 +789,8 @@ void main() {
     );
 
     final backup = await repository.createFullBackup();
-    expect(
-      (jsonDecode(backup) as Map<String, dynamic>)['format'],
-      'ledgerpro_full_backup',
-      reason: 'The legacy marker keeps pre-Summa backups compatible.',
-    );
+    final payload = jsonDecode(backup) as Map<String, dynamic>;
+    expect(payload['format'], 'summa_full_backup');
     final preview = repository.inspectFullBackup(backup);
     expect(preview.entryCount, 2);
     expect(preview.deletedEntryCount, 1);
@@ -803,9 +800,29 @@ void main() {
     expect(await repository.watchTransactions().first, isEmpty);
     await repository.restoreFullBackup(backup, mode: BackupRestoreMode.replace);
 
+    expect((await repository.watchTransactions().first).single.note, '保留');
+    await repository.resetToFactoryDefaults();
+
+    final legacyBackup = jsonEncode({
+      ...payload,
+      'format': 'ledgerpro_full_backup',
+    });
+    expect(repository.inspectFullBackup(legacyBackup).entryCount, 2);
+    await repository.restoreFullBackup(
+      legacyBackup,
+      mode: BackupRestoreMode.replace,
+    );
     final restored = await repository.watchTransactions().first;
     expect(restored, hasLength(1));
+    expect(restored.single.id, entries.single.id);
     expect(restored.single.note, '保留');
+    final balances = await repository.watchAccountBalances().first;
+    expect(
+      balances
+          .singleWhere((item) => item.id == 'account-cash')
+          .currentBalanceMinor,
+      700,
+    );
     expect(
       repository
           .inspectFullBackup(await repository.createFullBackup())

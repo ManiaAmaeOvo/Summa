@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:summa/l10n/l10n.dart';
 
 class AboutSummaScreen extends StatelessWidget {
   const AboutSummaScreen({super.key});

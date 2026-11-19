@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:ledger_pro/domain/defaults/default_ledger_names.dart';
-import 'package:ledger_pro/domain/transactions/expense_record.dart';
+import 'package:summa/domain/defaults/default_ledger_names.dart';
+import 'package:summa/domain/transactions/expense_record.dart';
 
 enum LedgerExportFormat { json, csv, markdown }
 

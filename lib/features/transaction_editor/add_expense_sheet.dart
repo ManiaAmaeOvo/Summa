@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:ledger_pro/app/providers.dart';
-import 'package:ledger_pro/core/money/money.dart';
-import 'package:ledger_pro/domain/accounts/ledger_account.dart';
-import 'package:ledger_pro/domain/categories/ledger_category.dart';
-import 'package:ledger_pro/domain/transactions/expense_record.dart';
-import 'package:ledger_pro/domain/transactions/expense_repository.dart';
-import 'package:ledger_pro/features/accounts/account_overview_screen.dart';
-import 'package:ledger_pro/l10n/default_ledger_labels.dart';
-import 'package:ledger_pro/l10n/input_error_labels.dart';
-import 'package:ledger_pro/l10n/l10n.dart';
-import 'package:ledger_pro/l10n/transaction_rule_labels.dart';
+import 'package:summa/app/providers.dart';
+import 'package:summa/core/money/money.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/features/accounts/account_overview_screen.dart';
+import 'package:summa/l10n/default_ledger_labels.dart';
+import 'package:summa/l10n/input_error_labels.dart';
+import 'package:summa/l10n/l10n.dart';
+import 'package:summa/l10n/transaction_rule_labels.dart';
 
 class TransactionEditorSheet extends ConsumerStatefulWidget {
   const TransactionEditorSheet({super.key, this.record});

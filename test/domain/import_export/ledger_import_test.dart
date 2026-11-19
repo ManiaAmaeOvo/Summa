@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ledger_pro/domain/accounts/ledger_account.dart';
-import 'package:ledger_pro/domain/categories/ledger_category.dart';
-import 'package:ledger_pro/domain/import_export/ledger_export.dart';
-import 'package:ledger_pro/domain/import_export/ledger_import.dart';
-import 'package:ledger_pro/domain/transactions/expense_record.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/import_export/ledger_export.dart';
+import 'package:summa/domain/import_export/ledger_import.dart';
+import 'package:summa/domain/transactions/expense_record.dart';
 
 void main() {
   const accounts = [

@@ -2,15 +2,18 @@ import 'dart:math' as math;
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:ledger_pro/data/database/app_database.dart';
-import 'package:ledger_pro/domain/accounts/ledger_account.dart';
-import 'package:ledger_pro/domain/categories/ledger_category.dart';
-import 'package:ledger_pro/domain/import_export/ledger_import.dart';
-import 'package:ledger_pro/domain/import_export/ledger_backup.dart';
-import 'package:ledger_pro/domain/transactions/expense_record.dart';
-import 'package:ledger_pro/domain/transactions/expense_repository.dart';
-import 'package:ledger_pro/domain/defaults/default_ledger_names.dart';
+import 'package:summa/data/database/app_database.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/import_export/ledger_import.dart';
+import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/domain/defaults/default_ledger_names.dart';
 import 'package:uuid/uuid.dart';
+
+const _backupFormat = 'summa_full_backup';
+const _legacyBackupFormat = 'ledgerpro_full_backup';
 
 class DriftExpenseRepository implements ExpenseRepository {
   DriftExpenseRepository(this._database);
@@ -1103,7 +1106,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     final categories = await _database.select(_database.ledgerCategories).get();
     final entries = await _database.select(_database.ledgerEntries).get();
     return const JsonEncoder.withIndent('  ').convert({
-      'format': 'ledgerpro_full_backup',
+      'format': _backupFormat,
       'backup_version': 1,
       'created_at': DateTime.now().toIso8601String(),
       'accounts': [for (final item in accounts) _backupAccount(item)],
@@ -1286,7 +1289,8 @@ _parseBackup(String source) {
     throw LedgerBackupException('备份 JSON 格式错误：${error.message}');
   }
   if (decoded is! Map<String, dynamic> ||
-      decoded['format'] != 'ledgerpro_full_backup' ||
+      (decoded['format'] != _backupFormat &&
+          decoded['format'] != _legacyBackupFormat) ||
       decoded['backup_version'] != 1) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }

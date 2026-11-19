@@ -1,4 +1,4 @@
-package com.maniaamae.ledger_pro
+package com.maniaamae.summa
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:ledger_pro/core/money/money.dart';
-import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:summa/core/money/money.dart';
+import 'package:summa/l10n/l10n.dart';
 
 String localizedMoneyInputError(
   BuildContext context,

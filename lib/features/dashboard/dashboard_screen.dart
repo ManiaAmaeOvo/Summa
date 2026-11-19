@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:ledger_pro/app/providers.dart';
-import 'package:ledger_pro/core/money/money.dart';
-import 'package:ledger_pro/domain/accounts/ledger_account.dart';
-import 'package:ledger_pro/domain/transactions/expense_record.dart';
-import 'package:ledger_pro/features/accounts/account_overview_screen.dart';
-import 'package:ledger_pro/features/import_export/structured_import_screen.dart';
-import 'package:ledger_pro/features/reports/report_screen.dart';
-import 'package:ledger_pro/features/settings/settings_screen.dart';
-import 'package:ledger_pro/features/transaction_editor/add_expense_sheet.dart';
-import 'package:ledger_pro/l10n/default_ledger_labels.dart';
-import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:summa/app/providers.dart';
+import 'package:summa/core/money/money.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/features/accounts/account_overview_screen.dart';
+import 'package:summa/features/import_export/structured_import_screen.dart';
+import 'package:summa/features/reports/report_screen.dart';
+import 'package:summa/features/settings/settings_screen.dart';
+import 'package:summa/features/transaction_editor/add_expense_sheet.dart';
+import 'package:summa/l10n/default_ledger_labels.dart';
+import 'package:summa/l10n/l10n.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});

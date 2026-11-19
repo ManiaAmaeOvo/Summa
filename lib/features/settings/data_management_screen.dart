@@ -4,10 +4,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:ledger_pro/app/providers.dart';
-import 'package:ledger_pro/domain/import_export/ledger_backup.dart';
-import 'package:ledger_pro/domain/import_export/local_backup.dart';
-import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:summa/app/providers.dart';
+import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/import_export/local_backup.dart';
+import 'package:summa/l10n/l10n.dart';
 import 'package:share_plus/share_plus.dart';
 
 class DataManagementScreen extends ConsumerStatefulWidget {

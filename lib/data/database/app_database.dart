@@ -422,8 +422,12 @@ class AppDatabase extends _$AppDatabase {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final documents = await getApplicationDocumentsDirectory();
-    return NativeDatabase.createInBackground(
-      File(p.join(documents.path, 'ledger_pro.sqlite')),
-    );
+    final database = File(p.join(documents.path, 'summa.sqlite'));
+    final legacy = File(p.join(documents.path, 'ledger_pro.sqlite'));
+    // Keep any database already present in this sandbox with its SQLite sidecars.
+    final file = await database.exists() || !await legacy.exists()
+        ? database
+        : legacy;
+    return NativeDatabase.createInBackground(file);
   });
 }

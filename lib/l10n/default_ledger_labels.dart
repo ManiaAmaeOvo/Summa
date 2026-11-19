@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:ledger_pro/domain/accounts/ledger_account.dart';
-import 'package:ledger_pro/domain/categories/ledger_category.dart';
-import 'package:ledger_pro/domain/defaults/default_ledger_names.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/defaults/default_ledger_names.dart';
 
 class DefaultLedgerLabels {
   const DefaultLedgerLabels._();

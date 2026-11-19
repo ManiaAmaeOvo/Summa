@@ -1,7 +1,7 @@
-name: ledger_pro
+name: summa
 description: "Summa, a local-first personal ledger for Android and future desktop platforms."
 publish_to: 'none'
-version: 0.4.2+6
+version: 2.0.0-dev.1+7
 
 environment:
   sdk: ^3.13.2

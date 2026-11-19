@@ -1,5 +1,5 @@
-import 'package:ledger_pro/domain/accounts/ledger_account.dart';
-import 'package:ledger_pro/domain/categories/ledger_category.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/categories/ledger_category.dart';
 
 class DefaultLedgerNames {
   const DefaultLedgerNames._();

@@ -3,12 +3,12 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ledger_pro/data/backup/local_backup_store.dart';
-import 'package:ledger_pro/data/database/app_database.dart';
-import 'package:ledger_pro/data/repositories/auto_backup_expense_repository.dart';
-import 'package:ledger_pro/data/repositories/drift_expense_repository.dart';
-import 'package:ledger_pro/domain/import_export/local_backup.dart';
-import 'package:ledger_pro/domain/transactions/expense_record.dart';
+import 'package:summa/data/backup/local_backup_store.dart';
+import 'package:summa/data/database/app_database.dart';
+import 'package:summa/data/repositories/auto_backup_expense_repository.dart';
+import 'package:summa/data/repositories/drift_expense_repository.dart';
+import 'package:summa/domain/import_export/local_backup.dart';
+import 'package:summa/domain/transactions/expense_record.dart';
 
 void main() {
   late Directory directory;

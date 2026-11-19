@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
-import 'package:ledger_pro/core/money/money.dart';
-import 'package:ledger_pro/domain/transactions/expense_repository.dart';
-import 'package:ledger_pro/l10n/default_ledger_labels.dart';
-import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:summa/core/money/money.dart';
+import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/l10n/default_ledger_labels.dart';
+import 'package:summa/l10n/l10n.dart';
 
 String localizedTransactionRule(
   BuildContext context,

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:ledger_pro/app/locale_controller.dart';
-import 'package:ledger_pro/app/text_scale_controller.dart';
-import 'package:ledger_pro/features/categories/category_management_screen.dart';
-import 'package:ledger_pro/features/settings/about_screen.dart';
-import 'package:ledger_pro/features/settings/data_management_screen.dart';
-import 'package:ledger_pro/features/settings/help_screen.dart';
-import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:summa/app/locale_controller.dart';
+import 'package:summa/app/text_scale_controller.dart';
+import 'package:summa/features/categories/category_management_screen.dart';
+import 'package:summa/features/settings/about_screen.dart';
+import 'package:summa/features/settings/data_management_screen.dart';
+import 'package:summa/features/settings/help_screen.dart';
+import 'package:summa/l10n/l10n.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

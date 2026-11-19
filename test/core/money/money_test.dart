@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ledger_pro/core/money/money.dart';
+import 'package:summa/core/money/money.dart';
 
 void main() {
   group('parseCnyMinorUnits', () {

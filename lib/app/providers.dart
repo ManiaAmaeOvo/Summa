@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ledger_pro/data/backup/local_backup_store.dart';
-import 'package:ledger_pro/data/database/app_database.dart';
-import 'package:ledger_pro/data/repositories/auto_backup_expense_repository.dart';
-import 'package:ledger_pro/data/repositories/drift_expense_repository.dart';
-import 'package:ledger_pro/domain/accounts/ledger_account.dart';
-import 'package:ledger_pro/domain/categories/ledger_category.dart';
-import 'package:ledger_pro/domain/transactions/expense_record.dart';
-import 'package:ledger_pro/domain/transactions/expense_repository.dart';
+import 'package:summa/data/backup/local_backup_store.dart';
+import 'package:summa/data/database/app_database.dart';
+import 'package:summa/data/repositories/auto_backup_expense_repository.dart';
+import 'package:summa/data/repositories/drift_expense_repository.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/expense_repository.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();

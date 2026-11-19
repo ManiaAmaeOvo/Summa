@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:intl/intl.dart';
-import 'package:ledger_pro/domain/import_export/local_backup.dart';
+import 'package:summa/domain/import_export/local_backup.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 

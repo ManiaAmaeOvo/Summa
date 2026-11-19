@@ -19,9 +19,12 @@ server, so it was not truly portable or offline. Summa is a clean Flutter
 implementation designed for Android first, with desktop and iOS support left
 open for future development.
 
-The project used the working name `LedgerPro` during early development. Some
-non-user-facing identifiers retain that name so existing test installations
-and backups remain compatible.
+The Summa 2.0 development build uses the Android application ID
+`com.maniaamae.summa` and installs alongside releases through v0.4.2. To
+transfer your ledger, export a complete JSON backup from **Settings → Data &
+backup** in the old app and restore that file from the same screen in the new
+app. Verify the restored accounts and transactions before uninstalling the old
+app.
 
 ## Features
 

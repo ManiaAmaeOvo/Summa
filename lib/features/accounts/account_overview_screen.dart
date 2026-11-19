@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ledger_pro/app/providers.dart';
-import 'package:ledger_pro/core/money/money.dart';
-import 'package:ledger_pro/domain/accounts/ledger_account.dart';
-import 'package:ledger_pro/l10n/default_ledger_labels.dart';
-import 'package:ledger_pro/l10n/input_error_labels.dart';
-import 'package:ledger_pro/l10n/l10n.dart';
+import 'package:summa/app/providers.dart';
+import 'package:summa/core/money/money.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/l10n/default_ledger_labels.dart';
+import 'package:summa/l10n/input_error_labels.dart';
+import 'package:summa/l10n/l10n.dart';
 
 class AccountOverviewScreen extends ConsumerWidget {
   const AccountOverviewScreen({super.key});
