@@ -573,6 +573,8 @@ class _RejectingExpenseRepository extends DriftExpenseRepository {
     required String accountId,
     String? targetAccountId,
     String? categoryId,
+    List<AccountPayment>? payments,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   }) {
     return Future.error(

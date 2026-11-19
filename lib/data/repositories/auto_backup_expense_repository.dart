@@ -97,6 +97,8 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
     required String accountId,
     String? targetAccountId,
     String? categoryId,
+    List<AccountPayment>? payments,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   }) => _mutate(
     () => _delegate.addTransaction(
@@ -106,6 +108,8 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       accountId: accountId,
       targetAccountId: targetAccountId,
       categoryId: categoryId,
+      payments: payments,
+      status: status,
       note: note,
     ),
   );
@@ -119,6 +123,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
     required String accountId,
     String? targetAccountId,
     String? categoryId,
+    List<AccountPayment>? payments,
     required String note,
   }) => _mutate(
     () => _delegate.updateTransaction(
@@ -129,7 +134,33 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       accountId: accountId,
       targetAccountId: targetAccountId,
       categoryId: categoryId,
+      payments: payments,
       note: note,
+    ),
+  );
+
+  @override
+  Future<void> postTransaction(String id) =>
+      _mutate(() => _delegate.postTransaction(id));
+
+  @override
+  Future<void> saveRefund({
+    String? id,
+    required String originalId,
+    required String accountId,
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String note,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
+  }) => _mutate(
+    () => _delegate.saveRefund(
+      id: id,
+      originalId: originalId,
+      accountId: accountId,
+      amountMinor: amountMinor,
+      occurredAt: occurredAt,
+      note: note,
+      status: status,
     ),
   );
 

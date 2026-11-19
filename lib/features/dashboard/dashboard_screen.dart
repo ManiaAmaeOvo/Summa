@@ -5,6 +5,7 @@ import 'package:summa/app/providers.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/features/accounts/account_overview_screen.dart';
 import 'package:summa/features/import_export/structured_import_screen.dart';
 import 'package:summa/features/reports/report_screen.dart';
@@ -12,6 +13,7 @@ import 'package:summa/features/settings/settings_screen.dart';
 import 'package:summa/features/transaction_editor/add_expense_sheet.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/l10n.dart';
+import 'package:summa/l10n/transaction_rule_labels.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -153,7 +155,10 @@ class _TransactionList extends ConsumerWidget {
     final expenses = items
         .where((item) => item.type == LedgerTransactionType.expense)
         .toList(growable: false);
-    final total = expenses.fold<int>(0, (sum, item) => sum + item.amountMinor);
+    final total = expenses.fold<int>(
+      0,
+      (sum, item) => sum + item.actualExpenseMinor,
+    );
     final monthTotal = _sumSince(expenses, monthStart);
     final weekTotal = _sumSince(expenses, weekStart);
     final personalAssets = balances
@@ -164,12 +169,48 @@ class _TransactionList extends ConsumerWidget {
         .fold<int>(0, (sum, account) => sum + account.currentBalanceMinor);
     final netAssets = personalAssets - liabilities;
 
-    void editRecord(LedgerRecord record) {
+    final recordsById = {for (final record in items) record.id: record};
+    final refundsByOriginal = <String, List<LedgerRecord>>{};
+    for (final record in items) {
+      final originalId = record.refundOfId;
+      if (originalId != null) {
+        (refundsByOriginal[originalId] ??= []).add(record);
+      }
+    }
+
+    Map<String, int> refundableAmounts(
+      LedgerRecord original, {
+      String? excluding,
+    }) {
+      final remaining = {
+        for (final leg in original.accountPostings)
+          leg.accountId: -leg.debitMinor,
+      };
+      for (final refund
+          in refundsByOriginal[original.id] ?? const <LedgerRecord>[]) {
+        if (refund.id != excluding) {
+          remaining.update(
+            refund.accountId,
+            (value) => value - refund.amountMinor,
+          );
+        }
+      }
+      return remaining;
+    }
+
+    void openEditor({LedgerRecord? record, LedgerRecord? refundFor}) {
+      final original = refundFor ?? recordsById[record?.refundOfId];
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
-        builder: (_) => TransactionEditorSheet(record: record),
+        builder: (_) => TransactionEditorSheet(
+          record: record,
+          refundFor: original,
+          refundRemaining: original == null
+              ? const {}
+              : refundableAmounts(original, excluding: record?.id),
+        ),
       );
     }
 
@@ -225,13 +266,22 @@ class _TransactionList extends ConsumerWidget {
                 final item = items[index];
                 return Card(
                   child: ListTile(
-                    leading: CircleAvatar(child: Icon(_iconForType(item.type))),
+                    leading: CircleAvatar(
+                      child: Icon(
+                        item.isPending
+                            ? Icons.schedule
+                            : item.isRefund
+                            ? Icons.undo
+                            : _iconForType(item.type),
+                      ),
+                    ),
                     title: Text(_titleForRecord(context, item)),
                     subtitle: Text(
                       [
                         DateFormat.MMMd(
                           Localizations.localeOf(context).toLanguageTag(),
                         ).add_Hm().format(item.occurredAt),
+                        if (item.isPending) context.l10n.pendingPosting,
                         _accountDescription(context, item),
                         if (item.note.isNotEmpty) item.note,
                       ].join(' · '),
@@ -245,16 +295,26 @@ class _TransactionList extends ConsumerWidget {
                           _amountForRecord(item),
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
-                                color: _colorForType(context, item.type),
+                                color: _colorForType(
+                                  context,
+                                  item.isRefund
+                                      ? LedgerTransactionType.income
+                                      : item.type,
+                                ),
                               ),
                         ),
                         PopupMenuButton<_RecordAction>(
                           tooltip: context.l10n.transactionActions,
                           onSelected: (action) {
-                            if (action == _RecordAction.edit) {
-                              editRecord(item);
-                            } else {
-                              _confirmDeleteRecord(context, ref, item);
+                            switch (action) {
+                              case _RecordAction.edit:
+                                openEditor(record: item);
+                              case _RecordAction.delete:
+                                _confirmDeleteRecord(context, ref, item);
+                              case _RecordAction.refund:
+                                openEditor(refundFor: item);
+                              case _RecordAction.post:
+                                _postRecord(context, ref, item);
                             }
                           },
                           itemBuilder: (_) => [
@@ -262,6 +322,18 @@ class _TransactionList extends ConsumerWidget {
                               value: _RecordAction.edit,
                               child: Text(context.l10n.edit),
                             ),
+                            if (item.isPending)
+                              PopupMenuItem(
+                                value: _RecordAction.post,
+                                child: Text(context.l10n.postTransactionAction),
+                              ),
+                            if (item.canRefund &&
+                                refundableAmounts(item).values
+                                    .any((amount) => amount > 0))
+                              PopupMenuItem(
+                                value: _RecordAction.refund,
+                                child: Text(context.l10n.recordRefund),
+                              ),
                             PopupMenuItem(
                               value: _RecordAction.delete,
                               child: Text(context.l10n.delete),
@@ -270,7 +342,7 @@ class _TransactionList extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    onTap: () => editRecord(item),
+                    onTap: () => openEditor(record: item),
                   ),
                 );
               },
@@ -281,11 +353,11 @@ class _TransactionList extends ConsumerWidget {
   }
 }
 
-enum _RecordAction { edit, delete }
+enum _RecordAction { edit, post, refund, delete }
 
 int _sumSince(List<LedgerRecord> items, DateTime start) => items
     .where((item) => !item.occurredAt.isBefore(start))
-    .fold<int>(0, (sum, item) => sum + item.amountMinor);
+    .fold<int>(0, (sum, item) => sum + item.actualExpenseMinor);
 
 class _DashboardSummaryCard extends StatelessWidget {
   const _DashboardSummaryCard({
@@ -347,6 +419,32 @@ class _DashboardSummaryCard extends StatelessWidget {
   }
 }
 
+Future<void> _postRecord(
+  BuildContext context,
+  WidgetRef ref,
+  LedgerRecord record,
+) async {
+  try {
+    await ref.read(expenseRepositoryProvider).postTransaction(record.id);
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.transactionPosted)));
+    }
+  } on TransactionRuleException catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizedTransactionRule(context, error))),
+      );
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(context.l10n.saveLaterFailed)));
+    }
+  }
+}
+
 Future<void> _confirmDeleteRecord(
   BuildContext context,
   WidgetRef ref,
@@ -380,6 +478,12 @@ Future<void> _confirmDeleteRecord(
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.transactionDeleted)));
     }
+  } on TransactionRuleException catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizedTransactionRule(context, error))),
+      );
+    }
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context)
@@ -393,7 +497,8 @@ String _titleForRecord(
   LedgerRecord record,
 ) => switch (record.type) {
   LedgerTransactionType.expense || LedgerTransactionType.income =>
-    '${DefaultLedgerLabels.categoryName(Localizations.localeOf(context), record.parentCategoryId, record.parentCategoryName)} · '
+    '${record.isRefund ? '${context.l10n.refund} · ' : ''}'
+        '${DefaultLedgerLabels.categoryName(Localizations.localeOf(context), record.parentCategoryId, record.parentCategoryName)} · '
         '${DefaultLedgerLabels.categoryName(Localizations.localeOf(context), record.categoryId, record.categoryName)}',
   LedgerTransactionType.borrowing => context.l10n.borrowing,
   LedgerTransactionType.repayment => context.l10n.repayment,
@@ -415,7 +520,15 @@ String _accountDescription(BuildContext context, LedgerRecord record) {
           record.targetAccountName!,
         );
   return switch (record.type) {
-    LedgerTransactionType.expense => source,
+    LedgerTransactionType.expense =>
+      record.accountPostings.length > 1
+          ? record.accountPostings
+                .map(
+                  (leg) =>
+                      '${DefaultLedgerLabels.accountName(locale, leg.accountId, leg.accountName)} ${formatCny(-leg.debitMinor)}',
+                )
+                .join(' + ')
+          : source,
     LedgerTransactionType.income => context.l10n.creditedTo(source),
     LedgerTransactionType.borrowing ||
     LedgerTransactionType.repayment => '$source → $target',
@@ -424,7 +537,8 @@ String _accountDescription(BuildContext context, LedgerRecord record) {
 }
 
 String _amountForRecord(LedgerRecord record) => switch (record.type) {
-  LedgerTransactionType.expense => '-${formatCny(record.amountMinor)}',
+  LedgerTransactionType.expense =>
+    '${record.isRefund ? '+' : '-'}${formatCny(record.amountMinor)}',
   LedgerTransactionType.income => '+${formatCny(record.amountMinor)}',
   LedgerTransactionType.borrowing ||
   LedgerTransactionType.repayment ||

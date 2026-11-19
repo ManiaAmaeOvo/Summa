@@ -60,25 +60,48 @@ class LedgerEntries extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  TextColumn get status => text()
+      .withDefault(const Constant('posted'))
+      .check(const CustomExpression<bool>("status IN ('posted', 'pending')"))();
+  TextColumn get refundOfId =>
+      text().nullable().references(LedgerEntries, #id)();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [LedgerAccounts, LedgerCategories, LedgerEntries])
+@DataClassName('PostingRow')
+class LedgerPostings extends Table {
+  TextColumn get transactionId =>
+      text().references(LedgerEntries, #id, onDelete: KeyAction.cascade)();
+  IntColumn get position => integer()();
+  TextColumn get accountId =>
+      text().nullable().references(LedgerAccounts, #id)();
+  TextColumn get currencyCode => text()();
+  IntColumn get debitMinor => integer()();
+  TextColumn get role => text()();
+  BoolColumn get needsReview => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {transactionId, position};
+}
+
+@DriftDatabase(
+  tables: [LedgerAccounts, LedgerCategories, LedgerEntries, LedgerPostings],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => transaction(() async {
       await migrator.createAll();
-      await _createPostingViews();
+      await _createPostingIndexes();
       await _seedDefaults();
       await customStatement('PRAGMA user_version = $schemaVersion');
     }),
@@ -102,7 +125,19 @@ class AppDatabase extends _$AppDatabase {
           await _addVersion5Categories();
         }
         if (from < 6) await _addVersion6Categories();
-        if (from < 7) await _createPostingViews();
+        if (from < 8) {
+          if (from == 7) {
+            await customStatement('DROP VIEW ledger_postings');
+            await customStatement('DROP VIEW ledger_account_postings');
+            await customStatement('DROP INDEX ledger_entries_active_account');
+            await customStatement('DROP INDEX ledger_entries_active_target');
+          }
+          await migrator.addColumn(ledgerEntries, ledgerEntries.status);
+          await migrator.addColumn(ledgerEntries, ledgerEntries.refundOfId);
+          await migrator.createTable(ledgerPostings);
+          await _createPostingIndexes();
+          await backfillLegacyPostings();
+        }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
         await customStatement('PRAGMA user_version = $to');
@@ -113,18 +148,19 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
-  Future<void> _createPostingViews() async {
+  Future<void> _createPostingIndexes() async {
     await customStatement('''
-      CREATE INDEX ledger_entries_active_account ON ledger_entries (account_id)
-      WHERE is_deleted = 0
+      CREATE INDEX ledger_postings_account ON ledger_postings (account_id, transaction_id)
+      WHERE account_id IS NOT NULL
     ''');
     await customStatement('''
-      CREATE INDEX ledger_entries_active_target ON ledger_entries (target_account_id)
-      WHERE is_deleted = 0
+      CREATE INDEX ledger_entries_refund_of ON ledger_entries (refund_of_id)
+      WHERE refund_of_id IS NOT NULL
     ''');
-    await customStatement(createLedgerAccountPostingsView);
-    await customStatement(createLedgerPostingsView);
   }
+
+  Future<void> backfillLegacyPostings() =>
+      customInsert(insertLegacyPostings, updates: {ledgerPostings});
 
   Future<void> _seedDefaults() async {
     final now = DateTime.now();

@@ -23,6 +23,13 @@ String localizedTransactionRule(
       account,
       formatCny(exception.amountMinor ?? 0),
     ),
+    TransactionRuleError.invalidPaymentSplit =>
+      context.l10n.invalidPaymentSplit,
+    TransactionRuleError.refundLimitExceeded =>
+      context.l10n.refundLimitExceeded(formatCny(exception.amountMinor ?? 0)),
+    TransactionRuleError.linkedRefunds => context.l10n.linkedRefunds,
+    TransactionRuleError.archivedPostingAccount =>
+      context.l10n.archivedPostingAccount,
     TransactionRuleError.fixedOtherCategory => context.l10n.fixedOtherCategory,
     TransactionRuleError.otherCategoryRequired =>
       context.l10n.otherCategoryRequired,

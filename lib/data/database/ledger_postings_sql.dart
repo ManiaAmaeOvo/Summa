@@ -1,7 +1,8 @@
-// Debit-positive amounts are denominated in the posting's account currency.
-// Each legacy transaction stays the canonical record for its projected legs.
-const createLedgerAccountPostingsView = '''
-CREATE VIEW ledger_account_postings AS
+// Preserve account effects and unresolved semantics from the pre-posting ledger.
+const insertLegacyPostings = '''
+INSERT INTO ledger_postings (
+  transaction_id, position, account_id, currency_code, debit_minor, role, needs_review
+)
 WITH transaction_accounts AS (
   SELECT
     e.id AS transaction_id,
@@ -34,46 +35,53 @@ WITH transaction_accounts AS (
   FROM ledger_entries AS e
   JOIN ledger_accounts AS source ON source.id = e.account_id
   LEFT JOIN ledger_accounts AS target ON target.id = e.target_account_id
-  WHERE e.is_deleted = 0
+  WHERE e.status = 'posted' AND e.refund_of_id IS NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM ledger_postings AS p WHERE p.transaction_id = e.id
+    )
+),
+account_postings AS (
+  SELECT
+    transaction_id, transaction_type, source_id AS account_id,
+    source_currency AS currency_code, needs_review, 0 AS leg_order,
+    CASE transaction_type
+      WHEN 'expense' THEN -amount_minor
+      WHEN 'income' THEN amount_minor
+      WHEN 'borrowing' THEN
+        CASE WHEN source_is_liability THEN -amount_minor ELSE amount_minor END
+      WHEN 'repayment' THEN
+        CASE WHEN source_is_liability THEN amount_minor ELSE -amount_minor END
+      WHEN 'transfer' THEN
+        CASE WHEN source_is_liability THEN amount_minor ELSE -amount_minor END
+      ELSE 0
+    END AS debit_minor
+  FROM transaction_accounts
+  UNION ALL
+  SELECT
+    transaction_id, transaction_type, target_id, target_currency, needs_review, 1,
+    CASE WHEN target_is_liability THEN -1 ELSE 1 END *
+    CASE WHEN transaction_type = 'repayment' THEN -amount_minor
+         ELSE amount_minor END
+  FROM transaction_accounts
+  WHERE transaction_type IN ('borrowing', 'repayment', 'transfer')
+    AND target_id <> source_id
+),
+postings AS (
+  SELECT transaction_id, account_id, currency_code, debit_minor,
+         'account' AS role, needs_review, leg_order
+  FROM account_postings
+  UNION ALL
+  SELECT transaction_id, NULL, currency_code, -SUM(debit_minor),
+         CASE WHEN needs_review = 1 THEN 'unclassified'
+              ELSE transaction_type END,
+         needs_review, 2
+  FROM account_postings
+  WHERE needs_review = 1 OR transaction_type IN ('expense', 'income')
+  GROUP BY transaction_id, currency_code, transaction_type, needs_review
+  HAVING SUM(debit_minor) <> 0
 )
-SELECT
-  transaction_id, transaction_type, source_id AS account_id,
-  source_currency AS currency_code, needs_review,
-  CASE transaction_type
-    WHEN 'expense' THEN -amount_minor
-    WHEN 'income' THEN amount_minor
-    WHEN 'borrowing' THEN
-      CASE WHEN source_is_liability THEN -amount_minor ELSE amount_minor END
-    WHEN 'repayment' THEN
-      CASE WHEN source_is_liability THEN amount_minor ELSE -amount_minor END
-    WHEN 'transfer' THEN
-      CASE WHEN source_is_liability THEN amount_minor ELSE -amount_minor END
-    ELSE 0
-  END AS debit_minor
-FROM transaction_accounts
-UNION ALL
-SELECT
-  transaction_id, transaction_type, target_id, target_currency, needs_review,
-  CASE WHEN target_is_liability THEN -1 ELSE 1 END *
-  CASE WHEN transaction_type = 'repayment' THEN -amount_minor
-       ELSE amount_minor END
-FROM transaction_accounts
-WHERE transaction_type IN ('borrowing', 'repayment', 'transfer')
-  AND target_id <> source_id
-''';
-
-const createLedgerPostingsView = '''
-CREATE VIEW ledger_postings AS
-SELECT transaction_id, account_id, currency_code, debit_minor,
-       'account' AS role, needs_review
-FROM ledger_account_postings
-UNION ALL
-SELECT transaction_id, NULL, currency_code, -SUM(debit_minor),
-       CASE WHEN needs_review = 1 THEN 'unclassified'
-            ELSE transaction_type END,
-       needs_review
-FROM ledger_account_postings
-WHERE needs_review = 1 OR transaction_type IN ('expense', 'income')
-GROUP BY transaction_id, currency_code, transaction_type, needs_review
-HAVING SUM(debit_minor) <> 0
+SELECT transaction_id,
+       ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY leg_order, currency_code) - 1,
+       account_id, currency_code, debit_minor, role, needs_review
+FROM postings
 ''';

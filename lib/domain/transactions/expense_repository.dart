@@ -7,6 +7,10 @@ import 'package:summa/domain/transactions/expense_record.dart';
 enum TransactionRuleError {
   insufficientBalance,
   overpayment,
+  invalidPaymentSplit,
+  refundLimitExceeded,
+  linkedRefunds,
+  archivedPostingAccount,
   fixedOtherCategory,
   otherCategoryRequired,
 }
@@ -65,6 +69,8 @@ abstract interface class ExpenseRepository {
     required String accountId,
     String? targetAccountId,
     String? categoryId,
+    List<AccountPayment>? payments,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   });
 
@@ -76,7 +82,20 @@ abstract interface class ExpenseRepository {
     required String accountId,
     String? targetAccountId,
     String? categoryId,
+    List<AccountPayment>? payments,
     required String note,
+  });
+
+  Future<void> postTransaction(String id);
+
+  Future<void> saveRefund({
+    String? id,
+    required String originalId,
+    required String accountId,
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String note,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
   });
 
   Future<void> importTransactions(List<LedgerImportDraft> drafts);

@@ -2035,6 +2035,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Field {field} has an unsupported value: {value}'**
   String backupFieldUnsupportedValue(String field, String value);
+
+  /// No description provided for @pendingPosting.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingPosting;
+
+  /// No description provided for @saveAsPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as pending'**
+  String get saveAsPending;
+
+  /// No description provided for @pendingPostingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending transactions stay outside balances and reports until posted.'**
+  String get pendingPostingHint;
+
+  /// No description provided for @postTransactionAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm posting'**
+  String get postTransactionAction;
+
+  /// No description provided for @transactionPosted.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction posted'**
+  String get transactionPosted;
+
+  /// No description provided for @addPaymentAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add payment account'**
+  String get addPaymentAccount;
+
+  /// No description provided for @extraPaymentAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount from this account'**
+  String get extraPaymentAmount;
+
+  /// No description provided for @removePaymentAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove payment account'**
+  String get removePaymentAccount;
+
+  /// No description provided for @mainPaymentRemainder.
+  ///
+  /// In en, this message translates to:
+  /// **'The first account pays the remaining amount.'**
+  String get mainPaymentRemainder;
+
+  /// No description provided for @invalidPaymentSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Use distinct accounts with positive amounts that add up to the transaction total.'**
+  String get invalidPaymentSplit;
+
+  /// No description provided for @recordRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Record refund'**
+  String get recordRefund;
+
+  /// No description provided for @editRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit refund'**
+  String get editRefund;
+
+  /// No description provided for @refund.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund'**
+  String get refund;
+
+  /// No description provided for @refundAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available to refund: {amount}'**
+  String refundAvailable(String amount);
+
+  /// No description provided for @refundRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund saved'**
+  String get refundRecorded;
+
+  /// No description provided for @refundLimitExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'The refund cannot exceed the remaining {amount} for this account.'**
+  String refundLimitExceeded(String amount);
+
+  /// No description provided for @linkedRefunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the linked refunds before editing or deleting the original purchase.'**
+  String get linkedRefunds;
+
+  /// No description provided for @archivedPostingAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'An account is archived. Restore it or choose another account before posting.'**
+  String get archivedPostingAccount;
+
+  /// No description provided for @backupLedgerConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup conflicts with the current ledger or contains invalid postings or refunds.'**
+  String get backupLedgerConflict;
 }
 
 class _AppLocalizationsDelegate

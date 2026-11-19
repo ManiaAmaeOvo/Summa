@@ -22,22 +22,23 @@ int parseCnyMinorUnits(String input, {bool allowZero = false}) {
   }
 
   final parts = normalized.split('.');
-  final yuan = int.parse(parts.first);
   final fraction = parts.length == 1 ? '' : parts.last;
-  final fen = fraction.isEmpty ? 0 : int.parse(fraction.padRight(2, '0'));
-  final minorUnits = yuan * 100 + fen;
-  if (minorUnits < 0 || (!allowZero && minorUnits == 0)) {
-    throw MoneyInputException(
-      allowZero ? MoneyInputError.negative : MoneyInputError.notPositive,
-    );
+  final minorUnits = int.tryParse(
+    '${parts.first}${fraction.padRight(2, '0')}',
+    radix: 10,
+  );
+  if (minorUnits == null) {
+    throw const MoneyInputException(MoneyInputError.invalidFormat);
+  }
+  if (!allowZero && minorUnits == 0) {
+    throw const MoneyInputException(MoneyInputError.notPositive);
   }
   return minorUnits;
 }
 
 String formatCny(int minorUnits) {
-  final absolute = minorUnits.abs();
   final sign = minorUnits < 0 ? '-' : '';
-  final yuan = absolute ~/ 100;
-  final fen = (absolute % 100).toString().padLeft(2, '0');
+  final yuan = (minorUnits ~/ 100).abs();
+  final fen = minorUnits.remainder(100).abs().toString().padLeft(2, '0');
   return '$sign¥$yuan.$fen';
 }

@@ -1061,4 +1061,65 @@ class AppLocalizationsZh extends AppLocalizations {
   String backupFieldUnsupportedValue(String field, String value) {
     return '字段 $field 的值不受支持：$value';
   }
+
+  @override
+  String get pendingPosting => '待入账';
+
+  @override
+  String get saveAsPending => '保存为待入账';
+
+  @override
+  String get pendingPostingHint => '确认入账前，不计入账户余额和报表。';
+
+  @override
+  String get postTransactionAction => '确认入账';
+
+  @override
+  String get transactionPosted => '已确认入账';
+
+  @override
+  String get addPaymentAccount => '添加付款账户';
+
+  @override
+  String get extraPaymentAmount => '此账户付款金额';
+
+  @override
+  String get removePaymentAccount => '移除此付款账户';
+
+  @override
+  String get mainPaymentRemainder => '首个账户支付剩余金额。';
+
+  @override
+  String get invalidPaymentSplit => '请使用不同的付款账户，各笔金额须为正数且合计等于总金额。';
+
+  @override
+  String get recordRefund => '记录退款';
+
+  @override
+  String get editRefund => '编辑退款';
+
+  @override
+  String get refund => '退款';
+
+  @override
+  String refundAvailable(String amount) {
+    return '此账户可退 $amount';
+  }
+
+  @override
+  String get refundRecorded => '退款已保存';
+
+  @override
+  String refundLimitExceeded(String amount) {
+    return '退款不能超过此账户剩余可退的 $amount。';
+  }
+
+  @override
+  String get linkedRefunds => '请先删除关联退款，再修改或删除原消费。';
+
+  @override
+  String get archivedPostingAccount => '有账户已归档，请先恢复账户或选择其他账户。';
+
+  @override
+  String get backupLedgerConflict => '此备份与当前账本冲突，或包含无效分录或退款。';
 }

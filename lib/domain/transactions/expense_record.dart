@@ -1,5 +1,32 @@
 enum LedgerTransactionType { expense, income, transfer, borrowing, repayment }
 
+enum LedgerPostingStatus { posted, pending }
+
+enum LedgerPostingRole { account, expense, income, unclassified }
+
+class AccountPayment {
+  const AccountPayment(this.accountId, this.amountMinor);
+
+  final String accountId;
+  final int amountMinor;
+}
+
+class AccountPosting {
+  const AccountPosting({
+    required this.accountId,
+    required this.accountName,
+    required this.accountKind,
+    required this.debitMinor,
+    required this.needsReview,
+  });
+
+  final String accountId;
+  final String accountName;
+  final String accountKind;
+  final int debitMinor;
+  final bool needsReview;
+}
+
 class LedgerRecord {
   const LedgerRecord({
     required this.id,
@@ -16,6 +43,9 @@ class LedgerRecord {
     this.targetAccountId,
     this.targetAccountName,
     this.targetAccountKind,
+    this.status = LedgerPostingStatus.posted,
+    this.refundOfId,
+    this.accountPostings = const [],
     required this.note,
   });
 
@@ -33,5 +63,24 @@ class LedgerRecord {
   final String? targetAccountId;
   final String? targetAccountName;
   final String? targetAccountKind;
+  final LedgerPostingStatus status;
+  final String? refundOfId;
+  final List<AccountPosting> accountPostings;
   final String note;
+
+  bool get isPending => status == LedgerPostingStatus.pending;
+  bool get isRefund => refundOfId != null;
+  bool get canRefund =>
+      type == LedgerTransactionType.expense &&
+      !isPending &&
+      !isRefund &&
+      accountPostings.isNotEmpty &&
+      !accountPostings.any((posting) => posting.needsReview);
+
+  int get actualExpenseMinor =>
+      isPending || type != LedgerTransactionType.expense
+      ? 0
+      : isRefund
+      ? -amountMinor
+      : amountMinor;
 }

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show MigrationStrategy;
@@ -6,62 +5,22 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
-import 'package:summa/domain/import_export/ledger_backup.dart';
-import 'package:summa/domain/transactions/expense_record.dart';
 
 void main() {
-  test(
-    'schema 6 upgrades on disk and preserves active and deleted transactions',
-    () async {
-      final source = AppDatabase.forTesting(NativeDatabase.memory());
-      late Map<String, dynamic> payload;
-      try {
-        final repository = DriftExpenseRepository(source);
-        final day = DateTime(2026, 9, 9);
-        await repository.setCurrentBalance(
-          accountId: 'account-bank',
-          amountMinor: 800,
-        );
-        await repository.addTransaction(
-          type: LedgerTransactionType.transfer,
-          amountMinor: 150,
-          occurredAt: day,
-          accountId: 'account-bank',
-          targetAccountId: 'account-cash',
-          note: 'Transfer',
-        );
-        await repository.addExpense(
-          amountMinor: 50,
-          occurredAt: day,
-          categoryId: 'expense-parent-0-child-0',
-          accountId: 'account-bank',
-          note: 'Deleted expense',
-        );
-        final records = await repository.watchTransactions().first;
-        await repository.deleteTransaction(
-          records.singleWhere((record) => record.note == 'Deleted expense').id,
-        );
-        payload = jsonDecode(
-          await repository.createFullBackup(),
-        ) as Map<String, dynamic>;
-      } finally {
-        await source.close();
-      }
-
-      final directory = await Directory.systemTemp.createTemp('summa-v6-');
+  for (final version in [6, 7]) {
+    test('migrates schema $version to persisted postings and reopens safely', () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'summa-v$version-',
+      );
       addTearDown(() => directory.delete(recursive: true));
       final file = File('${directory.path}/ledger_pro.sqlite');
-      final before = _Schema6Database(NativeDatabase(file));
-      late List<EntryRow> originalRows;
+      final before = _LegacyDatabase(NativeDatabase(file), version);
       try {
-        payload['format'] = 'ledgerpro_full_backup';
-        payload.remove('schema_version');
-        await DriftExpenseRepository(before).restoreFullBackup(
-          jsonEncode(payload),
-          mode: BackupRestoreMode.replace,
-        );
-        originalRows = await before.select(before.ledgerEntries).get();
-        expect(originalRows, hasLength(2));
+        // Force creation and close the file before the new schema opens it.
+        final schema = await before
+            .customSelect('PRAGMA user_version')
+            .getSingle();
+        expect(schema.read<int>('user_version'), version);
       } finally {
         await before.close();
       }
@@ -76,40 +35,117 @@ void main() {
               for (final account in balances)
                 account.id: account.currentBalanceMinor,
             },
-            allOf(
-              containsPair('account-bank', 650),
-              containsPair('account-cash', 150),
-            ),
+            {'bank': 650, 'cash': 150},
           );
+          final entries = await after.select(after.ledgerEntries).get();
+          expect(entries, hasLength(2));
+          final active = entries.singleWhere((row) => !row.isDeleted);
+          final deleted = entries.singleWhere((row) => row.isDeleted);
+          expect(active.id, 'bank-to-cash');
+          expect(active.targetAccountId, 'cash');
+          expect(active.note, 'Transfer');
+          expect(active.timezoneOffsetMinutes, 480);
+          expect(active.status, 'posted');
+          expect(deleted.id, 'hidden');
+          expect(deleted.amountMinor, 50);
+          final postings = await after.select(after.ledgerPostings).get();
+          expect(postings, hasLength(4));
           expect(
-            await after.select(after.ledgerEntries).get(),
-            unorderedEquals(originalRows),
+            postings
+                .where((leg) => leg.transactionId == active.id)
+                .map((leg) => leg.debitMinor),
+            unorderedEquals([-150, 150]),
           );
-          final postings = await after
-              .customSelect('SELECT * FROM ledger_postings')
-              .get();
-          expect(postings, hasLength(2));
+          final table = await after
+              .customSelect(
+                "SELECT type FROM sqlite_master WHERE name = 'ledger_postings'",
+              )
+              .getSingle();
+          expect(table.read<String>('type'), 'table');
           final schema = await after
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(schema.read<int>('user_version'), 7);
+          expect(schema.read<int>('user_version'), 8);
         } finally {
           await after.close();
         }
       }
-    },
-  );
+    });
+  }
 }
 
-class _Schema6Database extends AppDatabase {
-  _Schema6Database(super.executor) : super.forTesting();
+class _LegacyDatabase extends AppDatabase {
+  _LegacyDatabase(super.executor, this.schemaVersion) : super.forTesting();
 
   @override
-  int get schemaVersion => 6;
+  final int schemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (migrator) => migrator.createAll(),
-    beforeOpen: super.migration.beforeOpen,
+    onCreate: (migrator) async {
+      await migrator.createTable(ledgerAccounts);
+      await migrator.createTable(ledgerCategories);
+      await customStatement('''
+        CREATE TABLE ledger_entries (
+          id TEXT NOT NULL PRIMARY KEY,
+          transaction_type TEXT NOT NULL,
+          amount_minor INTEGER NOT NULL,
+          currency_code TEXT NOT NULL DEFAULT 'CNY',
+          occurred_at INTEGER NOT NULL,
+          timezone_offset_minutes INTEGER NOT NULL,
+          category_id TEXT NOT NULL REFERENCES ledger_categories (id),
+          account_id TEXT NOT NULL REFERENCES ledger_accounts (id),
+          target_account_id TEXT REFERENCES ledger_accounts (id),
+          note TEXT NOT NULL DEFAULT '',
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          is_deleted INTEGER NOT NULL DEFAULT 0 CHECK (is_deleted IN (0, 1))
+        )
+      ''');
+      if (schemaVersion == 7) {
+        await customStatement('''
+          CREATE INDEX ledger_entries_active_account ON ledger_entries (account_id)
+          WHERE is_deleted = 0
+        ''');
+        await customStatement('''
+          CREATE INDEX ledger_entries_active_target ON ledger_entries (target_account_id)
+          WHERE is_deleted = 0
+        ''');
+        // The frozen fixture uses transfer and expense rows only.
+        await customStatement('''
+          CREATE VIEW ledger_account_postings AS
+          SELECT id AS transaction_id, account_id, -amount_minor AS debit_minor
+          FROM ledger_entries WHERE is_deleted = 0
+          UNION ALL
+          SELECT id, target_account_id, amount_minor
+          FROM ledger_entries WHERE is_deleted = 0 AND target_account_id IS NOT NULL
+        ''');
+        await customStatement('''
+          CREATE VIEW ledger_postings AS SELECT * FROM ledger_account_postings
+        ''');
+      }
+      await customStatement('''
+        INSERT INTO ledger_accounts (id, name, kind, opening_balance_minor, created_at, updated_at)
+        VALUES ('bank', 'Bank', 'bank', 800, 1000, 1000),
+               ('cash', 'Cash', 'cash', 0, 1000, 1000)
+      ''');
+      await customStatement('''
+        INSERT INTO ledger_categories (id, name, transaction_type, parent_id, created_at, updated_at)
+        VALUES ('flow-transfer-parent', 'Transfers', 'transfer', NULL, 1000, 1000),
+               ('flow-transfer', 'Transfer', 'transfer', 'flow-transfer-parent', 1000, 1000),
+               ('expense-parent', 'Food', 'expense', NULL, 1000, 1000),
+               ('expense-child', 'Lunch', 'expense', 'expense-parent', 1000, 1000)
+      ''');
+      await customStatement('''
+        INSERT INTO ledger_entries (
+          id, transaction_type, amount_minor, occurred_at, timezone_offset_minutes,
+          category_id, account_id, target_account_id, note, created_at, updated_at, is_deleted
+        )
+        VALUES ('bank-to-cash', 'transfer', 150, 2000, 480,
+                'flow-transfer', 'bank', 'cash', 'Transfer', 2000, 2000, 0),
+               ('hidden', 'expense', 50, 2000, 480,
+                'expense-child', 'bank', NULL, 'Deleted', 2000, 2001, 1)
+      ''');
+    },
   );
 }

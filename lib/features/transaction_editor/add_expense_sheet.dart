@@ -15,9 +15,16 @@ import 'package:summa/l10n/l10n.dart';
 import 'package:summa/l10n/transaction_rule_labels.dart';
 
 class TransactionEditorSheet extends ConsumerStatefulWidget {
-  const TransactionEditorSheet({super.key, this.record});
+  const TransactionEditorSheet({
+    super.key,
+    this.record,
+    this.refundFor,
+    this.refundRemaining = const {},
+  });
 
   final LedgerRecord? record;
+  final LedgerRecord? refundFor;
+  final Map<String, int> refundRemaining;
 
   @override
   ConsumerState<TransactionEditorSheet> createState() =>
@@ -37,7 +44,10 @@ class _TransactionEditorSheetState
   String? _targetAccountId;
   String? _submissionError;
   bool _isSaving = false;
+  bool _pending = false;
+  final _extraPayments = <_SplitPaymentInput>[];
 
+  bool get _isRefund => widget.refundFor != null;
   bool get _isEditing => widget.record != null;
 
   @override
@@ -45,7 +55,14 @@ class _TransactionEditorSheetState
     super.initState();
     final record = widget.record;
     _type = record?.type ?? LedgerTransactionType.expense;
-    if (record == null) return;
+    _pending = record?.isPending ?? false;
+    if (record == null) {
+      final original = widget.refundFor;
+      if (original != null && original.occurredAt.isAfter(_occurredAt)) {
+        _occurredAt = original.occurredAt;
+      }
+      return;
+    }
     _amountController.text = _editableAmount(record.amountMinor);
     _noteController.text = record.note;
     _occurredAt = record.occurredAt;
@@ -53,23 +70,35 @@ class _TransactionEditorSheetState
     _categoryId = record.categoryId;
     _accountId = record.accountId;
     _targetAccountId = record.targetAccountId;
+    if (!_isRefund && _type == LedgerTransactionType.expense) {
+      for (final leg in record.accountPostings.skip(1)) {
+        _extraPayments.add(_SplitPaymentInput(leg.accountId, -leg.debitMinor));
+      }
+    }
   }
 
   @override
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
+    for (final payment in _extraPayments) {
+      payment.amount.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final categories = switch (_type) {
-      LedgerTransactionType.expense => ref.watch(expenseCategoriesProvider),
-      LedgerTransactionType.income => ref.watch(incomeCategoriesProvider),
-      _ => null,
-    };
-    final accounts = ref.watch(accountsProvider);
+    final categories = _isRefund
+        ? null
+        : switch (_type) {
+            LedgerTransactionType.expense => ref.watch(
+              expenseCategoriesProvider,
+            ),
+            LedgerTransactionType.income => ref.watch(incomeCategoriesProvider),
+            _ => null,
+          };
+    final accounts = _isRefund ? null : ref.watch(accountsProvider);
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -86,9 +115,13 @@ class _TransactionEditorSheetState
               Row(
                 children: [
                   Text(
-                    _isEditing
-                        ? context.l10n.editTransaction
-                        : context.l10n.addTransaction,
+                    _isRefund
+                        ? (_isEditing
+                              ? context.l10n.editRefund
+                              : context.l10n.recordRefund)
+                        : (_isEditing
+                              ? context.l10n.editTransaction
+                              : context.l10n.addTransaction),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Spacer(),
@@ -100,37 +133,38 @@ class _TransactionEditorSheetState
                 ],
               ),
               const SizedBox(height: 12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SegmentedButton<LedgerTransactionType>(
-                  segments: [
-                    ButtonSegment(
-                      value: LedgerTransactionType.expense,
-                      label: Text(context.l10n.expense),
-                    ),
-                    ButtonSegment(
-                      value: LedgerTransactionType.income,
-                      label: Text(context.l10n.income),
-                    ),
-                    ButtonSegment(
-                      value: LedgerTransactionType.transfer,
-                      label: Text(context.l10n.transfer),
-                    ),
-                    ButtonSegment(
-                      value: LedgerTransactionType.borrowing,
-                      label: Text(context.l10n.borrowing),
-                    ),
-                    ButtonSegment(
-                      value: LedgerTransactionType.repayment,
-                      label: Text(context.l10n.repayment),
-                    ),
-                  ],
-                  selected: {_type},
-                  onSelectionChanged: _isSaving
-                      ? null
-                      : (selection) => _changeType(selection.single),
+              if (!_isRefund)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SegmentedButton<LedgerTransactionType>(
+                    segments: [
+                      ButtonSegment(
+                        value: LedgerTransactionType.expense,
+                        label: Text(context.l10n.expense),
+                      ),
+                      ButtonSegment(
+                        value: LedgerTransactionType.income,
+                        label: Text(context.l10n.income),
+                      ),
+                      ButtonSegment(
+                        value: LedgerTransactionType.transfer,
+                        label: Text(context.l10n.transfer),
+                      ),
+                      ButtonSegment(
+                        value: LedgerTransactionType.borrowing,
+                        label: Text(context.l10n.borrowing),
+                      ),
+                      ButtonSegment(
+                        value: LedgerTransactionType.repayment,
+                        label: Text(context.l10n.repayment),
+                      ),
+                    ],
+                    selected: {_type},
+                    onSelectionChanged: _isSaving
+                        ? null
+                        : (selection) => _changeType(selection.single),
+                  ),
                 ),
-              ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _amountController,
@@ -146,14 +180,7 @@ class _TransactionEditorSheetState
                   prefixText: '¥ ',
                   hintText: '0.00',
                 ),
-                validator: (value) {
-                  try {
-                    parseCnyMinorUnits(value ?? '');
-                    return null;
-                  } on MoneyInputException catch (error) {
-                    return localizedMoneyInputError(context, error);
-                  }
-                },
+                validator: _validateAmount,
               ),
               if (categories != null) ...[
                 const SizedBox(height: 16),
@@ -164,11 +191,14 @@ class _TransactionEditorSheetState
                 ),
               ],
               const SizedBox(height: 16),
-              accounts.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => Text(context.l10n.accountLoadFailed),
-                data: _buildAccountFields,
-              ),
+              if (_isRefund)
+                _refundAccountFields()
+              else
+                accounts!.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (_, _) => Text(context.l10n.accountLoadFailed),
+                  data: _buildAccountFields,
+                ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: _pickDateTime,
@@ -185,9 +215,21 @@ class _TransactionEditorSheetState
                 maxLength: 200,
                 decoration: InputDecoration(
                   labelText: context.l10n.noteOptional,
-                  hintText: _noteHint(context),
+                  hintText: _isRefund ? null : _noteHint(context),
                 ),
               ),
+              if (!_isEditing)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(context.l10n.saveAsPending),
+                  subtitle: _pending
+                      ? Text(context.l10n.pendingPostingHint)
+                      : null,
+                  value: _pending,
+                  onChanged: _isSaving
+                      ? null
+                      : (pending) => setState(() => _pending = pending),
+                ),
               const SizedBox(height: 8),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
@@ -256,6 +298,10 @@ class _TransactionEditorSheetState
 
   void _changeType(LedgerTransactionType value) {
     setState(() {
+      for (final payment in _extraPayments) {
+        payment.amount.dispose();
+      }
+      _extraPayments.clear();
       _type = value;
       _parentCategoryId = null;
       _categoryId = null;
@@ -327,10 +373,7 @@ class _TransactionEditorSheetState
   Widget _buildAccountFields(List<LedgerAccount> accounts) {
     final selectable = _withOriginalArchivedAccounts(accounts);
     return switch (_type) {
-      LedgerTransactionType.expense => _singleAccountField(
-        selectable,
-        label: context.l10n.paymentAccount,
-      ),
+      LedgerTransactionType.expense => _expenseFields(selectable),
       LedgerTransactionType.income => _singleAccountField(
         selectable,
         label: context.l10n.incomeDestinationAccount,
@@ -366,7 +409,148 @@ class _TransactionEditorSheetState
         ),
       );
     }
+    for (final leg in record.accountPostings.skip(1)) {
+      if (!result.any((item) => item.id == leg.accountId)) {
+        result.add(
+          LedgerAccount(
+            id: leg.accountId,
+            name: context.l10n.archivedName(leg.accountName),
+            kind: AccountKind.values.byName(leg.accountKind),
+          ),
+        );
+      }
+    }
     return result;
+  }
+
+  Widget _expenseFields(List<LedgerAccount> accounts) {
+    final extraIds = _extraPayments.map((leg) => leg.accountId).toSet();
+    final unused = accounts.where(
+      (account) => account.id != _accountId && !extraIds.contains(account.id),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _singleAccountField(
+          accounts.where((account) => !extraIds.contains(account.id)).toList(),
+          label: context.l10n.paymentAccount,
+        ),
+        if (_extraPayments.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(context.l10n.mainPaymentRemainder),
+          ),
+        for (final payment in _extraPayments)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Column(
+              key: ObjectKey(payment),
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _accountDropdown(
+                        key: ObjectKey(payment.amount),
+                        accounts: accounts
+                            .where(
+                              (account) =>
+                                  account.id == payment.accountId ||
+                                  (account.id != _accountId &&
+                                      !extraIds.contains(account.id)),
+                            )
+                            .toList(),
+                        value: payment.accountId,
+                        label: context.l10n.paymentAccount,
+                        onChanged: (id) {
+                          if (id != null) {
+                            setState(() => payment.accountId = id);
+                          }
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () {
+                              setState(() => _extraPayments.remove(payment));
+                              // The field detaches from the controller on the next build.
+                              WidgetsBinding.instance.addPostFrameCallback(
+                                (_) => payment.amount.dispose(),
+                              );
+                            },
+                      tooltip: context.l10n.removePaymentAccount,
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: payment.amount,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.extraPaymentAmount,
+                    prefixText: '¥ ',
+                  ),
+                  validator: _validateAmount,
+                ),
+              ],
+            ),
+          ),
+        if (unused.isNotEmpty)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: _isSaving
+                  ? null
+                  : () => setState(() {
+                      _extraPayments.add(
+                        _SplitPaymentInput(unused.first.id, 0),
+                      );
+                    }),
+              icon: const Icon(Icons.add),
+              label: Text(context.l10n.addPaymentAccount),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _refundAccountFields() {
+    final accounts = [
+      for (final leg in widget.refundFor!.accountPostings)
+        if ((widget.refundRemaining[leg.accountId] ?? 0) > 0)
+          LedgerAccount(
+            id: leg.accountId,
+            name: leg.accountName,
+            kind: AccountKind.values.byName(leg.accountKind),
+          ),
+    ];
+    final dropdown = _singleAccountField(
+      accounts,
+      label: context.l10n.incomeDestinationAccount,
+    );
+    final maximum = widget.refundRemaining[_accountId] ?? 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        dropdown,
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(context.l10n.refundAvailable(formatCny(maximum))),
+        ),
+      ],
+    );
+  }
+
+  String? _validateAmount(String? value) {
+    try {
+      parseCnyMinorUnits(value ?? '');
+      return null;
+    } on MoneyInputException catch (error) {
+      return localizedMoneyInputError(context, error);
+    }
   }
 
   Widget _singleAccountField(
@@ -532,7 +716,8 @@ class _TransactionEditorSheetState
             ),
           ),
       ],
-      onChanged: accounts.isEmpty ? null : onChanged,
+      isExpanded: true,
+      onChanged: accounts.isEmpty || _isSaving ? null : onChanged,
     );
   }
 
@@ -540,8 +725,10 @@ class _TransactionEditorSheetState
     final date = await showDatePicker(
       context: context,
       initialDate: _occurredAt,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: widget.refundFor?.occurredAt ?? DateTime(2000),
+      lastDate: _occurredAt.isAfter(DateTime.now())
+          ? _occurredAt.add(const Duration(days: 1))
+          : DateTime.now().add(const Duration(days: 1)),
     );
     if (date == null || !mounted) return;
     final time = await showTimePicker(
@@ -568,7 +755,8 @@ class _TransactionEditorSheetState
                 _type == LedgerTransactionType.transfer ||
                 _type == LedgerTransactionType.repayment) &&
             _targetAccountId == null) ||
-        ((_type == LedgerTransactionType.expense ||
+        (!_isRefund &&
+            (_type == LedgerTransactionType.expense ||
                 _type == LedgerTransactionType.income) &&
             _categoryId == null)) {
       setState(
@@ -584,25 +772,63 @@ class _TransactionEditorSheetState
     try {
       final repository = ref.read(expenseRepositoryProvider);
       final record = widget.record;
-      if (record == null) {
+      final amount = parseCnyMinorUnits(_amountController.text);
+      final status = _pending
+          ? LedgerPostingStatus.pending
+          : LedgerPostingStatus.posted;
+      List<AccountPayment>? payments;
+      if (!_isRefund && _type == LedgerTransactionType.expense) {
+        final rest = [
+          for (final input in _extraPayments)
+            AccountPayment(
+              input.accountId,
+              parseCnyMinorUnits(input.amount.text),
+            ),
+        ];
+        final primary = rest.fold(
+          amount,
+          (remaining, item) =>
+              remaining > item.amountMinor ? remaining - item.amountMinor : 0,
+        );
+        if (primary <= 0) {
+          throw const TransactionRuleException(
+            TransactionRuleError.invalidPaymentSplit,
+          );
+        }
+        payments = [AccountPayment(accountId, primary), ...rest];
+      }
+      if (_isRefund) {
+        await repository.saveRefund(
+          id: record?.id,
+          originalId: widget.refundFor!.id,
+          accountId: accountId,
+          amountMinor: amount,
+          occurredAt: _occurredAt,
+          note: _noteController.text,
+          status: status,
+        );
+      } else if (record == null) {
         await repository.addTransaction(
           type: _type,
-          amountMinor: parseCnyMinorUnits(_amountController.text),
+          amountMinor: amount,
           occurredAt: _occurredAt,
           categoryId: _categoryId,
           accountId: accountId,
           targetAccountId: _targetAccountId,
+          payments: payments,
+          status: status,
           note: _noteController.text,
         );
       } else {
         await repository.updateTransaction(
           id: record.id,
           type: _type,
-          amountMinor: parseCnyMinorUnits(_amountController.text),
+          amountMinor: amount,
           occurredAt: _occurredAt,
           categoryId: _categoryId,
           accountId: accountId,
           targetAccountId: _targetAccountId,
+          payments: payments,
           note: _noteController.text,
         );
       }
@@ -612,7 +838,9 @@ class _TransactionEditorSheetState
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            _isEditing
+            _isRefund
+                ? context.l10n.refundRecorded
+                : _isEditing
                 ? context.l10n.transactionChangesSaved
                 : context.l10n.transactionSavedLocally,
           ),
@@ -632,6 +860,16 @@ class _TransactionEditorSheetState
       });
     }
   }
+}
+
+class _SplitPaymentInput {
+  _SplitPaymentInput(this.accountId, int minor)
+    : amount = TextEditingController(
+        text: minor == 0 ? '' : _editableAmount(minor),
+      );
+
+  String accountId;
+  final TextEditingController amount;
 }
 
 String _editableAmount(int minorUnits) {

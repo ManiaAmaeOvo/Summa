@@ -39,7 +39,10 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         final range = _rangeFor(_period, _anchor);
-        final selected = all
+        final posted = all
+            .where((item) => !item.isPending)
+            .toList(growable: false);
+        final selected = posted
             .where(
               (item) =>
                   !item.occurredAt.isBefore(range.start) &&
@@ -114,7 +117,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             ),
             const SizedBox(height: 16),
             _DebtTrendCard(
-              allRecords: all,
+              allRecords: posted,
               selectedRecords: selected,
               balances: balances,
               range: range,
@@ -239,7 +242,7 @@ class _TrendCard extends StatelessWidget {
               record.occurredAt.month,
               record.occurredAt.day,
             );
-      buckets[key] = (buckets[key] ?? 0) + record.amountMinor;
+      buckets[key] = (buckets[key] ?? 0) + record.actualExpenseMinor;
     }
     final points = buckets.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
@@ -329,13 +332,18 @@ class _TrendPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(plot);
-    final maxValue = math.max(1, values.reduce(math.max));
+    final minValue = math.min(0, values.reduce(math.min)).toDouble();
+    final maxValue = math
+        .max(minValue == 0 ? 1 : 0, values.reduce(math.max))
+        .toDouble();
+    final span = maxValue - minValue;
+    final zeroY = plot.bottom + plot.height * minValue / span;
 
     for (var tick = 0; tick < 3; tick++) {
       final fraction = tick / 2;
       final y = plot.top + plot.height * fraction;
       canvas.drawLine(Offset(plot.left, y), Offset(plot.right, y), gridPaint);
-      final value = (maxValue * (1 - fraction)).round();
+      final value = (maxValue - span * fraction).round();
       _paintAxisLabel(
         canvas,
         _compactAxisAmount(value),
@@ -352,7 +360,7 @@ class _TrendPainter extends CustomPainter {
       final x = values.length == 1
           ? plot.center.dx
           : plot.left + plot.width * i / (values.length - 1);
-      final y = plot.bottom - plot.height * values[i] / maxValue;
+      final y = plot.bottom - plot.height * (values[i] - minValue) / span;
       offsets.add(Offset(x, y));
       if (i == 0) {
         path.moveTo(x, y);
@@ -362,8 +370,8 @@ class _TrendPainter extends CustomPainter {
     }
     if (offsets.length > 1) {
       final area = Path.from(path)
-        ..lineTo(offsets.last.dx, plot.bottom)
-        ..lineTo(offsets.first.dx, plot.bottom)
+        ..lineTo(offsets.last.dx, zeroY)
+        ..lineTo(offsets.first.dx, zeroY)
         ..close();
       canvas.drawPath(area, fill);
       canvas.drawPath(path, linePaint);
@@ -468,12 +476,16 @@ class _CategoryPieCard extends StatelessWidget {
     final storedNames = <String, String>{};
     for (final item in records.where((item) => item.type == type)) {
       totals[item.parentCategoryId] =
-          (totals[item.parentCategoryId] ?? 0) + item.amountMinor;
+          (totals[item.parentCategoryId] ?? 0) +
+          (type == LedgerTransactionType.expense
+              ? item.actualExpenseMinor
+              : item.amountMinor);
       storedNames[item.parentCategoryId] = item.parentCategoryName;
     }
     final rows = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final total = rows.fold<int>(0, (sum, row) => sum + row.value);
+    final showPie = total > 0 && rows.every((row) => row.value >= 0);
     final colors = [
       Theme.of(context).colorScheme.primary,
       Theme.of(context).colorScheme.tertiary,
@@ -495,18 +507,20 @@ class _CategoryPieCard extends StatelessWidget {
             if (rows.isEmpty)
               SizedBox(height: 120, child: Center(child: Text(emptyText)))
             else ...[
-              Center(
-                child: SizedBox.square(
-                  dimension: 176,
-                  child: CustomPaint(
-                    painter: _PiePainter(
-                      values: rows.map((row) => row.value).toList(),
-                      colors: colors,
+              if (showPie) ...[
+                Center(
+                  child: SizedBox.square(
+                    dimension: 176,
+                    child: CustomPaint(
+                      painter: _PiePainter(
+                        values: rows.map((row) => row.value).toList(),
+                        colors: colors,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
               for (var index = 0; index < rows.length; index++) ...[
                 Row(
                   children: [
@@ -529,7 +543,7 @@ class _CategoryPieCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${(rows[index].value * 100 / total).toStringAsFixed(1)}%  '
+                      '${showPie ? '${(rows[index].value * 100 / total).toStringAsFixed(1)}%  ' : ''}'
                       '${formatCny(rows[index].value)}',
                     ),
                   ],
@@ -595,16 +609,12 @@ class _DebtTrendCard extends StatelessWidget {
     final current = balances
         .where((item) => item.group == AccountGroup.liability)
         .fold<int>(0, (sum, item) => sum + item.currentBalanceMinor);
-    final now = DateTime.now();
-    var opening = current;
-    if (!range.start.isAfter(now)) {
-      for (final record in allRecords) {
-        if (!record.occurredAt.isBefore(range.start) &&
-            !record.occurredAt.isAfter(now)) {
-          opening -= _liabilityDelta(record, liabilityIds);
-        }
-      }
-    }
+    final opening = allRecords
+        .where((record) => !record.occurredAt.isBefore(range.start))
+        .fold(
+          current,
+          (balance, record) => balance - _liabilityDelta(record, liabilityIds),
+        );
     final ordered =
         selectedRecords
             .where((item) => _liabilityDelta(item, liabilityIds) != 0)
@@ -682,23 +692,10 @@ class _DebtTrendCard extends StatelessWidget {
   }
 }
 
-int _liabilityDelta(LedgerRecord record, Set<String> liabilityIds) {
-  final primaryIsLiability =
-      liabilityIds.contains(record.accountId) ||
-      record.accountKind == AccountKind.creditLine.name;
-  final targetIsLiability =
-      liabilityIds.contains(record.targetAccountId) ||
-      record.targetAccountKind == AccountKind.creditLine.name;
-  return switch (record.type) {
-    LedgerTransactionType.expense when primaryIsLiability => record.amountMinor,
-    LedgerTransactionType.income when primaryIsLiability => -record.amountMinor,
-    LedgerTransactionType.borrowing when primaryIsLiability =>
-      record.amountMinor,
-    LedgerTransactionType.repayment when targetIsLiability =>
-      -record.amountMinor,
-    _ => 0,
-  };
-}
+int _liabilityDelta(LedgerRecord record, Set<String> liabilityIds) => record
+    .accountPostings
+    .where((posting) => liabilityIds.contains(posting.accountId))
+    .fold(0, (balance, posting) => balance - posting.debitMinor);
 
 enum _ExportRange { week, month, year, all, custom }
 
@@ -850,7 +847,14 @@ class _ExportDialogState extends State<_ExportDialog> {
 
 int _sum(List<LedgerRecord> records, LedgerTransactionType type) => records
     .where((item) => item.type == type)
-    .fold(0, (sum, item) => sum + item.amountMinor);
+    .fold(
+      0,
+      (sum, item) =>
+          sum +
+          (type == LedgerTransactionType.expense
+              ? item.actualExpenseMinor
+              : item.amountMinor),
+    );
 
 class _DateRange {
   const _DateRange(this.start, this.end);

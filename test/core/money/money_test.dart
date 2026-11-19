@@ -27,10 +27,19 @@ void main() {
     test('allows zero for account opening balances', () {
       expect(parseCnyMinorUnits('0', allowZero: true), 0);
     });
+
+    test('rejects amounts outside the integer minor-unit range', () {
+      expect(parseCnyMinorUnits('92233720368547758.07'), 9223372036854775807);
+      expect(
+        () => parseCnyMinorUnits('92233720368547758.08'),
+        throwsA(isA<MoneyInputException>()),
+      );
+    });
   });
 
   test('formats minor units without floating point arithmetic', () {
     expect(formatCny(2850), '¥28.50');
     expect(formatCny(-5), '-¥0.05');
+    expect(formatCny(-9223372036854775808), '-¥92233720368547758.08');
   });
 }

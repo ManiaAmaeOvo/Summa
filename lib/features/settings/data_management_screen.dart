@@ -489,6 +489,8 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
     setState(() => _busy = true);
     try {
       await action();
+    } on LedgerBackupException catch (error) {
+      if (mounted) _message(_localizedBackupError(context, error.message));
     } catch (_) {
       if (mounted) _message(failure);
     } finally {
@@ -672,6 +674,9 @@ String _localizedBackupError(BuildContext context, String message) {
     return context.l10n.backupUnsupported;
   }
   if (message == '备份时间无效') return context.l10n.backupInvalidTime;
+  if (message == '旧备份与已有拆分、待入账或退款交易冲突') {
+    return context.l10n.backupLedgerConflict;
+  }
   final patterns = <(RegExp, String Function(RegExpMatch))>[
     (
       RegExp(r'^备份缺少 (.+) 列表$'),

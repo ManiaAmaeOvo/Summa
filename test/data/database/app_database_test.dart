@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:summa/data/database/app_database.dart';
@@ -144,22 +143,33 @@ void main() {
     );
     expect(await repository.watchTransactions().first, isEmpty);
 
-    await database
-        .into(database.ledgerEntries)
-        .insert(
-          LedgerEntriesCompanion.insert(
-            id: 'legacy-transfer',
-            transactionType: 'transfer',
-            amountMinor: 100,
-            occurredAt: day,
-            timezoneOffsetMinutes: 0,
-            categoryId: 'flow-transfer',
-            accountId: 'account-bank',
-            targetAccountId: const Value('account-cash'),
-            createdAt: day,
-            updatedAt: day,
-          ),
-        );
+    payload['backup_version'] = 1;
+    payload['entries'] = [
+      {
+        'id': 'legacy-transfer',
+        'transaction_type': 'transfer',
+        'amount_minor': 100,
+        'currency_code': 'CNY',
+        'occurred_at': day.toIso8601String(),
+        'timezone_offset_minutes': 0,
+        'category_id': 'flow-transfer',
+        'account_id': 'account-bank',
+        'target_account_id': 'account-cash',
+        'note': '',
+        'created_at': day.toIso8601String(),
+        'updated_at': day.toIso8601String(),
+        'is_deleted': false,
+      },
+    ];
+    await repository.restoreFullBackup(
+      jsonEncode(payload),
+      mode: BackupRestoreMode.replace,
+    );
+    final reviewedBackup = await repository.createFullBackup();
+    await repository.restoreFullBackup(
+      reviewedBackup,
+      mode: BackupRestoreMode.replace,
+    );
     final groups = await database.customSelect('''
       SELECT currency_code, SUM(debit_minor) AS net, MIN(needs_review) AS review
       FROM ledger_postings
@@ -930,7 +940,8 @@ void main() {
     final backup = await repository.createFullBackup();
     final payload = jsonDecode(backup) as Map<String, dynamic>;
     expect(payload['format'], 'summa_full_backup');
-    expect(payload['schema_version'], 7);
+    expect(payload['schema_version'], 8);
+    expect(payload['backup_version'], 2);
     final preview = repository.inspectFullBackup(backup);
     expect(preview.entryCount, 2);
     expect(preview.deletedEntryCount, 1);
@@ -944,7 +955,14 @@ void main() {
     await repository.resetToFactoryDefaults();
 
     payload.remove('schema_version');
+    payload['backup_version'] = 1;
     payload['format'] = 'ledgerpro_full_backup';
+    for (final entry
+        in (payload['entries'] as List).cast<Map<String, dynamic>>()) {
+      entry.remove('status');
+      entry.remove('refund_of_id');
+      entry.remove('postings');
+    }
     final legacyBackup = jsonEncode(payload);
     expect(repository.inspectFullBackup(legacyBackup).entryCount, 2);
     await repository.restoreFullBackup(

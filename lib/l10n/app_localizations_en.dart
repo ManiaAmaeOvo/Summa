@@ -1134,4 +1134,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String backupFieldUnsupportedValue(String field, String value) {
     return 'Field $field has an unsupported value: $value';
   }
+
+  @override
+  String get pendingPosting => 'Pending';
+
+  @override
+  String get saveAsPending => 'Save as pending';
+
+  @override
+  String get pendingPostingHint =>
+      'Pending transactions stay outside balances and reports until posted.';
+
+  @override
+  String get postTransactionAction => 'Confirm posting';
+
+  @override
+  String get transactionPosted => 'Transaction posted';
+
+  @override
+  String get addPaymentAccount => 'Add payment account';
+
+  @override
+  String get extraPaymentAmount => 'Amount from this account';
+
+  @override
+  String get removePaymentAccount => 'Remove payment account';
+
+  @override
+  String get mainPaymentRemainder =>
+      'The first account pays the remaining amount.';
+
+  @override
+  String get invalidPaymentSplit =>
+      'Use distinct accounts with positive amounts that add up to the transaction total.';
+
+  @override
+  String get recordRefund => 'Record refund';
+
+  @override
+  String get editRefund => 'Edit refund';
+
+  @override
+  String get refund => 'Refund';
+
+  @override
+  String refundAvailable(String amount) {
+    return 'Available to refund: $amount';
+  }
+
+  @override
+  String get refundRecorded => 'Refund saved';
+
+  @override
+  String refundLimitExceeded(String amount) {
+    return 'The refund cannot exceed the remaining $amount for this account.';
+  }
+
+  @override
+  String get linkedRefunds =>
+      'Remove the linked refunds before editing or deleting the original purchase.';
+
+  @override
+  String get archivedPostingAccount =>
+      'An account is archived. Restore it or choose another account before posting.';
+
+  @override
+  String get backupLedgerConflict =>
+      'This backup conflicts with the current ledger or contains invalid postings or refunds.';
 }

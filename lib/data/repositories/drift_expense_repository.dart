@@ -9,6 +9,7 @@ import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/domain/transactions/ledger_posting.dart';
 import 'package:summa/domain/defaults/default_ledger_names.dart';
 import 'package:uuid/uuid.dart';
 
@@ -104,6 +105,8 @@ class DriftExpenseRepository implements ExpenseRepository {
       _database.ledgerAccounts,
       'target_account',
     );
+    final postings = _database.ledgerPostings;
+    final postingAccount = _database.alias(account, 'posting_account');
     final query =
         _database.select(entry).join([
             innerJoin(child, child.id.equalsExp(entry.categoryId)),
@@ -113,34 +116,92 @@ class DriftExpenseRepository implements ExpenseRepository {
               targetAccount,
               targetAccount.id.equalsExp(entry.targetAccountId),
             ),
+            leftOuterJoin(
+              postings,
+              postings.transactionId.equalsExp(entry.id) &
+                  postings.accountId.isNotNull(),
+            ),
+            leftOuterJoin(
+              postingAccount,
+              postingAccount.id.equalsExp(postings.accountId),
+            ),
           ])
           ..where(entry.isDeleted.equals(false))
-          ..orderBy([OrderingTerm.desc(entry.occurredAt)]);
+          ..orderBy([
+            OrderingTerm.desc(entry.occurredAt),
+            OrderingTerm.desc(entry.id),
+            OrderingTerm.asc(postings.position),
+          ]);
 
-    return query.watch().map(
-      (rows) => rows
-          .map((row) {
-            final item = row.readTable(entry);
-            final target = row.readTableOrNull(targetAccount);
-            return LedgerRecord(
-              id: item.id,
-              type: LedgerTransactionType.values.byName(item.transactionType),
-              amountMinor: item.amountMinor,
-              occurredAt: item.occurredAt,
-              parentCategoryId: row.readTable(parent).id,
-              parentCategoryName: row.readTable(parent).name,
-              categoryId: row.readTable(child).id,
-              categoryName: row.readTable(child).name,
-              accountId: row.readTable(account).id,
-              accountName: row.readTable(account).name,
-              accountKind: row.readTable(account).kind,
-              targetAccountId: target?.id,
-              targetAccountName: target?.name,
-              targetAccountKind: target?.kind,
-              note: item.note,
-            );
-          })
-          .toList(growable: false),
+    return query.watch().map((rows) {
+      final transactions = <String, List<TypedResult>>{};
+      for (final row in rows) {
+        (transactions[row.readTable(entry).id] ??= []).add(row);
+      }
+      return [
+        for (final legs in transactions.values)
+          _ledgerRecord(
+            legs,
+            entry,
+            parent,
+            child,
+            account,
+            targetAccount,
+            postingAccount,
+            postings,
+          ),
+      ];
+    });
+  }
+
+  LedgerRecord _ledgerRecord(
+    List<TypedResult> legs,
+    $LedgerEntriesTable entry,
+    $LedgerCategoriesTable parent,
+    $LedgerCategoriesTable child,
+    $LedgerAccountsTable account,
+    $LedgerAccountsTable targetAccount,
+    $LedgerAccountsTable postingAccount,
+    $LedgerPostingsTable postings,
+  ) {
+    final row = legs.first;
+    final item = row.readTable(entry);
+    final target = row.readTableOrNull(targetAccount);
+    final accountPostings = <AccountPosting>[];
+    for (final leg in legs) {
+      final posting = leg.readTableOrNull(postings);
+      final destination = leg.readTableOrNull(postingAccount);
+      if (posting != null && destination != null) {
+        accountPostings.add(
+          AccountPosting(
+            accountId: destination.id,
+            accountName: destination.name,
+            accountKind: destination.kind,
+            debitMinor: posting.debitMinor,
+            needsReview: posting.needsReview,
+          ),
+        );
+      }
+    }
+    return LedgerRecord(
+      id: item.id,
+      type: LedgerTransactionType.values.byName(item.transactionType),
+      amountMinor: item.amountMinor,
+      occurredAt: item.occurredAt,
+      parentCategoryId: row.readTable(parent).id,
+      parentCategoryName: row.readTable(parent).name,
+      categoryId: row.readTable(child).id,
+      categoryName: row.readTable(child).name,
+      accountId: row.readTable(account).id,
+      accountName: row.readTable(account).name,
+      accountKind: row.readTable(account).kind,
+      targetAccountId: target?.id,
+      targetAccountName: target?.name,
+      targetAccountKind: target?.kind,
+      status: LedgerPostingStatus.values.byName(item.status),
+      refundOfId: item.refundOfId,
+      accountPostings: List.unmodifiable(accountPostings),
+      note: item.note,
     );
   }
 
@@ -190,37 +251,20 @@ class DriftExpenseRepository implements ExpenseRepository {
     required String accountId,
     String? targetAccountId,
     String? categoryId,
+    List<AccountPayment>? payments,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
-  }) async {
-    await _database.transaction(() async {
-      final validation = await _validateTransaction(
-        type: type,
-        amountMinor: amountMinor,
-        categoryId: categoryId,
-        accountId: accountId,
-        targetAccountId: targetAccountId,
-      );
-      final now = DateTime.now();
-      await _database
-          .into(_database.ledgerEntries)
-          .insert(
-            LedgerEntriesCompanion.insert(
-              id: _uuid.v4(),
-              transactionType: type.name,
-              amountMinor: amountMinor,
-              occurredAt: occurredAt,
-              timezoneOffsetMinutes: occurredAt.timeZoneOffset.inMinutes,
-              categoryId: validation.categoryId,
-              currencyCode: Value(validation.currencyCode),
-              accountId: accountId,
-              targetAccountId: Value(targetAccountId),
-              note: Value(note.trim()),
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
-    });
-  }
+  }) => _saveTransaction(
+    type: type,
+    amountMinor: amountMinor,
+    occurredAt: occurredAt,
+    accountId: accountId,
+    targetAccountId: targetAccountId,
+    categoryId: categoryId,
+    payments: payments,
+    status: status,
+    note: note,
+  );
 
   @override
   Future<void> updateTransaction({
@@ -231,57 +275,324 @@ class DriftExpenseRepository implements ExpenseRepository {
     required String accountId,
     String? targetAccountId,
     String? categoryId,
+    List<AccountPayment>? payments,
     required String note,
-  }) async {
-    await _database.transaction(() async {
-      final validation = await _validateTransaction(
-        type: type,
-        amountMinor: amountMinor,
-        categoryId: categoryId,
-        accountId: accountId,
-        targetAccountId: targetAccountId,
-        excludingEntryId: id,
-      );
-      final updated =
-          await (_database.update(_database.ledgerEntries)..where(
-                (table) => table.id.equals(id) & table.isDeleted.equals(false),
-              ))
-              .write(
-                LedgerEntriesCompanion(
-                  transactionType: Value(type.name),
-                  amountMinor: Value(amountMinor),
-                  occurredAt: Value(occurredAt),
-                  timezoneOffsetMinutes: Value(
-                    occurredAt.timeZoneOffset.inMinutes,
-                  ),
-                  categoryId: Value(validation.categoryId),
-                  accountId: Value(accountId),
-                  targetAccountId: Value(targetAccountId),
-                  note: Value(note.trim()),
-                  updatedAt: Value(DateTime.now()),
-                ),
-              );
-      if (updated != 1) {
-        throw ArgumentError.value(id, 'id', 'transaction not found');
+  }) => _saveTransaction(
+    id: id,
+    type: type,
+    amountMinor: amountMinor,
+    occurredAt: occurredAt,
+    accountId: accountId,
+    targetAccountId: targetAccountId,
+    categoryId: categoryId,
+    payments: payments,
+    status: LedgerPostingStatus.posted,
+    note: note,
+  );
+
+  Future<void> _saveTransaction({
+    String? id,
+    required LedgerTransactionType type,
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String accountId,
+    required String? targetAccountId,
+    required String? categoryId,
+    required List<AccountPayment>? payments,
+    required LedgerPostingStatus status,
+    required String note,
+  }) => _database.transaction(() async {
+    final previous = id == null ? null : await _activeEntry(id);
+    if (previous != null) {
+      if (previous.refundOfId != null) {
+        throw ArgumentError('Use saveRefund to edit a refund');
       }
-    });
+      await _requireNoActiveRefunds(previous.id);
+    }
+    final effectiveStatus = previous == null
+        ? status
+        : LedgerPostingStatus.values.byName(previous.status);
+    final savedPayments =
+        type == LedgerTransactionType.expense &&
+            previous?.transactionType == LedgerTransactionType.expense.name &&
+            payments == null
+        ? await _expensePayments(previous!.id)
+        : const <AccountPayment>[];
+    final validation = await _validateTransaction(
+      type: type,
+      amountMinor: amountMinor,
+      categoryId: categoryId,
+      accountId: accountId,
+      targetAccountId: targetAccountId,
+      status: effectiveStatus,
+      previous: previous,
+      payments: payments ?? (savedPayments.length > 1 ? savedPayments : null),
+    );
+    await _writeEntry(
+      previous: previous,
+      type: type,
+      amountMinor: amountMinor,
+      occurredAt: occurredAt,
+      categoryId: validation.categoryId,
+      currencyCode: validation.currencyCode,
+      accountId: accountId,
+      targetAccountId: targetAccountId,
+      status: effectiveStatus,
+      note: note,
+      postings: validation.postings,
+    );
+  });
+
+  Future<void> _writeEntry({
+    EntryRow? previous,
+    required LedgerTransactionType type,
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String categoryId,
+    required String currencyCode,
+    required String accountId,
+    String? targetAccountId,
+    String? refundOfId,
+    required LedgerPostingStatus status,
+    required String note,
+    required List<PostingLeg> postings,
+  }) async {
+    final now = DateTime.now();
+    final id = previous?.id ?? _uuid.v4();
+    await _database
+        .into(_database.ledgerEntries)
+        .insertOnConflictUpdate(
+          LedgerEntriesCompanion.insert(
+            id: id,
+            transactionType: type.name,
+            amountMinor: amountMinor,
+            occurredAt: occurredAt,
+            timezoneOffsetMinutes: occurredAt.timeZoneOffset.inMinutes,
+            categoryId: categoryId,
+            currencyCode: Value(currencyCode),
+            accountId: accountId,
+            targetAccountId: Value(targetAccountId),
+            refundOfId: Value(refundOfId),
+            status: Value(status.name),
+            note: Value(note.trim()),
+            createdAt: previous?.createdAt ?? now,
+            updatedAt: now,
+          ),
+        );
+    await _replacePostings(id, postings);
+  }
+
+  Future<void> _replacePostings(String id, List<PostingLeg> postings) async {
+    await (_database.delete(
+      _database.ledgerPostings,
+    )..where((table) => table.transactionId.equals(id))).go();
+    await _database.batch(
+      (batch) => batch.insertAll(_database.ledgerPostings, [
+        for (final (position, posting) in postings.indexed)
+          LedgerPostingsCompanion.insert(
+            transactionId: id,
+            position: position,
+            accountId: Value(posting.accountId),
+            currencyCode: posting.currencyCode,
+            debitMinor: posting.debitMinor,
+            role: posting.role.name,
+            needsReview: Value(posting.needsReview),
+          ),
+      ]),
+    );
+  }
+
+  Future<EntryRow> _activeEntry(String id) async {
+    final row =
+        await (_database.select(_database.ledgerEntries)..where(
+              (table) => table.id.equals(id) & table.isDeleted.equals(false),
+            ))
+            .getSingleOrNull();
+    if (row == null) {
+      throw ArgumentError.value(id, 'id', 'transaction not found');
+    }
+    return row;
+  }
+
+  Future<List<PostingRow>> _accountPostings(String id) =>
+      (_database.select(_database.ledgerPostings)
+            ..where(
+              (table) =>
+                  table.transactionId.equals(id) & table.accountId.isNotNull(),
+            )
+            ..orderBy([(table) => OrderingTerm.asc(table.position)]))
+          .get();
+
+  Future<List<AccountPayment>> _expensePayments(String id) async => [
+    for (final leg in await _accountPostings(id))
+      AccountPayment(leg.accountId!, -leg.debitMinor),
+  ];
+
+  Future<void> _requireNoActiveRefunds(String id) async {
+    if (await _hasActiveRefunds(id)) {
+      throw const TransactionRuleException(TransactionRuleError.linkedRefunds);
+    }
+  }
+
+  Future<bool> _hasActiveRefunds(String id) async {
+    final refund =
+        await (_database.select(_database.ledgerEntries)
+              ..where(
+                (table) =>
+                    table.refundOfId.equals(id) & table.isDeleted.equals(false),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    return refund != null;
   }
 
   @override
-  Future<void> deleteTransaction(String id) async {
-    final updated =
-        await (_database.update(_database.ledgerEntries)..where(
-              (table) => table.id.equals(id) & table.isDeleted.equals(false),
-            ))
-            .write(
-              LedgerEntriesCompanion(
-                isDeleted: const Value(true),
-                updatedAt: Value(DateTime.now()),
-              ),
-            );
-    if (updated != 1) {
-      throw ArgumentError.value(id, 'id', 'expense not found');
+  Future<void> deleteTransaction(String id) => _database.transaction(() async {
+    await _activeEntry(id);
+    await _requireNoActiveRefunds(id);
+    await (_database.update(
+      _database.ledgerEntries,
+    )..where((table) => table.id.equals(id))).write(
+      LedgerEntriesCompanion(
+        isDeleted: const Value(true),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  });
+
+  @override
+  Future<void> postTransaction(String id) => _database.transaction(() async {
+    final entry = await _activeEntry(id);
+    if (entry.status == LedgerPostingStatus.posted.name) return;
+
+    final type = LedgerTransactionType.values.byName(entry.transactionType);
+    final originalId = entry.refundOfId;
+    if (originalId == null) {
+      await _validateTransaction(
+        type: type,
+        amountMinor: entry.amountMinor,
+        categoryId: entry.categoryId,
+        accountId: entry.accountId,
+        targetAccountId: entry.targetAccountId,
+        previous: entry,
+        status: LedgerPostingStatus.posted,
+        payments: type == LedgerTransactionType.expense
+            ? await _expensePayments(id)
+            : null,
+      );
+    } else {
+      await _validateRefund(
+        originalId: originalId,
+        accountId: entry.accountId,
+        amountMinor: entry.amountMinor,
+        occurredAt: entry.occurredAt,
+        excludingId: id,
+      );
     }
+
+    await (_database.update(
+      _database.ledgerEntries,
+    )..where((table) => table.id.equals(id))).write(
+      LedgerEntriesCompanion(
+        status: Value(LedgerPostingStatus.posted.name),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  });
+
+  @override
+  Future<void> saveRefund({
+    String? id,
+    required String originalId,
+    required String accountId,
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String note,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
+  }) => _database.transaction(() async {
+    final previous = id == null ? null : await _activeEntry(id);
+    if (previous != null && previous.refundOfId != originalId) {
+      throw ArgumentError('A refund must retain its original purchase');
+    }
+    final original = await _validateRefund(
+      originalId: originalId,
+      accountId: accountId,
+      amountMinor: amountMinor,
+      occurredAt: occurredAt,
+      excludingId: id,
+    );
+    await _writeEntry(
+      previous: previous,
+      type: LedgerTransactionType.expense,
+      amountMinor: amountMinor,
+      occurredAt: occurredAt,
+      categoryId: original.categoryId,
+      currencyCode: original.currencyCode,
+      accountId: accountId,
+      refundOfId: original.id,
+      status: previous == null
+          ? status
+          : LedgerPostingStatus.values.byName(previous.status),
+      note: note,
+      postings: transactionPostings(
+        type: LedgerTransactionType.expense,
+        amountMinor: amountMinor,
+        currencyCode: original.currencyCode,
+        accountId: accountId,
+        isRefund: true,
+      ),
+    );
+  });
+
+  Future<EntryRow> _validateRefund({
+    required String originalId,
+    required String accountId,
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String? excludingId,
+  }) async {
+    final original = await _activeEntry(originalId);
+    if (amountMinor <= 0 ||
+        original.transactionType != LedgerTransactionType.expense.name ||
+        original.status != LedgerPostingStatus.posted.name ||
+        original.refundOfId != null ||
+        occurredAt.isBefore(original.occurredAt)) {
+      throw ArgumentError(
+        'A refund requires a positive amount and an earlier posted purchase',
+      );
+    }
+    final legs = await _accountPostings(originalId);
+    final paid = legs.where((leg) => leg.accountId == accountId).singleOrNull;
+    if (paid == null ||
+        paid.debitMinor >= 0 ||
+        legs.any((leg) => leg.needsReview)) {
+      throw ArgumentError(
+        'Refund account must have a verified payment on the original purchase',
+      );
+    }
+
+    final refunds =
+        await (_database.select(_database.ledgerEntries)..where(
+              (table) =>
+                  table.refundOfId.equals(originalId) &
+                  table.accountId.equals(accountId) &
+                  table.isDeleted.equals(false) &
+                  (excludingId == null
+                      ? const Constant(true)
+                      : table.id.equals(excludingId).not()),
+            ))
+            .get();
+    final available = refunds.fold(
+      -paid.debitMinor,
+      (amount, refund) => amount - refund.amountMinor,
+    );
+    if (amountMinor > available) {
+      throw TransactionRuleException(
+        TransactionRuleError.refundLimitExceeded,
+        amountMinor: available,
+      );
+    }
+    return original;
   }
 
   @override
@@ -392,13 +703,16 @@ class DriftExpenseRepository implements ExpenseRepository {
     return id;
   }
 
-  Future<({String categoryId, String currencyCode})> _validateTransaction({
+  Future<({String categoryId, String currencyCode, List<PostingLeg> postings})>
+  _validateTransaction({
     required LedgerTransactionType type,
     required int amountMinor,
-    String? categoryId,
+    required String? categoryId,
     required String accountId,
-    String? targetAccountId,
-    String? excludingEntryId,
+    required String? targetAccountId,
+    required LedgerPostingStatus status,
+    EntryRow? previous,
+    List<AccountPayment>? payments,
   }) async {
     if (amountMinor <= 0) {
       throw ArgumentError.value(amountMinor, 'amountMinor', 'must be positive');
@@ -424,84 +738,101 @@ class DriftExpenseRepository implements ExpenseRepository {
         'must match transaction type',
       );
     }
-    final account = await (_database.select(
-      _database.ledgerAccounts,
-    )..where((table) => table.id.equals(accountId))).getSingleOrNull();
-    if (account == null) {
-      throw ArgumentError.value(accountId, 'accountId', 'account not found');
-    }
-    final target = targetAccountId == null
-        ? null
-        : await (_database.select(_database.ledgerAccounts)
-                ..where((table) => table.id.equals(targetAccountId)))
-              .getSingleOrNull();
-    if (targetAccountId != null && target == null) {
-      throw ArgumentError.value(
-        targetAccountId,
-        'targetAccountId',
-        'account not found',
+
+    final allocations = type == LedgerTransactionType.expense
+        ? payments ?? [AccountPayment(accountId, amountMinor)]
+        : const <AccountPayment>[];
+    if (type == LedgerTransactionType.expense
+        ? allocations.isEmpty ||
+              allocations.first.accountId != accountId ||
+              !isValidPaymentSplit(allocations, amountMinor)
+        : payments != null && payments.isNotEmpty) {
+      throw const TransactionRuleException(
+        TransactionRuleError.invalidPaymentSplit,
       );
     }
     if (accountId == targetAccountId) {
       throw ArgumentError('source and target accounts must differ');
     }
-    if (target != null && account.currencyCode != target.currencyCode) {
+    final ids = {
+      accountId,
+      ?targetAccountId,
+      for (final payment in allocations) payment.accountId,
+    };
+    final accounts = {
+      for (final row in await (_database.select(
+        _database.ledgerAccounts,
+      )..where((table) => table.id.isIn(ids))).get())
+        row.id: row,
+    };
+    if (accounts.length != ids.length) {
+      throw ArgumentError('A transaction account no longer exists');
+    }
+    final account = accounts[accountId]!;
+    final target = accounts[targetAccountId];
+    if (accounts.values.any(
+          (row) => row.currencyCode != account.currencyCode,
+        ) ||
+        (previous != null && previous.currencyCode != account.currencyCode)) {
       throw ArgumentError(
         'A cross-currency transaction requires explicit settlement amounts',
       );
     }
-    if (excludingEntryId != null) {
-      final entry =
-          await (_database.select(_database.ledgerEntries)..where(
-                (table) =>
-                    table.id.equals(excludingEntryId) &
-                    table.isDeleted.equals(false),
-              ))
-              .getSingleOrNull();
-      if (entry == null) {
-        throw ArgumentError.value(
-          excludingEntryId,
-          'id',
-          'transaction not found',
-        );
-      }
-      if (account.currencyCode != entry.currencyCode) {
-        throw ArgumentError(
-          'An existing transaction must keep its original currency',
-        );
-      }
+    final posting = status == LedgerPostingStatus.posted;
+    final originalAccounts =
+        previous == null ||
+            (posting && previous.status == LedgerPostingStatus.pending.name)
+        ? const <String>{}
+        : {
+            for (final leg in await _accountPostings(previous.id))
+              leg.accountId!,
+          };
+    if (accounts.values.any(
+      (row) => row.isArchived && !originalAccounts.contains(row.id),
+    )) {
+      throw const TransactionRuleException(
+        TransactionRuleError.archivedPostingAccount,
+      );
     }
+
     final accountKind = AccountKind.values.byName(account.kind);
     final targetKind = target == null
         ? null
         : AccountKind.values.byName(target.kind);
+    Future<void> requireFunds(AccountRow source, int amount) =>
+        _requireAvailableBalance(
+          accountId: source.id,
+          accountName: source.name,
+          requiredMinor: amount,
+          excludingEntryId: previous?.id,
+        );
+    Future<void> requireDebt(AccountRow debt) => _requireOutstandingLiability(
+      accountId: debt.id,
+      accountName: debt.name,
+      requiredMinor: amountMinor,
+      excludingEntryId: previous?.id,
+    );
+
     switch (type) {
       case LedgerTransactionType.expense:
         if (target != null) {
           throw ArgumentError('expense and income have no target account');
         }
-        if (accountKind != AccountKind.creditLine) {
-          await _requireAvailableBalance(
-            accountId: account.id,
-            accountName: account.name,
-            requiredMinor: amountMinor,
-            excludingEntryId: excludingEntryId,
-          );
+        if (posting) {
+          for (final payment in allocations) {
+            final source = accounts[payment.accountId]!;
+            if (source.kind != AccountKind.creditLine.name) {
+              await requireFunds(source, payment.amountMinor);
+            }
+          }
         }
-        break;
       case LedgerTransactionType.income:
         if (target != null) {
           throw ArgumentError('expense and income have no target account');
         }
-        if (accountKind == AccountKind.creditLine) {
-          await _requireOutstandingLiability(
-            accountId: account.id,
-            accountName: account.name,
-            requiredMinor: amountMinor,
-            excludingEntryId: excludingEntryId,
-          );
+        if (posting && accountKind == AccountKind.creditLine) {
+          await requireDebt(account);
         }
-        break;
       case LedgerTransactionType.borrowing:
         if (accountKind != AccountKind.creditLine ||
             targetKind == null ||
@@ -509,20 +840,13 @@ class DriftExpenseRepository implements ExpenseRepository {
             targetKind == AccountKind.entrustedFunds) {
           throw ArgumentError('borrowing requires liability to personal asset');
         }
-        break;
       case LedgerTransactionType.transfer:
         if (accountKind == AccountKind.creditLine ||
             targetKind == null ||
             targetKind == AccountKind.creditLine) {
           throw ArgumentError('transfer requires two non-liability accounts');
         }
-        await _requireAvailableBalance(
-          accountId: account.id,
-          accountName: account.name,
-          requiredMinor: amountMinor,
-          excludingEntryId: excludingEntryId,
-        );
-        break;
+        if (posting) await requireFunds(account, amountMinor);
       case LedgerTransactionType.repayment:
         if (accountKind == AccountKind.creditLine ||
             targetKind != AccountKind.creditLine) {
@@ -530,21 +854,26 @@ class DriftExpenseRepository implements ExpenseRepository {
             'repayment requires a non-liability account to liability',
           );
         }
-        await _requireAvailableBalance(
-          accountId: account.id,
-          accountName: account.name,
-          requiredMinor: amountMinor,
-          excludingEntryId: excludingEntryId,
-        );
-        await _requireOutstandingLiability(
-          accountId: target!.id,
-          accountName: target.name,
-          requiredMinor: amountMinor,
-          excludingEntryId: excludingEntryId,
-        );
-        break;
+        if (posting) {
+          await requireFunds(account, amountMinor);
+          await requireDebt(target!);
+        }
     }
-    return (categoryId: resolvedCategoryId, currencyCode: account.currencyCode);
+    return (
+      categoryId: resolvedCategoryId,
+      currencyCode: account.currencyCode,
+      postings: transactionPostings(
+        type: type,
+        amountMinor: amountMinor,
+        currencyCode: account.currencyCode,
+        accountId: accountId,
+        targetAccountId: targetAccountId,
+        payments: allocations,
+        isCreditIncome:
+            type == LedgerTransactionType.income &&
+            accountKind == AccountKind.creditLine,
+      ),
+    );
   }
 
   Future<void> _requireAvailableBalance({
@@ -591,8 +920,10 @@ class DriftExpenseRepository implements ExpenseRepository {
     String? accountId,
     String? excludingEntryId,
   }) {
-    final postingAccount = accountId == null ? '' : 'AND account_id = ?';
-    final exclusion = excludingEntryId == null ? '' : 'AND transaction_id != ?';
+    final postingAccount = accountId == null ? '' : 'AND leg.account_id = ?';
+    final exclusion = excludingEntryId == null
+        ? ''
+        : 'AND leg.transaction_id != ?';
     final selection = accountId == null ? 'a.is_archived = 0' : 'a.id = ?';
     return _database.customSelect(
       """
@@ -601,10 +932,13 @@ class DriftExpenseRepository implements ExpenseRepository {
           CASE WHEN a.kind = 'creditLine' THEN -1 ELSE 1 END AS current_balance
       FROM ledger_accounts AS a
       LEFT JOIN (
-        SELECT account_id, currency_code, SUM(debit_minor) AS net_debit
-        FROM ledger_account_postings
-        WHERE 1 = 1 $postingAccount $exclusion
-        GROUP BY account_id, currency_code
+        SELECT leg.account_id, leg.currency_code, SUM(leg.debit_minor) AS net_debit
+        FROM ledger_postings AS leg
+        JOIN ledger_entries AS entry ON entry.id = leg.transaction_id
+        WHERE leg.account_id IS NOT NULL
+          AND entry.status = 'posted' AND entry.is_deleted = 0
+          $postingAccount $exclusion
+        GROUP BY leg.account_id, leg.currency_code
       ) AS p ON p.account_id = a.id AND p.currency_code = a.currency_code
       WHERE $selection
       ORDER BY a.sort_order
@@ -614,7 +948,11 @@ class DriftExpenseRepository implements ExpenseRepository {
         if (excludingEntryId != null) Variable.withString(excludingEntryId),
         if (accountId != null) Variable.withString(accountId),
       ],
-      readsFrom: {_database.ledgerAccounts, _database.ledgerEntries},
+      readsFrom: {
+        _database.ledgerAccounts,
+        _database.ledgerEntries,
+        _database.ledgerPostings,
+      },
     );
   }
 
@@ -1051,14 +1389,24 @@ class DriftExpenseRepository implements ExpenseRepository {
     final accounts = await _database.select(_database.ledgerAccounts).get();
     final categories = await _database.select(_database.ledgerCategories).get();
     final entries = await _database.select(_database.ledgerEntries).get();
+    final postings = <String, List<PostingRow>>{};
+    final orderedPostings = await (_database.select(
+      _database.ledgerPostings,
+    )..orderBy([(table) => OrderingTerm.asc(table.position)])).get();
+    for (final posting in orderedPostings) {
+      (postings[posting.transactionId] ??= []).add(posting);
+    }
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 1,
+      'backup_version': 2,
       'schema_version': _database.schemaVersion,
       'created_at': DateTime.now().toIso8601String(),
       'accounts': [for (final item in accounts) _backupAccount(item)],
       'categories': [for (final item in categories) _backupCategory(item)],
-      'entries': [for (final item in entries) _backupEntry(item)],
+      'entries': [
+        for (final entry in entries)
+          _backupEntry(entry, postings[entry.id] ?? const []),
+      ],
     });
   });
 
@@ -1143,37 +1491,117 @@ class DriftExpenseRepository implements ExpenseRepository {
             );
       }
 
-      for (final raw in payload.entries) {
+      final knownAccounts = {
+        for (final account
+            in await _database.select(_database.ledgerAccounts).get())
+          account.id: account,
+      };
+      final entries = {
+        for (final raw in payload.entries)
+          _restoreEntry(raw, payload.version): raw,
+      };
+      if (entries.keys.map((entry) => entry.id).toSet().length !=
+          payload.entries.length) {
+        throw const LedgerBackupException('备份含重复交易 ID');
+      }
+
+      // Insert purchases before their refunds, even if the file order differs.
+      final ordered = [...entries.keys]
+        ..sort(
+          (a, b) => (a.refundOfId == null ? 0 : 1).compareTo(
+            b.refundOfId == null ? 0 : 1,
+          ),
+        );
+      final legacyReviews = <String, List<PostingLeg>>{};
+      for (final entry in ordered) {
+        if (payload.version == 1 && mode == BackupRestoreMode.merge) {
+          await _guardLegacyMerge(entry.id);
+        }
         await _database
             .into(_database.ledgerEntries)
-            .insertOnConflictUpdate(
-              LedgerEntriesCompanion.insert(
-                id: _requiredString(raw, 'id'),
-                transactionType: _requiredEnum(
-                  raw,
-                  'transaction_type',
-                  LedgerTransactionType.values.map((e) => e.name),
-                ),
-                amountMinor: _requiredInt(raw, 'amount_minor'),
-                currencyCode: Value(_requiredString(raw, 'currency_code')),
-                occurredAt: _requiredDate(raw, 'occurred_at'),
-                timezoneOffsetMinutes: _requiredInt(
-                  raw,
-                  'timezone_offset_minutes',
-                ),
-                categoryId: _requiredString(raw, 'category_id'),
-                accountId: _requiredString(raw, 'account_id'),
-                targetAccountId: Value(
-                  _nullableString(raw, 'target_account_id'),
-                ),
-                note: Value(_requiredString(raw, 'note')),
-                createdAt: _requiredDate(raw, 'created_at'),
-                updatedAt: _requiredDate(raw, 'updated_at'),
-                isDeleted: Value(_requiredBool(raw, 'is_deleted')),
-              ),
-            );
+            .insertOnConflictUpdate(entry);
+        final postings = payload.version == 1
+            ? const <PostingLeg>[]
+            : _restorePostings(entries[entry]!, entry, knownAccounts);
+        final legacyReview =
+            postings.isNotEmpty &&
+            entry.status == LedgerPostingStatus.posted.name &&
+            entry.refundOfId == null &&
+            postings.every((posting) => posting.needsReview);
+        if (legacyReview) legacyReviews[entry.id] = postings;
+        await _replacePostings(entry.id, legacyReview ? const [] : postings);
       }
+      if (payload.version == 1 || legacyReviews.isNotEmpty) {
+        await _database.backfillLegacyPostings();
+      }
+      for (final item in legacyReviews.entries) {
+        final derived =
+            await (_database.select(_database.ledgerPostings)
+                  ..where((row) => row.transactionId.equals(item.key))
+                  ..orderBy([(row) => OrderingTerm.asc(row.position)]))
+                .get();
+        if (derived.length != item.value.length ||
+            derived.indexed.any(
+              (row) => _postingLeg(row.$2) != item.value[row.$1],
+            )) {
+          throw const LedgerBackupException('备份历史分录与原交易不一致');
+        }
+      }
+      await _validateRestoredLedger();
     });
+  }
+
+  Future<void> _guardLegacyMerge(String id) async {
+    final entries = _database.ledgerEntries;
+    final current = await (_database.select(
+      entries,
+    )..where((table) => table.id.equals(id))).getSingleOrNull();
+    if (current != null &&
+        (current.status == LedgerPostingStatus.pending.name ||
+            current.refundOfId != null ||
+            (current.transactionType == LedgerTransactionType.expense.name &&
+                ((await _accountPostings(id)).length > 1 ||
+                    await _hasActiveRefunds(id))))) {
+      throw const LedgerBackupException('旧备份与已有拆分、待入账或退款交易冲突');
+    }
+  }
+
+  Future<void> _validateRestoredLedger() async {
+    final mismatch = await _database.customSelect('''
+      SELECT 1
+      FROM ledger_postings AS p
+      JOIN ledger_accounts AS a ON a.id = p.account_id
+      WHERE p.currency_code <> a.currency_code
+      LIMIT 1
+    ''').getSingleOrNull();
+    if (mismatch != null) {
+      throw const LedgerBackupException('备份与已有账户分录币种冲突');
+    }
+    final refunds =
+        await (_database.select(_database.ledgerEntries)..where(
+              (table) =>
+                  table.refundOfId.isNotNull() & table.isDeleted.equals(false),
+            ))
+            .get();
+    for (final refund in refunds) {
+      try {
+        final original = await _validateRefund(
+          originalId: refund.refundOfId!,
+          accountId: refund.accountId,
+          amountMinor: refund.amountMinor,
+          occurredAt: refund.occurredAt,
+          excludingId: refund.id,
+        );
+        if (refund.currencyCode != original.currencyCode ||
+            refund.categoryId != original.categoryId) {
+          throw const LedgerBackupException('备份退款与原交易的币种或分类不一致');
+        }
+      } on ArgumentError {
+        throw const LedgerBackupException('备份退款没有有效的原交易或付款账户');
+      } on TransactionRuleException {
+        throw const LedgerBackupException('备份中的累计退款超过原交易金额');
+      }
+    }
   }
 
   @override
@@ -1206,7 +1634,7 @@ Map<String, Object?> _backupCategory(CategoryRow item) => {
   'updated_at': item.updatedAt.toIso8601String(),
 };
 
-Map<String, Object?> _backupEntry(EntryRow item) => {
+Map<String, Object?> _backupEntry(EntryRow item, List<PostingRow> postings) => {
   'id': item.id,
   'transaction_type': item.transactionType,
   'amount_minor': item.amountMinor,
@@ -1220,10 +1648,172 @@ Map<String, Object?> _backupEntry(EntryRow item) => {
   'created_at': item.createdAt.toIso8601String(),
   'updated_at': item.updatedAt.toIso8601String(),
   'is_deleted': item.isDeleted,
+  'status': item.status,
+  'refund_of_id': item.refundOfId,
+  'postings': [for (final posting in postings) _backupPosting(posting)],
+};
+
+EntryRow _restoreEntry(Map<String, dynamic> raw, int version) {
+  final id = _requiredString(raw, 'id');
+  final original = version == 2 ? _nullableString(raw, 'refund_of_id') : null;
+  final type = _requiredEnum(
+    raw,
+    'transaction_type',
+    LedgerTransactionType.values.map((type) => type.name),
+  );
+  if (original != null &&
+      (id == original || type != LedgerTransactionType.expense.name)) {
+    throw const LedgerBackupException('备份退款关联无效');
+  }
+  return EntryRow(
+    id: id,
+    transactionType: type,
+    amountMinor: _requiredInt(raw, 'amount_minor'),
+    currencyCode: _requiredString(raw, 'currency_code'),
+    occurredAt: _requiredDate(raw, 'occurred_at'),
+    timezoneOffsetMinutes: _requiredInt(raw, 'timezone_offset_minutes'),
+    categoryId: _requiredString(raw, 'category_id'),
+    accountId: _requiredString(raw, 'account_id'),
+    targetAccountId: _nullableString(raw, 'target_account_id'),
+    note: _requiredString(raw, 'note'),
+    createdAt: _requiredDate(raw, 'created_at'),
+    updatedAt: _requiredDate(raw, 'updated_at'),
+    isDeleted: _requiredBool(raw, 'is_deleted'),
+    status: version == 2
+        ? _requiredEnum(
+            raw,
+            'status',
+            LedgerPostingStatus.values.map((status) => status.name),
+          )
+        : LedgerPostingStatus.posted.name,
+    refundOfId: original,
+  );
+}
+
+List<PostingLeg> _restorePostings(
+  Map<String, dynamic> raw,
+  EntryRow entry,
+  Map<String, AccountRow> accounts,
+) {
+  final postings = <PostingLeg>[
+    for (final leg in _requiredObjectList(raw, 'postings'))
+      (
+        accountId: _nullableString(leg, 'account_id'),
+        currencyCode: _requiredString(leg, 'currency_code'),
+        debitMinor: _requiredInt(leg, 'debit_minor'),
+        role: LedgerPostingRole.values.byName(
+          _requiredEnum(
+            leg,
+            'role',
+            LedgerPostingRole.values.map((role) => role.name),
+          ),
+        ),
+        needsReview: _requiredBool(leg, 'needs_review'),
+      ),
+  ];
+  final totals = <String, BigInt>{};
+  final accountLegs = <PostingLeg>[];
+  for (final leg in postings) {
+    if (leg.role == LedgerPostingRole.account) {
+      if (leg.accountId == null ||
+          accounts[leg.accountId]?.currencyCode != leg.currencyCode) {
+        throw const LedgerBackupException('备份分录与账户币种不匹配');
+      }
+      accountLegs.add(leg);
+    } else if (leg.accountId != null) {
+      throw const LedgerBackupException('备份分录类型与账户不匹配');
+    }
+    totals.update(
+      leg.currencyCode,
+      (total) => total + BigInt.from(leg.debitMinor),
+      ifAbsent: () => BigInt.from(leg.debitMinor),
+    );
+  }
+
+  if (accountLegs.isEmpty ||
+      accountLegs.first.accountId != entry.accountId ||
+      totals.values.any((total) => total != BigInt.zero)) {
+    throw const LedgerBackupException('备份分录不平衡或缺少付款账户');
+  }
+
+  final type = LedgerTransactionType.values.byName(entry.transactionType);
+  final isRefund = entry.refundOfId != null;
+  // Older rows may have unknown settlement semantics. Preserve their exact
+  // per-currency account effects when restoring a full backup.
+  if (!isRefund &&
+      entry.status == LedgerPostingStatus.posted.name &&
+      postings.every((leg) => leg.needsReview)) {
+    return postings;
+  }
+
+  final payments = type == LedgerTransactionType.expense && !isRefund
+      ? [
+          for (final leg in accountLegs)
+            AccountPayment(leg.accountId!, -leg.debitMinor),
+        ]
+      : const <AccountPayment>[];
+  final hasTarget =
+      type != LedgerTransactionType.expense &&
+      type != LedgerTransactionType.income;
+  final source = accounts[entry.accountId]!;
+  final target = accounts[entry.targetAccountId];
+  final sourceCredit = source.kind == AccountKind.creditLine.name;
+  final targetCredit = target?.kind == AccountKind.creditLine.name;
+  final validAccounts = switch (type) {
+    LedgerTransactionType.expense ||
+    LedgerTransactionType.income => entry.targetAccountId == null,
+    LedgerTransactionType.borrowing =>
+      sourceCredit &&
+          target != null &&
+          !targetCredit &&
+          target.kind != AccountKind.entrustedFunds.name,
+    LedgerTransactionType.repayment => !sourceCredit && targetCredit,
+    LedgerTransactionType.transfer =>
+      !sourceCredit && target != null && !targetCredit,
+  };
+  if (entry.amountMinor <= 0 ||
+      !validAccounts ||
+      (hasTarget && entry.accountId == entry.targetAccountId) ||
+      (payments.isNotEmpty &&
+          !isValidPaymentSplit(payments, entry.amountMinor))) {
+    throw const LedgerBackupException('备份交易账户或金额无效');
+  }
+  final expected = transactionPostings(
+    type: type,
+    amountMinor: entry.amountMinor,
+    currencyCode: entry.currencyCode,
+    accountId: entry.accountId,
+    targetAccountId: entry.targetAccountId,
+    isRefund: isRefund,
+    payments: payments,
+    isCreditIncome: type == LedgerTransactionType.income && sourceCredit,
+  );
+  if (postings.length != expected.length ||
+      postings.indexed.any((item) => item.$2 != expected[item.$1])) {
+    throw const LedgerBackupException('备份分录与交易不一致');
+  }
+  return postings;
+}
+
+PostingLeg _postingLeg(PostingRow row) => (
+  accountId: row.accountId,
+  currencyCode: row.currencyCode,
+  debitMinor: row.debitMinor,
+  role: LedgerPostingRole.values.byName(row.role),
+  needsReview: row.needsReview,
+);
+
+Map<String, Object?> _backupPosting(PostingRow posting) => {
+  'account_id': posting.accountId,
+  'currency_code': posting.currencyCode,
+  'debit_minor': posting.debitMinor,
+  'role': posting.role,
+  'needs_review': posting.needsReview,
 };
 
 ({
   DateTime createdAt,
+  int version,
   List<Map<String, dynamic>> accounts,
   List<Map<String, dynamic>> categories,
   List<Map<String, dynamic>> entries,
@@ -1235,16 +1825,21 @@ _parseBackup(String source) {
   } on FormatException catch (error) {
     throw LedgerBackupException('备份 JSON 格式错误：${error.message}');
   }
-  if (decoded is! Map<String, dynamic> ||
-      (decoded['format'] != _backupFormat &&
-          decoded['format'] != _legacyBackupFormat) ||
-      decoded['backup_version'] != 1) {
+  if (decoded is! Map<String, dynamic>) {
+    throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
+  }
+  final version = decoded['backup_version'];
+  final format = decoded['format'];
+  if (version is! int ||
+      !(format == _backupFormat && (version == 1 || version == 2) ||
+          format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
   final createdAt = DateTime.tryParse(decoded['created_at']?.toString() ?? '');
   if (createdAt == null) throw const LedgerBackupException('备份时间无效');
   return (
     createdAt: createdAt,
+    version: version,
     accounts: _requiredObjectList(decoded, 'accounts'),
     categories: _requiredObjectList(decoded, 'categories'),
     entries: _requiredObjectList(decoded, 'entries'),

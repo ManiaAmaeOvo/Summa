@@ -172,6 +172,17 @@ LedgerImportDraft _parseRow(
       ),
     );
   }
+  if (value['payments'] != null ||
+      value['refund_of_id'] != null ||
+      (value['status'] != null && value['status'] != 'posted')) {
+    throw LedgerImportException(
+      _localized(
+        languageCode,
+        '第 $number 条包含拆分、退款或待入账信息，请通过完整备份恢复',
+        'Item $number contains split, refund, or pending details. Restore a complete backup.',
+      ),
+    );
+  }
   final rawType = value['type'];
   final rawAmount = value['amount'];
   final rawTime = value['occurred_at'];

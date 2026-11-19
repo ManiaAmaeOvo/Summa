@@ -1245,6 +1245,32 @@ class $LedgerEntriesTable extends LedgerEntries
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    check: () =>
+        const CustomExpression<bool>("status IN ('posted', 'pending')"),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('posted'),
+  );
+  static const VerificationMeta _refundOfIdMeta = const VerificationMeta(
+    'refundOfId',
+  );
+  @override
+  late final GeneratedColumn<String> refundOfId = GeneratedColumn<String>(
+    'refund_of_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_entries (id)',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1260,6 +1286,8 @@ class $LedgerEntriesTable extends LedgerEntries
     createdAt,
     updatedAt,
     isDeleted,
+    status,
+    refundOfId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1381,6 +1409,21 @@ class $LedgerEntriesTable extends LedgerEntries
         isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
       );
     }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('refund_of_id')) {
+      context.handle(
+        _refundOfIdMeta,
+        refundOfId.isAcceptableOrUnknown(
+          data['refund_of_id']!,
+          _refundOfIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1442,6 +1485,14 @@ class $LedgerEntriesTable extends LedgerEntries
         DriftSqlType.bool,
         data['${effectivePrefix}is_deleted'],
       )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      refundOfId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}refund_of_id'],
+      ),
     );
   }
 
@@ -1465,6 +1516,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isDeleted;
+  final String status;
+  final String? refundOfId;
   const EntryRow({
     required this.id,
     required this.transactionType,
@@ -1479,6 +1532,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     required this.createdAt,
     required this.updatedAt,
     required this.isDeleted,
+    required this.status,
+    this.refundOfId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1498,6 +1553,10 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['is_deleted'] = Variable<bool>(isDeleted);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || refundOfId != null) {
+      map['refund_of_id'] = Variable<String>(refundOfId);
+    }
     return map;
   }
 
@@ -1518,6 +1577,10 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       isDeleted: Value(isDeleted),
+      status: Value(status),
+      refundOfId: refundOfId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refundOfId),
     );
   }
 
@@ -1542,6 +1605,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      status: serializer.fromJson<String>(json['status']),
+      refundOfId: serializer.fromJson<String?>(json['refundOfId']),
     );
   }
   @override
@@ -1561,6 +1626,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'isDeleted': serializer.toJson<bool>(isDeleted),
+      'status': serializer.toJson<String>(status),
+      'refundOfId': serializer.toJson<String?>(refundOfId),
     };
   }
 
@@ -1578,6 +1645,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDeleted,
+    String? status,
+    Value<String?> refundOfId = const Value.absent(),
   }) => EntryRow(
     id: id ?? this.id,
     transactionType: transactionType ?? this.transactionType,
@@ -1594,6 +1663,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     isDeleted: isDeleted ?? this.isDeleted,
+    status: status ?? this.status,
+    refundOfId: refundOfId.present ? refundOfId.value : this.refundOfId,
   );
   EntryRow copyWithCompanion(LedgerEntriesCompanion data) {
     return EntryRow(
@@ -1624,6 +1695,10 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      status: data.status.present ? data.status.value : this.status,
+      refundOfId: data.refundOfId.present
+          ? data.refundOfId.value
+          : this.refundOfId,
     );
   }
 
@@ -1642,7 +1717,9 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('isDeleted: $isDeleted')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('status: $status, ')
+          ..write('refundOfId: $refundOfId')
           ..write(')'))
         .toString();
   }
@@ -1662,6 +1739,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     createdAt,
     updatedAt,
     isDeleted,
+    status,
+    refundOfId,
   );
   @override
   bool operator ==(Object other) =>
@@ -1679,7 +1758,9 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
           other.note == this.note &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.isDeleted == this.isDeleted);
+          other.isDeleted == this.isDeleted &&
+          other.status == this.status &&
+          other.refundOfId == this.refundOfId);
 }
 
 class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
@@ -1696,6 +1777,8 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool> isDeleted;
+  final Value<String> status;
+  final Value<String?> refundOfId;
   final Value<int> rowid;
   const LedgerEntriesCompanion({
     this.id = const Value.absent(),
@@ -1711,6 +1794,8 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isDeleted = const Value.absent(),
+    this.status = const Value.absent(),
+    this.refundOfId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LedgerEntriesCompanion.insert({
@@ -1727,6 +1812,8 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.isDeleted = const Value.absent(),
+    this.status = const Value.absent(),
+    this.refundOfId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        transactionType = Value(transactionType),
@@ -1751,6 +1838,8 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? isDeleted,
+    Expression<String>? status,
+    Expression<String>? refundOfId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1768,6 +1857,8 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (isDeleted != null) 'is_deleted': isDeleted,
+      if (status != null) 'status': status,
+      if (refundOfId != null) 'refund_of_id': refundOfId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1786,6 +1877,8 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<bool>? isDeleted,
+    Value<String>? status,
+    Value<String?>? refundOfId,
     Value<int>? rowid,
   }) {
     return LedgerEntriesCompanion(
@@ -1803,6 +1896,8 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
+      status: status ?? this.status,
+      refundOfId: refundOfId ?? this.refundOfId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1851,6 +1946,12 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     if (isDeleted.present) {
       map['is_deleted'] = Variable<bool>(isDeleted.value);
     }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (refundOfId.present) {
+      map['refund_of_id'] = Variable<String>(refundOfId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1873,6 +1974,500 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
+          ..write('status: $status, ')
+          ..write('refundOfId: $refundOfId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LedgerPostingsTable extends LedgerPostings
+    with TableInfo<$LedgerPostingsTable, PostingRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LedgerPostingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _transactionIdMeta = const VerificationMeta(
+    'transactionId',
+  );
+  @override
+  late final GeneratedColumn<String> transactionId = GeneratedColumn<String>(
+    'transaction_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_entries (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_accounts (id)',
+    ),
+  );
+  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
+    'currencyCode',
+  );
+  @override
+  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
+    'currency_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _debitMinorMeta = const VerificationMeta(
+    'debitMinor',
+  );
+  @override
+  late final GeneratedColumn<int> debitMinor = GeneratedColumn<int>(
+    'debit_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _needsReviewMeta = const VerificationMeta(
+    'needsReview',
+  );
+  @override
+  late final GeneratedColumn<bool> needsReview = GeneratedColumn<bool>(
+    'needs_review',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_review" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    transactionId,
+    position,
+    accountId,
+    currencyCode,
+    debitMinor,
+    role,
+    needsReview,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ledger_postings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PostingRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('transaction_id')) {
+      context.handle(
+        _transactionIdMeta,
+        transactionId.isAcceptableOrUnknown(
+          data['transaction_id']!,
+          _transactionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_transactionIdMeta);
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
+    if (data.containsKey('currency_code')) {
+      context.handle(
+        _currencyCodeMeta,
+        currencyCode.isAcceptableOrUnknown(
+          data['currency_code']!,
+          _currencyCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyCodeMeta);
+    }
+    if (data.containsKey('debit_minor')) {
+      context.handle(
+        _debitMinorMeta,
+        debitMinor.isAcceptableOrUnknown(data['debit_minor']!, _debitMinorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_debitMinorMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('needs_review')) {
+      context.handle(
+        _needsReviewMeta,
+        needsReview.isAcceptableOrUnknown(
+          data['needs_review']!,
+          _needsReviewMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {transactionId, position};
+  @override
+  PostingRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PostingRow(
+      transactionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}transaction_id'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      ),
+      currencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_code'],
+      )!,
+      debitMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}debit_minor'],
+      )!,
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
+      needsReview: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_review'],
+      )!,
+    );
+  }
+
+  @override
+  $LedgerPostingsTable createAlias(String alias) {
+    return $LedgerPostingsTable(attachedDatabase, alias);
+  }
+}
+
+class PostingRow extends DataClass implements Insertable<PostingRow> {
+  final String transactionId;
+  final int position;
+  final String? accountId;
+  final String currencyCode;
+  final int debitMinor;
+  final String role;
+  final bool needsReview;
+  const PostingRow({
+    required this.transactionId,
+    required this.position,
+    this.accountId,
+    required this.currencyCode,
+    required this.debitMinor,
+    required this.role,
+    required this.needsReview,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['transaction_id'] = Variable<String>(transactionId);
+    map['position'] = Variable<int>(position);
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<String>(accountId);
+    }
+    map['currency_code'] = Variable<String>(currencyCode);
+    map['debit_minor'] = Variable<int>(debitMinor);
+    map['role'] = Variable<String>(role);
+    map['needs_review'] = Variable<bool>(needsReview);
+    return map;
+  }
+
+  LedgerPostingsCompanion toCompanion(bool nullToAbsent) {
+    return LedgerPostingsCompanion(
+      transactionId: Value(transactionId),
+      position: Value(position),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
+      currencyCode: Value(currencyCode),
+      debitMinor: Value(debitMinor),
+      role: Value(role),
+      needsReview: Value(needsReview),
+    );
+  }
+
+  factory PostingRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PostingRow(
+      transactionId: serializer.fromJson<String>(json['transactionId']),
+      position: serializer.fromJson<int>(json['position']),
+      accountId: serializer.fromJson<String?>(json['accountId']),
+      currencyCode: serializer.fromJson<String>(json['currencyCode']),
+      debitMinor: serializer.fromJson<int>(json['debitMinor']),
+      role: serializer.fromJson<String>(json['role']),
+      needsReview: serializer.fromJson<bool>(json['needsReview']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'transactionId': serializer.toJson<String>(transactionId),
+      'position': serializer.toJson<int>(position),
+      'accountId': serializer.toJson<String?>(accountId),
+      'currencyCode': serializer.toJson<String>(currencyCode),
+      'debitMinor': serializer.toJson<int>(debitMinor),
+      'role': serializer.toJson<String>(role),
+      'needsReview': serializer.toJson<bool>(needsReview),
+    };
+  }
+
+  PostingRow copyWith({
+    String? transactionId,
+    int? position,
+    Value<String?> accountId = const Value.absent(),
+    String? currencyCode,
+    int? debitMinor,
+    String? role,
+    bool? needsReview,
+  }) => PostingRow(
+    transactionId: transactionId ?? this.transactionId,
+    position: position ?? this.position,
+    accountId: accountId.present ? accountId.value : this.accountId,
+    currencyCode: currencyCode ?? this.currencyCode,
+    debitMinor: debitMinor ?? this.debitMinor,
+    role: role ?? this.role,
+    needsReview: needsReview ?? this.needsReview,
+  );
+  PostingRow copyWithCompanion(LedgerPostingsCompanion data) {
+    return PostingRow(
+      transactionId: data.transactionId.present
+          ? data.transactionId.value
+          : this.transactionId,
+      position: data.position.present ? data.position.value : this.position,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      currencyCode: data.currencyCode.present
+          ? data.currencyCode.value
+          : this.currencyCode,
+      debitMinor: data.debitMinor.present
+          ? data.debitMinor.value
+          : this.debitMinor,
+      role: data.role.present ? data.role.value : this.role,
+      needsReview: data.needsReview.present
+          ? data.needsReview.value
+          : this.needsReview,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostingRow(')
+          ..write('transactionId: $transactionId, ')
+          ..write('position: $position, ')
+          ..write('accountId: $accountId, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('debitMinor: $debitMinor, ')
+          ..write('role: $role, ')
+          ..write('needsReview: $needsReview')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    transactionId,
+    position,
+    accountId,
+    currencyCode,
+    debitMinor,
+    role,
+    needsReview,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PostingRow &&
+          other.transactionId == this.transactionId &&
+          other.position == this.position &&
+          other.accountId == this.accountId &&
+          other.currencyCode == this.currencyCode &&
+          other.debitMinor == this.debitMinor &&
+          other.role == this.role &&
+          other.needsReview == this.needsReview);
+}
+
+class LedgerPostingsCompanion extends UpdateCompanion<PostingRow> {
+  final Value<String> transactionId;
+  final Value<int> position;
+  final Value<String?> accountId;
+  final Value<String> currencyCode;
+  final Value<int> debitMinor;
+  final Value<String> role;
+  final Value<bool> needsReview;
+  final Value<int> rowid;
+  const LedgerPostingsCompanion({
+    this.transactionId = const Value.absent(),
+    this.position = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.currencyCode = const Value.absent(),
+    this.debitMinor = const Value.absent(),
+    this.role = const Value.absent(),
+    this.needsReview = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LedgerPostingsCompanion.insert({
+    required String transactionId,
+    required int position,
+    this.accountId = const Value.absent(),
+    required String currencyCode,
+    required int debitMinor,
+    required String role,
+    this.needsReview = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : transactionId = Value(transactionId),
+       position = Value(position),
+       currencyCode = Value(currencyCode),
+       debitMinor = Value(debitMinor),
+       role = Value(role);
+  static Insertable<PostingRow> custom({
+    Expression<String>? transactionId,
+    Expression<int>? position,
+    Expression<String>? accountId,
+    Expression<String>? currencyCode,
+    Expression<int>? debitMinor,
+    Expression<String>? role,
+    Expression<bool>? needsReview,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (transactionId != null) 'transaction_id': transactionId,
+      if (position != null) 'position': position,
+      if (accountId != null) 'account_id': accountId,
+      if (currencyCode != null) 'currency_code': currencyCode,
+      if (debitMinor != null) 'debit_minor': debitMinor,
+      if (role != null) 'role': role,
+      if (needsReview != null) 'needs_review': needsReview,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LedgerPostingsCompanion copyWith({
+    Value<String>? transactionId,
+    Value<int>? position,
+    Value<String?>? accountId,
+    Value<String>? currencyCode,
+    Value<int>? debitMinor,
+    Value<String>? role,
+    Value<bool>? needsReview,
+    Value<int>? rowid,
+  }) {
+    return LedgerPostingsCompanion(
+      transactionId: transactionId ?? this.transactionId,
+      position: position ?? this.position,
+      accountId: accountId ?? this.accountId,
+      currencyCode: currencyCode ?? this.currencyCode,
+      debitMinor: debitMinor ?? this.debitMinor,
+      role: role ?? this.role,
+      needsReview: needsReview ?? this.needsReview,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (transactionId.present) {
+      map['transaction_id'] = Variable<String>(transactionId.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (currencyCode.present) {
+      map['currency_code'] = Variable<String>(currencyCode.value);
+    }
+    if (debitMinor.present) {
+      map['debit_minor'] = Variable<int>(debitMinor.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (needsReview.present) {
+      map['needs_review'] = Variable<bool>(needsReview.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LedgerPostingsCompanion(')
+          ..write('transactionId: $transactionId, ')
+          ..write('position: $position, ')
+          ..write('accountId: $accountId, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('debitMinor: $debitMinor, ')
+          ..write('role: $role, ')
+          ..write('needsReview: $needsReview, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1887,6 +2482,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $LedgerEntriesTable ledgerEntries = $LedgerEntriesTable(this);
+  late final $LedgerPostingsTable ledgerPostings = $LedgerPostingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1895,7 +2491,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ledgerAccounts,
     ledgerCategories,
     ledgerEntries,
+    ledgerPostings,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'ledger_entries',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('ledger_postings', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$LedgerAccountsTableCreateCompanionBuilder =
@@ -1966,6 +2573,24 @@ final class $$LedgerAccountsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _targetLedgerEntriesTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$LedgerPostingsTable, List<PostingRow>>
+  _ledgerPostingsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.ledgerPostings,
+    aliasName: 'ledger_accounts__id__ledger_postings__account_id',
+  );
+
+  $$LedgerPostingsTableProcessedTableManager get ledgerPostingsRefs {
+    final manager = $$LedgerPostingsTableTableManager(
+      $_db,
+      $_db.ledgerPostings,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_ledgerPostingsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -2067,6 +2692,31 @@ class $$LedgerAccountsTableFilterComposer
           }) => $$LedgerEntriesTableFilterComposer(
             $db: $db,
             $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> ledgerPostingsRefs(
+    Expression<bool> Function($$LedgerPostingsTableFilterComposer f) f,
+  ) {
+    final $$LedgerPostingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ledgerPostings,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerPostingsTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerPostings,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2223,6 +2873,31 @@ class $$LedgerAccountsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> ledgerPostingsRefs<T extends Object>(
+    Expression<T> Function($$LedgerPostingsTableAnnotationComposer a) f,
+  ) {
+    final $$LedgerPostingsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ledgerPostings,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerPostingsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerPostings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LedgerAccountsTableTableManager
@@ -2241,6 +2916,7 @@ class $$LedgerAccountsTableTableManager
           PrefetchHooks Function({
             bool ledgerEntriesRefs,
             bool targetLedgerEntries,
+            bool ledgerPostingsRefs,
           })
         > {
   $$LedgerAccountsTableTableManager(
@@ -2313,12 +2989,17 @@ class $$LedgerAccountsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({ledgerEntriesRefs = false, targetLedgerEntries = false}) {
+              ({
+                ledgerEntriesRefs = false,
+                targetLedgerEntries = false,
+                ledgerPostingsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (ledgerEntriesRefs) db.ledgerEntries,
                     if (targetLedgerEntries) db.ledgerEntries,
+                    if (ledgerPostingsRefs) db.ledgerPostings,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -2365,6 +3046,27 @@ class $$LedgerAccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (ledgerPostingsRefs)
+                        await $_getPrefetchedData<
+                          AccountRow,
+                          $LedgerAccountsTable,
+                          PostingRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerAccountsTableReferences
+                              ._ledgerPostingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerAccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).ledgerPostingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -2385,7 +3087,11 @@ typedef $$LedgerAccountsTableProcessedTableManager =
       $$LedgerAccountsTableUpdateCompanionBuilder,
       (AccountRow, $$LedgerAccountsTableReferences),
       AccountRow,
-      PrefetchHooks Function({bool ledgerEntriesRefs, bool targetLedgerEntries})
+      PrefetchHooks Function({
+        bool ledgerEntriesRefs,
+        bool targetLedgerEntries,
+        bool ledgerPostingsRefs,
+      })
     >;
 typedef $$LedgerCategoriesTableCreateCompanionBuilder =
     LedgerCategoriesCompanion Function({
@@ -2878,6 +3584,8 @@ typedef $$LedgerEntriesTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<bool> isDeleted,
+      Value<String> status,
+      Value<String?> refundOfId,
       Value<int> rowid,
     });
 typedef $$LedgerEntriesTableUpdateCompanionBuilder =
@@ -2895,6 +3603,8 @@ typedef $$LedgerEntriesTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool> isDeleted,
+      Value<String> status,
+      Value<String?> refundOfId,
       Value<int> rowid,
     });
 
@@ -2959,6 +3669,42 @@ final class $$LedgerEntriesTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static $LedgerEntriesTable _refundOfIdTable(_$AppDatabase db) => db
+      .ledgerEntries
+      .createAlias('ledger_entries__refund_of_id__ledger_entries__id');
+
+  $$LedgerEntriesTableProcessedTableManager? get refundOfId {
+    final $_column = $_itemColumn<String>('refund_of_id');
+    if ($_column == null) return null;
+    final manager = $$LedgerEntriesTableTableManager(
+      $_db,
+      $_db.ledgerEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_refundOfIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$LedgerPostingsTable, List<PostingRow>>
+  _ledgerPostingsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.ledgerPostings,
+    aliasName: 'ledger_entries__id__ledger_postings__transaction_id',
+  );
+
+  $$LedgerPostingsTableProcessedTableManager get ledgerPostingsRefs {
+    final manager = $$LedgerPostingsTableTableManager(
+      $_db,
+      $_db.ledgerPostings,
+    ).filter((f) => f.transactionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_ledgerPostingsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LedgerEntriesTableFilterComposer
@@ -3017,6 +3763,11 @@ class $$LedgerEntriesTableFilterComposer
 
   ColumnFilters<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3088,6 +3839,54 @@ class $$LedgerEntriesTableFilterComposer
     );
     return composer;
   }
+
+  $$LedgerEntriesTableFilterComposer get refundOfId {
+    final $$LedgerEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.refundOfId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> ledgerPostingsRefs(
+    Expression<bool> Function($$LedgerPostingsTableFilterComposer f) f,
+  ) {
+    final $$LedgerPostingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ledgerPostings,
+      getReferencedColumn: (t) => t.transactionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerPostingsTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerPostings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LedgerEntriesTableOrderingComposer
@@ -3146,6 +3945,11 @@ class $$LedgerEntriesTableOrderingComposer
 
   ColumnOrderings<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3217,6 +4021,29 @@ class $$LedgerEntriesTableOrderingComposer
     );
     return composer;
   }
+
+  $$LedgerEntriesTableOrderingComposer get refundOfId {
+    final $$LedgerEntriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.refundOfId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$LedgerEntriesTableAnnotationComposer
@@ -3267,6 +4094,9 @@ class $$LedgerEntriesTableAnnotationComposer
 
   GeneratedColumn<bool> get isDeleted =>
       $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
   $$LedgerCategoriesTableAnnotationComposer get categoryId {
     final $$LedgerCategoriesTableAnnotationComposer composer = $composerBuilder(
@@ -3336,6 +4166,54 @@ class $$LedgerEntriesTableAnnotationComposer
     );
     return composer;
   }
+
+  $$LedgerEntriesTableAnnotationComposer get refundOfId {
+    final $$LedgerEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.refundOfId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> ledgerPostingsRefs<T extends Object>(
+    Expression<T> Function($$LedgerPostingsTableAnnotationComposer a) f,
+  ) {
+    final $$LedgerPostingsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ledgerPostings,
+      getReferencedColumn: (t) => t.transactionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerPostingsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerPostings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LedgerEntriesTableTableManager
@@ -3355,6 +4233,8 @@ class $$LedgerEntriesTableTableManager
             bool categoryId,
             bool accountId,
             bool targetAccountId,
+            bool refundOfId,
+            bool ledgerPostingsRefs,
           })
         > {
   $$LedgerEntriesTableTableManager(_$AppDatabase db, $LedgerEntriesTable table)
@@ -3383,6 +4263,8 @@ class $$LedgerEntriesTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> refundOfId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LedgerEntriesCompanion(
                 id: id,
@@ -3398,6 +4280,8 @@ class $$LedgerEntriesTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
+                status: status,
+                refundOfId: refundOfId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3415,6 +4299,8 @@ class $$LedgerEntriesTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<bool> isDeleted = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> refundOfId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LedgerEntriesCompanion.insert(
                 id: id,
@@ -3430,6 +4316,8 @@ class $$LedgerEntriesTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDeleted: isDeleted,
+                status: status,
+                refundOfId: refundOfId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -3445,10 +4333,14 @@ class $$LedgerEntriesTableTableManager
                 categoryId = false,
                 accountId = false,
                 targetAccountId = false,
+                refundOfId = false,
+                ledgerPostingsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [],
+                  explicitlyWatchedTables: [
+                    if (ledgerPostingsRefs) db.ledgerPostings,
+                  ],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -3498,11 +4390,44 @@ class $$LedgerEntriesTableTableManager
                                 .id,
                           ) as T;
                         }
+                        if (refundOfId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.refundOfId,
+                            referencedTable: $$LedgerEntriesTableReferences
+                                ._refundOfIdTable(db),
+                            referencedColumn: $$LedgerEntriesTableReferences
+                                ._refundOfIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
                         return state;
                       },
                   getPrefetchedDataCallback: (items) async {
-                    return [];
+                    return [
+                      if (ledgerPostingsRefs)
+                        await $_getPrefetchedData<
+                          EntryRow,
+                          $LedgerEntriesTable,
+                          PostingRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerEntriesTableReferences
+                              ._ledgerPostingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerEntriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).ledgerPostingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.transactionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
                 );
               },
@@ -3526,7 +4451,460 @@ typedef $$LedgerEntriesTableProcessedTableManager =
         bool categoryId,
         bool accountId,
         bool targetAccountId,
+        bool refundOfId,
+        bool ledgerPostingsRefs,
       })
+    >;
+typedef $$LedgerPostingsTableCreateCompanionBuilder =
+    LedgerPostingsCompanion Function({
+      required String transactionId,
+      required int position,
+      Value<String?> accountId,
+      required String currencyCode,
+      required int debitMinor,
+      required String role,
+      Value<bool> needsReview,
+      Value<int> rowid,
+    });
+typedef $$LedgerPostingsTableUpdateCompanionBuilder =
+    LedgerPostingsCompanion Function({
+      Value<String> transactionId,
+      Value<int> position,
+      Value<String?> accountId,
+      Value<String> currencyCode,
+      Value<int> debitMinor,
+      Value<String> role,
+      Value<bool> needsReview,
+      Value<int> rowid,
+    });
+
+final class $$LedgerPostingsTableReferences
+    extends BaseReferences<_$AppDatabase, $LedgerPostingsTable, PostingRow> {
+  $$LedgerPostingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LedgerEntriesTable _transactionIdTable(_$AppDatabase db) => db
+      .ledgerEntries
+      .createAlias('ledger_postings__transaction_id__ledger_entries__id');
+
+  $$LedgerEntriesTableProcessedTableManager get transactionId {
+    final $_column = $_itemColumn<String>('transaction_id')!;
+
+    final manager = $$LedgerEntriesTableTableManager(
+      $_db,
+      $_db.ledgerEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_transactionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LedgerAccountsTable _accountIdTable(_$AppDatabase db) => db
+      .ledgerAccounts
+      .createAlias('ledger_postings__account_id__ledger_accounts__id');
+
+  $$LedgerAccountsTableProcessedTableManager? get accountId {
+    final $_column = $_itemColumn<String>('account_id');
+    if ($_column == null) return null;
+    final manager = $$LedgerAccountsTableTableManager(
+      $_db,
+      $_db.ledgerAccounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LedgerPostingsTableFilterComposer
+    extends Composer<_$AppDatabase, $LedgerPostingsTable> {
+  $$LedgerPostingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get debitMinor => $composableBuilder(
+    column: $table.debitMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsReview => $composableBuilder(
+    column: $table.needsReview,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LedgerEntriesTableFilterComposer get transactionId {
+    final $$LedgerEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.transactionId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerAccountsTableFilterComposer get accountId {
+    final $$LedgerAccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LedgerPostingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LedgerPostingsTable> {
+  $$LedgerPostingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get debitMinor => $composableBuilder(
+    column: $table.debitMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsReview => $composableBuilder(
+    column: $table.needsReview,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LedgerEntriesTableOrderingComposer get transactionId {
+    final $$LedgerEntriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.transactionId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerAccountsTableOrderingComposer get accountId {
+    final $$LedgerAccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LedgerPostingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LedgerPostingsTable> {
+  $$LedgerPostingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get debitMinor => $composableBuilder(
+    column: $table.debitMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsReview => $composableBuilder(
+    column: $table.needsReview,
+    builder: (column) => column,
+  );
+
+  $$LedgerEntriesTableAnnotationComposer get transactionId {
+    final $$LedgerEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.transactionId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerAccountsTableAnnotationComposer get accountId {
+    final $$LedgerAccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LedgerPostingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LedgerPostingsTable,
+          PostingRow,
+          $$LedgerPostingsTableFilterComposer,
+          $$LedgerPostingsTableOrderingComposer,
+          $$LedgerPostingsTableAnnotationComposer,
+          $$LedgerPostingsTableCreateCompanionBuilder,
+          $$LedgerPostingsTableUpdateCompanionBuilder,
+          (PostingRow, $$LedgerPostingsTableReferences),
+          PostingRow,
+          PrefetchHooks Function({bool transactionId, bool accountId})
+        > {
+  $$LedgerPostingsTableTableManager(
+    _$AppDatabase db,
+    $LedgerPostingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LedgerPostingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LedgerPostingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LedgerPostingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> transactionId = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<String?> accountId = const Value.absent(),
+                Value<String> currencyCode = const Value.absent(),
+                Value<int> debitMinor = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<bool> needsReview = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LedgerPostingsCompanion(
+                transactionId: transactionId,
+                position: position,
+                accountId: accountId,
+                currencyCode: currencyCode,
+                debitMinor: debitMinor,
+                role: role,
+                needsReview: needsReview,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String transactionId,
+                required int position,
+                Value<String?> accountId = const Value.absent(),
+                required String currencyCode,
+                required int debitMinor,
+                required String role,
+                Value<bool> needsReview = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LedgerPostingsCompanion.insert(
+                transactionId: transactionId,
+                position: position,
+                accountId: accountId,
+                currencyCode: currencyCode,
+                debitMinor: debitMinor,
+                role: role,
+                needsReview: needsReview,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LedgerPostingsTable, PostingRow>(table),
+                  $$LedgerPostingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({transactionId = false, accountId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (transactionId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.transactionId,
+                        referencedTable: $$LedgerPostingsTableReferences
+                            ._transactionIdTable(db),
+                        referencedColumn: $$LedgerPostingsTableReferences
+                            ._transactionIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (accountId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.accountId,
+                        referencedTable: $$LedgerPostingsTableReferences
+                            ._accountIdTable(db),
+                        referencedColumn: $$LedgerPostingsTableReferences
+                            ._accountIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LedgerPostingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LedgerPostingsTable,
+      PostingRow,
+      $$LedgerPostingsTableFilterComposer,
+      $$LedgerPostingsTableOrderingComposer,
+      $$LedgerPostingsTableAnnotationComposer,
+      $$LedgerPostingsTableCreateCompanionBuilder,
+      $$LedgerPostingsTableUpdateCompanionBuilder,
+      (PostingRow, $$LedgerPostingsTableReferences),
+      PostingRow,
+      PrefetchHooks Function({bool transactionId, bool accountId})
     >;
 
 class $AppDatabaseManager {
@@ -3538,4 +4916,6 @@ class $AppDatabaseManager {
       $$LedgerCategoriesTableTableManager(_db, _db.ledgerCategories);
   $$LedgerEntriesTableTableManager get ledgerEntries =>
       $$LedgerEntriesTableTableManager(_db, _db.ledgerEntries);
+  $$LedgerPostingsTableTableManager get ledgerPostings =>
+      $$LedgerPostingsTableTableManager(_db, _db.ledgerPostings);
 }
