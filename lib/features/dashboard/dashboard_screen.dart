@@ -575,15 +575,27 @@ String _titleForRecord(
   LedgerTransactionType.borrowing => context.l10n.borrowing,
   LedgerTransactionType.repayment => context.l10n.repayment,
   LedgerTransactionType.transfer => context.l10n.transfer,
+  LedgerTransactionType.lending => context.l10n.lending,
+  LedgerTransactionType.advance => context.l10n.advance,
+  LedgerTransactionType.collection => context.l10n.collection,
+  LedgerTransactionType.reimbursement => context.l10n.reimbursement,
 };
 
 String _accountDescription(BuildContext context, LedgerRecord record) {
   final locale = Localizations.localeOf(context);
-  final source = DefaultLedgerLabels.accountName(
-    locale,
-    record.accountId,
-    record.accountName,
-  );
+  final source = record.isFamilyDirect
+      ? context.l10n.familyDirectFunding
+      : DefaultLedgerLabels.accountName(
+          locale,
+          record.accountId,
+          record.accountName,
+        );
+  final sourceDescription = switch (record.accountKind) {
+    'thirdPartyPayable' =>
+      '$source · ${context.l10n.accountKindThirdPartyPayable}',
+    'entrustedFunds' => '$source · ${context.l10n.accountKindEntrustedFunds}',
+    _ => source,
+  };
   final target = record.targetAccountId == null
       ? null
       : DefaultLedgerLabels.accountName(
@@ -600,11 +612,9 @@ String _accountDescription(BuildContext context, LedgerRecord record) {
                       '${DefaultLedgerLabels.accountName(locale, leg.accountId, leg.accountName)} ${formatMoney(-leg.debitMinor, leg.currencyCode)}',
                 )
                 .join(' + ')
-          : source,
+          : sourceDescription,
     LedgerTransactionType.income => context.l10n.creditedTo(source),
-    LedgerTransactionType.borrowing ||
-    LedgerTransactionType.repayment => '$source → $target',
-    LedgerTransactionType.transfer => '$source → $target',
+    _ => '$source → $target',
   };
 }
 
@@ -627,14 +637,24 @@ IconData _iconForType(LedgerTransactionType type) => switch (type) {
   LedgerTransactionType.borrowing => Icons.call_received,
   LedgerTransactionType.repayment => Icons.call_made,
   LedgerTransactionType.transfer => Icons.swap_horiz,
+  LedgerTransactionType.lending ||
+  LedgerTransactionType.advance => Icons.call_made,
+  LedgerTransactionType.collection ||
+  LedgerTransactionType.reimbursement => Icons.call_received,
 };
 
 Color _colorForType(BuildContext context, LedgerTransactionType type) =>
     switch (type) {
       LedgerTransactionType.expense => Theme.of(context).colorScheme.error,
       LedgerTransactionType.income => Theme.of(context).colorScheme.primary,
-      LedgerTransactionType.borrowing || LedgerTransactionType.repayment =>
-        Theme.of(context).colorScheme.onSurface,
+      LedgerTransactionType.borrowing ||
+      LedgerTransactionType.repayment ||
+      LedgerTransactionType.lending ||
+      LedgerTransactionType.advance ||
+      LedgerTransactionType.collection ||
+      LedgerTransactionType.reimbursement => Theme.of(
+        context,
+      ).colorScheme.onSurface,
       LedgerTransactionType.transfer => Theme.of(context).colorScheme.secondary,
     };
 

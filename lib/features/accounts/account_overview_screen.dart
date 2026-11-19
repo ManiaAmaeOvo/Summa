@@ -202,6 +202,14 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
           onEdit: editBalance,
           onDelete: deleteAccount,
         ),
+        if (_itemsFor(AccountGroup.receivable).isNotEmpty)
+          _AccountGroup(
+            title: context.l10n.receivableAccounts,
+            description: context.l10n.receivableAccountsDescription,
+            items: _itemsFor(AccountGroup.receivable),
+            onEdit: editBalance,
+            onDelete: deleteAccount,
+          ),
         _AccountGroup(
           title: context.l10n.liabilityAccounts,
           description: context.l10n.liabilityAccountsDescription,
@@ -223,9 +231,14 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
 }
 
 class AddAccountDialog extends ConsumerStatefulWidget {
-  const AddAccountDialog({super.key, this.initialKind = AccountKind.wallet});
+  const AddAccountDialog({
+    super.key,
+    this.initialKind = AccountKind.wallet,
+    this.initialCurrency = defaultCurrency,
+  });
 
   final AccountKind initialKind;
+  final String initialCurrency;
 
   @override
   ConsumerState<AddAccountDialog> createState() => _AddAccountDialogState();
@@ -234,7 +247,7 @@ class AddAccountDialog extends ConsumerStatefulWidget {
 class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController(text: '0');
-  String _currency = defaultCurrency;
+  late String _currency;
   late AccountKind _kind;
   String? _nameError;
   String? _amountError;
@@ -244,6 +257,9 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   void initState() {
     super.initState();
     _kind = widget.initialKind;
+    _currency = currencyMinorDigits.containsKey(widget.initialCurrency)
+        ? widget.initialCurrency
+        : defaultCurrency;
   }
 
   @override
@@ -255,7 +271,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isLiability = _kind == AccountKind.creditLine;
+    final isLiability = _kind.isLiability;
     return AlertDialog(
       title: Text(context.l10n.addAccountOrLiability),
       content: SingleChildScrollView(
@@ -282,6 +298,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 labelText: context.l10n.accountingType,
               ),
               items: AccountKind.values
+                  .where((kind) => kind != AccountKind.familyDirect)
                   .map(
                     (kind) => DropdownMenuItem(
                       value: kind,
@@ -397,6 +414,9 @@ String _labelForKind(BuildContext context, AccountKind kind) => switch (kind) {
   AccountKind.wallet => context.l10n.accountKindWallet,
   AccountKind.entrustedFunds => context.l10n.accountKindEntrustedFunds,
   AccountKind.creditLine => context.l10n.accountKindLiability,
+  AccountKind.receivable => context.l10n.accountKindReceivable,
+  AccountKind.thirdPartyPayable => context.l10n.accountKindThirdPartyPayable,
+  AccountKind.familyDirect => context.l10n.familyDirectFunding,
 };
 
 class _BalanceDialog extends ConsumerStatefulWidget {
@@ -582,11 +602,14 @@ class _AccountGroup extends StatelessWidget {
                   title: Text(
                     DefaultLedgerLabels.balance(context, items[index]),
                   ),
-                  subtitle: Text(
-                    items[index].group == AccountGroup.liability
-                        ? context.l10n.liability
-                        : context.l10n.balance,
-                  ),
+                  subtitle: Text(switch (items[index].kind) {
+                    AccountKind.thirdPartyPayable =>
+                      context.l10n.accountKindThirdPartyPayable,
+                    AccountKind.receivable =>
+                      context.l10n.accountKindReceivable,
+                    AccountKind.creditLine => context.l10n.liability,
+                    _ => context.l10n.balance,
+                  }),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

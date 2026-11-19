@@ -2329,6 +2329,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The backup contains invalid or duplicate valuation settings.'**
   String get invalidBackupValuation;
+
+  /// No description provided for @familyDirectFunding.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid directly by family'**
+  String get familyDirectFunding;
+
+  /// No description provided for @familyDirectExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Records the purchase against family funding.'**
+  String get familyDirectExplanation;
+
+  /// No description provided for @lending.
+  ///
+  /// In en, this message translates to:
+  /// **'Lend'**
+  String get lending;
+
+  /// No description provided for @advance.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay for someone'**
+  String get advance;
+
+  /// No description provided for @collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect principal'**
+  String get collection;
+
+  /// No description provided for @reimbursement.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive reimbursement'**
+  String get reimbursement;
+
+  /// No description provided for @receivableAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Receivable account'**
+  String get receivableAccount;
+
+  /// No description provided for @accountKindReceivable.
+  ///
+  /// In en, this message translates to:
+  /// **'Receivable'**
+  String get accountKindReceivable;
+
+  /// No description provided for @accountKindThirdPartyPayable.
+  ///
+  /// In en, this message translates to:
+  /// **'Third-party payment due'**
+  String get accountKindThirdPartyPayable;
+
+  /// No description provided for @receivableAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Receivables'**
+  String get receivableAccounts;
+
+  /// No description provided for @receivableAccountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Outstanding principal from loans and payments made for others.'**
+  String get receivableAccountsDescription;
+
+  /// No description provided for @quickAddReceivable.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a receivable account'**
+  String get quickAddReceivable;
+
+  /// No description provided for @receivableBalanceExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'This change would make the outstanding receivable negative on its transaction date.'**
+  String get receivableBalanceExceeded;
+
+  /// No description provided for @grossSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Total spending'**
+  String get grossSpending;
+
+  /// No description provided for @personalSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Personally borne'**
+  String get personalSpending;
+
+  /// No description provided for @entrustedSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid from entrusted funds'**
+  String get entrustedSpending;
+
+  /// No description provided for @thirdPartyPayableSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Of personally borne, paid by others'**
+  String get thirdPartyPayableSpending;
+
+  /// No description provided for @unclassifiedSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Funding to review'**
+  String get unclassifiedSpending;
+
+  /// No description provided for @familySupportReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Family money received'**
+  String get familySupportReceived;
+
+  /// No description provided for @fundingAndCashFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Funding and personal cash flow'**
+  String get fundingAndCashFlow;
+
+  /// No description provided for @personalCashInflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal cash inflow'**
+  String get personalCashInflow;
+
+  /// No description provided for @personalCashOutflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal cash outflow'**
+  String get personalCashOutflow;
+
+  /// No description provided for @personalCashFlowNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Net personal cash flow'**
+  String get personalCashFlowNet;
+
+  /// No description provided for @advancedFundingBackupError.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup conflicts with funding or receivable records.'**
+  String get advancedFundingBackupError;
 }
 
 class _AppLocalizationsDelegate

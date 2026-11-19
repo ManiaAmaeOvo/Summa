@@ -1,8 +1,29 @@
 import 'package:summa/core/money/money.dart';
 
-enum AccountKind { cash, bank, wallet, creditLine, entrustedFunds }
+enum AccountKind {
+  cash,
+  bank,
+  wallet,
+  creditLine,
+  entrustedFunds,
+  receivable,
+  thirdPartyPayable,
+  familyDirect;
 
-enum AccountGroup { personalAsset, entrustedFunds, liability }
+  AccountGroup get group => _groupForKind(this);
+  bool get isAdvancedFunding =>
+      this == receivable || this == thirdPartyPayable || this == familyDirect;
+  bool get isLiability => group == AccountGroup.liability;
+  bool get isPersonalCash => group == AccountGroup.personalAsset;
+}
+
+enum AccountGroup {
+  personalAsset,
+  entrustedFunds,
+  liability,
+  receivable,
+  external,
+}
 
 class LedgerAccount {
   const LedgerAccount({
@@ -17,7 +38,7 @@ class LedgerAccount {
   final AccountKind kind;
   final String currencyCode;
 
-  AccountGroup get group => _groupForKind(kind);
+  AccountGroup get group => kind.group;
 }
 
 class AccountBalance {
@@ -37,7 +58,7 @@ class AccountBalance {
   final int currentBalanceMinor;
   final String currencyCode;
 
-  AccountGroup get group => _groupForKind(kind);
+  AccountGroup get group => kind.group;
 }
 
 AccountGroup _groupForKind(AccountKind kind) => switch (kind) {
@@ -45,5 +66,8 @@ AccountGroup _groupForKind(AccountKind kind) => switch (kind) {
   AccountKind.bank ||
   AccountKind.wallet => AccountGroup.personalAsset,
   AccountKind.entrustedFunds => AccountGroup.entrustedFunds,
-  AccountKind.creditLine => AccountGroup.liability,
+  AccountKind.creditLine ||
+  AccountKind.thirdPartyPayable => AccountGroup.liability,
+  AccountKind.receivable => AccountGroup.receivable,
+  AccountKind.familyDirect => AccountGroup.external,
 };

@@ -1,6 +1,21 @@
 import 'package:summa/core/money/money.dart';
+import 'package:summa/domain/accounts/ledger_account.dart';
 
-enum LedgerTransactionType { expense, income, transfer, borrowing, repayment }
+enum LedgerTransactionType {
+  expense,
+  income,
+  transfer,
+  borrowing,
+  repayment,
+  lending,
+  advance,
+  collection,
+  reimbursement;
+
+  bool get originatesReceivable => this == lending || this == advance;
+  bool get collectsReceivable => this == collection || this == reimbursement;
+  bool get isReceivableFlow => originatesReceivable || collectsReceivable;
+}
 
 enum LedgerPostingStatus { posted, pending }
 
@@ -15,6 +30,7 @@ class TransferSettlement {
 
   final int amountMinor;
   final String currencyCode;
+
   final String? quotedRate;
 }
 
@@ -41,6 +57,9 @@ class AccountPosting {
   final int debitMinor;
   final bool needsReview;
   final String currencyCode;
+
+  AccountKind? get kind =>
+      AccountKind.values.where((kind) => kind.name == accountKind).firstOrNull;
 }
 
 class LedgerRecord {
@@ -90,6 +109,7 @@ class LedgerRecord {
 
   bool get isPending => status == LedgerPostingStatus.pending;
   bool get isRefund => refundOfId != null;
+  bool get isFamilyDirect => accountKind == AccountKind.familyDirect.name;
   bool get canRefund =>
       type == LedgerTransactionType.expense &&
       !isPending &&

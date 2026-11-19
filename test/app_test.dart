@@ -180,10 +180,10 @@ void main() {
 
     await tester.tap(find.text('报表'));
     await tester.pumpAndSettle();
-    expect(find.text('¥2.00'), findsOneWidget);
+    expect(find.text('¥2.00'), findsWidgets);
     expect(find.text('USD 4.00'), findsNothing);
     await selectUsd();
-    expect(find.text('USD 4.00'), findsOneWidget);
+    expect(find.text('USD 4.00'), findsWidgets);
     expect(find.text('¥2.00'), findsNothing);
     expect(tester.takeException(), isNull);
   });

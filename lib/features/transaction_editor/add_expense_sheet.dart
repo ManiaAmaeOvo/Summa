@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:summa/app/providers.dart';
+import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
@@ -47,6 +48,8 @@ class _TransactionEditorSheetState
   String? _submissionError;
   bool _isSaving = false;
   bool _pending = false;
+  bool _familyFunded = false;
+  String _familyCurrency = defaultCurrency;
   final _extraPayments = <_SplitPaymentInput>[];
   List<LedgerAccount> _formAccounts = const [];
 
@@ -55,11 +58,12 @@ class _TransactionEditorSheetState
       .firstOrNull
       ?.currencyCode;
 
-  String get _sourceCurrency =>
-      _accountCurrency(_accountId) ??
-      widget.record?.currencyCode ??
-      widget.refundFor?.currencyCode ??
-      defaultCurrency;
+  String get _sourceCurrency => _familyFunded
+      ? _familyCurrency
+      : _accountCurrency(_accountId) ??
+            widget.record?.currencyCode ??
+            widget.refundFor?.currencyCode ??
+            defaultCurrency;
 
   String? get _settlementCurrency {
     final target = _accountCurrency(_targetAccountId);
@@ -77,6 +81,8 @@ class _TransactionEditorSheetState
     final record = widget.record;
     _type = record?.type ?? LedgerTransactionType.expense;
     _pending = record?.isPending ?? false;
+    _familyFunded = !_isRefund && (record?.isFamilyDirect ?? false);
+    _familyCurrency = record?.currencyCode ?? defaultCurrency;
     if (record == null) {
       final original = widget.refundFor;
       if (original != null && original.occurredAt.isAfter(_occurredAt)) {
@@ -102,7 +108,9 @@ class _TransactionEditorSheetState
     _categoryId = record.categoryId;
     _accountId = record.accountId;
     _targetAccountId = record.targetAccountId;
-    if (!_isRefund && _type == LedgerTransactionType.expense) {
+    if (!_isRefund &&
+        !_familyFunded &&
+        _type == LedgerTransactionType.expense) {
       for (final leg in record.accountPostings.skip(1)) {
         _extraPayments.add(
           _SplitPaymentInput(leg.accountId, -leg.debitMinor, leg.currencyCode),
@@ -136,6 +144,15 @@ class _TransactionEditorSheetState
           };
     final accountFields = _isRefund
         ? _refundAccountFields()
+        : _familyFunded
+        ? CurrencySelector(
+            currencies: currencyOptions(currencyMinorDigits.keys),
+            value: _familyCurrency,
+            label: context.l10n.currencyLabel,
+            onChanged: _isEditing || _isSaving
+                ? null
+                : (code) => setState(() => _familyCurrency = code),
+          )
         : ref
               .watch(accountsProvider)
               .when(
@@ -205,6 +222,22 @@ class _TransactionEditorSheetState
                         value: LedgerTransactionType.repayment,
                         label: Text(context.l10n.repayment),
                       ),
+                      ButtonSegment(
+                        value: LedgerTransactionType.lending,
+                        label: Text(context.l10n.lending),
+                      ),
+                      ButtonSegment(
+                        value: LedgerTransactionType.advance,
+                        label: Text(context.l10n.advance),
+                      ),
+                      ButtonSegment(
+                        value: LedgerTransactionType.collection,
+                        label: Text(context.l10n.collection),
+                      ),
+                      ButtonSegment(
+                        value: LedgerTransactionType.reimbursement,
+                        label: Text(context.l10n.reimbursement),
+                      ),
                     ],
                     selected: {_type},
                     onSelectionChanged: _isSaving
@@ -241,6 +274,16 @@ class _TransactionEditorSheetState
                 ),
               ],
               const SizedBox(height: 16),
+              if (!_isRefund && _type == LedgerTransactionType.expense)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(context.l10n.familyDirectFunding),
+                  subtitle: _familyFunded
+                      ? Text(context.l10n.familyDirectExplanation)
+                      : null,
+                  value: _familyFunded,
+                  onChanged: _isSaving ? null : _setFamilyFunding,
+                ),
               accountFields,
               if (settlementCurrency != null)
                 _exchangeFields(settlementCurrency),
@@ -333,13 +376,32 @@ class _TransactionEditorSheetState
     );
   }
 
-  String _noteHint(BuildContext context) => switch (_type) {
+  String? _noteHint(BuildContext context) => switch (_type) {
     LedgerTransactionType.expense => context.l10n.expenseNoteHint,
     LedgerTransactionType.income => context.l10n.incomeNoteHint,
     LedgerTransactionType.transfer => context.l10n.transferNoteHint,
     LedgerTransactionType.borrowing => context.l10n.borrowingNoteHint,
     LedgerTransactionType.repayment => context.l10n.repaymentNoteHint,
+    _ => null,
   };
+
+  void _setFamilyFunding(bool selected) {
+    final currency = _sourceCurrency;
+    setState(() {
+      _familyFunded = selected;
+      _familyCurrency = currency;
+      _accountId = null;
+      _targetAccountId = null;
+      _submissionError = null;
+      final removed = List.of(_extraPayments);
+      _extraPayments.clear();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final payment in removed) {
+          payment.amount.dispose();
+        }
+      });
+    });
+  }
 
   void _changeType(LedgerTransactionType value) {
     setState(() {
@@ -350,6 +412,7 @@ class _TransactionEditorSheetState
       _settlementController.clear();
       _quoteController.clear();
       _type = value;
+      _familyFunded = false;
       _parentCategoryId = null;
       _categoryId = null;
       _accountId = null;
@@ -421,14 +484,28 @@ class _TransactionEditorSheetState
     final selectable = _withOriginalArchivedAccounts(accounts);
     _formAccounts = selectable;
     return switch (_type) {
-      LedgerTransactionType.expense => _expenseFields(selectable),
+      LedgerTransactionType.expense => _expenseFields(
+        selectable
+            .where((account) => account.kind != AccountKind.receivable)
+            .toList(),
+      ),
       LedgerTransactionType.income => _singleAccountField(
-        selectable,
+        selectable
+            .where(
+              (account) =>
+                  account.kind != AccountKind.receivable &&
+                  account.kind != AccountKind.thirdPartyPayable,
+            )
+            .toList(),
         label: context.l10n.incomeDestinationAccount,
       ),
       LedgerTransactionType.borrowing => _borrowingFields(selectable),
       LedgerTransactionType.repayment => _repaymentFields(selectable),
       LedgerTransactionType.transfer => _transferFields(selectable),
+      LedgerTransactionType.lending ||
+      LedgerTransactionType.advance ||
+      LedgerTransactionType.collection ||
+      LedgerTransactionType.reimbursement => _receivableFields(selectable),
     };
   }
 
@@ -438,7 +515,8 @@ class _TransactionEditorSheetState
     final result = [...accounts];
     final record = widget.record;
     if (record == null) return result;
-    if (!result.any((item) => item.id == record.accountId)) {
+    if (!record.isFamilyDirect &&
+        !result.any((item) => item.id == record.accountId)) {
       result.add(
         LedgerAccount(
           id: record.accountId,
@@ -695,7 +773,11 @@ class _TransactionEditorSheetState
 
   Widget _repaymentFields(List<LedgerAccount> accounts) {
     final assets = accounts
-        .where((item) => item.group != AccountGroup.liability)
+        .where(
+          (item) =>
+              item.kind.isPersonalCash ||
+              item.kind == AccountKind.entrustedFunds,
+        )
         .toList();
     _accountId = assets.any((item) => item.id == _accountId)
         ? _accountId
@@ -731,9 +813,78 @@ class _TransactionEditorSheetState
     );
   }
 
+  Widget _receivableFields(List<LedgerAccount> accounts) {
+    final opening = _type.originatesReceivable;
+    bool isReceivable(LedgerAccount account) =>
+        account.kind == AccountKind.receivable;
+    final sources = accounts
+        .where(
+          (account) =>
+              opening ? account.kind.isPersonalCash : isReceivable(account),
+        )
+        .toList();
+    _accountId = sources.any((item) => item.id == _accountId)
+        ? _accountId
+        : sources.firstOrNull?.id;
+    final targets = accounts
+        .where(
+          (account) =>
+              (opening ? isReceivable(account) : account.kind.isPersonalCash) &&
+              account.currencyCode == _sourceCurrency,
+        )
+        .toList();
+    _targetAccountId = targets.any((item) => item.id == _targetAccountId)
+        ? _targetAccountId
+        : targets.firstOrNull?.id;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _accountDropdown(
+          key: ValueKey('${_type.name}-source'),
+          accounts: sources,
+          value: _accountId,
+          label: opening
+              ? context.l10n.transferFromAccount
+              : context.l10n.receivableAccount,
+          onChanged: (value) => setState(() => _accountId = value),
+        ),
+        const SizedBox(height: 12),
+        _accountDropdown(
+          key: ValueKey('${_type.name}-target-$_accountId'),
+          accounts: targets,
+          value: _targetAccountId,
+          label: opening
+              ? context.l10n.receivableAccount
+              : context.l10n.incomeDestinationAccount,
+          onChanged: (value) => setState(() => _targetAccountId = value),
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: _isSaving
+                ? null
+                : () => showDialog<void>(
+                    context: context,
+                    builder: (_) => AddAccountDialog(
+                      initialKind: AccountKind.receivable,
+                      initialCurrency: _sourceCurrency,
+                    ),
+                  ),
+            icon: const Icon(Icons.add),
+            label: Text(context.l10n.quickAddReceivable),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _transferFields(List<LedgerAccount> accounts) {
     final assets = accounts
-        .where((item) => item.group != AccountGroup.liability)
+        .where(
+          (item) =>
+              item.kind.isPersonalCash ||
+              item.kind == AccountKind.entrustedFunds,
+        )
         .toList();
     _accountId = assets.any((item) => item.id == _accountId)
         ? _accountId
@@ -868,9 +1019,14 @@ class _TransactionEditorSheetState
 
   String _accountOption(LedgerAccount account) {
     final name = DefaultLedgerLabels.account(context, account);
-    final withKind = account.kind == AccountKind.creditLine
-        ? context.l10n.liabilityName(name)
-        : name;
+    final withKind = switch (account.kind) {
+      AccountKind.familyDirect => context.l10n.familyDirectFunding,
+      AccountKind.creditLine => context.l10n.liabilityName(name),
+      AccountKind.thirdPartyPayable =>
+        '$name · ${context.l10n.accountKindThirdPartyPayable}',
+      AccountKind.receivable => '$name · ${context.l10n.accountKindReceivable}',
+      _ => name,
+    };
     return account.currencyCode == defaultCurrency
         ? withKind
         : '$withKind · ${account.currencyCode}';
@@ -905,10 +1061,11 @@ class _TransactionEditorSheetState
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final accountId = _accountId;
-    if (accountId == null ||
+    if ((!_familyFunded && accountId == null) ||
         ((_type == LedgerTransactionType.borrowing ||
                 _type == LedgerTransactionType.transfer ||
-                _type == LedgerTransactionType.repayment) &&
+                _type == LedgerTransactionType.repayment ||
+                _type.isReceivableFlow) &&
             _targetAccountId == null) ||
         (!_isRefund &&
             (_type == LedgerTransactionType.expense ||
@@ -944,7 +1101,9 @@ class _TransactionEditorSheetState
           ? LedgerPostingStatus.pending
           : LedgerPostingStatus.posted;
       List<AccountPayment>? payments;
-      if (!_isRefund && _type == LedgerTransactionType.expense) {
+      if (!_isRefund &&
+          !_familyFunded &&
+          _type == LedgerTransactionType.expense) {
         final rest = [
           for (final input in _extraPayments)
             AccountPayment(
@@ -962,15 +1121,25 @@ class _TransactionEditorSheetState
             TransactionRuleError.invalidPaymentSplit,
           );
         }
-        payments = [AccountPayment(accountId, primary), ...rest];
+        payments = [AccountPayment(accountId!, primary), ...rest];
       }
       if (_isRefund) {
         await repository.saveRefund(
           id: record?.id,
           originalId: widget.refundFor!.id,
-          accountId: accountId,
+          accountId: accountId!,
           amountMinor: amount,
           occurredAt: _occurredAt,
+          note: _noteController.text,
+          status: status,
+        );
+      } else if (_familyFunded) {
+        await repository.saveFamilyExpense(
+          id: record?.id,
+          amountMinor: amount,
+          currencyCode: _familyCurrency,
+          occurredAt: _occurredAt,
+          categoryId: _categoryId!,
           note: _noteController.text,
           status: status,
         );
@@ -980,7 +1149,7 @@ class _TransactionEditorSheetState
           amountMinor: amount,
           occurredAt: _occurredAt,
           categoryId: _categoryId,
-          accountId: accountId,
+          accountId: accountId!,
           targetAccountId: _targetAccountId,
           payments: payments,
           settlement: settlement,
@@ -994,7 +1163,7 @@ class _TransactionEditorSheetState
           amountMinor: amount,
           occurredAt: _occurredAt,
           categoryId: _categoryId,
-          accountId: accountId,
+          accountId: accountId!,
           targetAccountId: _targetAccountId,
           payments: payments,
           settlement: settlement,

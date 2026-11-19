@@ -32,6 +32,10 @@ bool _requiresDetails(LedgerRecord record) =>
     record.currencyCode != defaultCurrency ||
     record.settlement != null ||
     record.isPending ||
+    record.type.isReceivableFlow ||
+    record.accountPostings.any(
+      (posting) => posting.kind?.isAdvancedFunding == true,
+    ) ||
     record.isRefund ||
     (record.type == LedgerTransactionType.expense &&
         record.accountPostings.length > 1);
@@ -244,6 +248,10 @@ String _typeName(LedgerRecord record, String languageCode) {
     LedgerTransactionType.transfer => '转账',
     LedgerTransactionType.borrowing => '借入',
     LedgerTransactionType.repayment => '还款',
+    LedgerTransactionType.lending => '借出',
+    LedgerTransactionType.advance => '垫付',
+    LedgerTransactionType.collection => '收回本金',
+    LedgerTransactionType.reimbursement => '报销到账',
   };
 }
 

@@ -65,7 +65,8 @@ NetWorthValuation estimateNetWorth(
   final subtotals = <String, BigInt>{};
   for (final balance in balances) {
     if (balance.currentBalanceMinor == 0 ||
-        balance.group == AccountGroup.entrustedFunds) {
+        balance.group == AccountGroup.entrustedFunds ||
+        balance.group == AccountGroup.external) {
       continue;
     }
     final amount = BigInt.from(balance.currentBalanceMinor);

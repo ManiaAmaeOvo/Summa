@@ -7,7 +7,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 
 void main() {
-  for (final version in [6, 7, 8, 9]) {
+  for (final version in [6, 7, 8, 9, 10]) {
     test('migrates schema $version to persisted postings and reopens safely', () async {
       final directory = await Directory.systemTemp.createTemp(
         'summa-v$version-',
@@ -48,18 +48,18 @@ void main() {
           expect(active.note, 'Transfer');
           expect(active.timezoneOffsetMinutes, 480);
           expect(active.status, version >= 8 ? 'pending' : 'posted');
-          expect(active.settlementAmountMinor, version == 9 ? 2000 : null);
-          expect(active.quotedExchangeRate, version == 9 ? '13.33' : null);
+          expect(active.settlementAmountMinor, version >= 9 ? 2000 : null);
+          expect(active.quotedExchangeRate, version >= 9 ? '13.33' : null);
           expect(deleted.id, 'hidden');
           expect(deleted.amountMinor, 50);
           final postings = await after.select(after.ledgerPostings).get();
-          expect(postings, hasLength(version == 9 ? 6 : 4));
+          expect(postings, hasLength(version >= 9 ? 6 : 4));
           expect(
             postings
                 .where((leg) => leg.transactionId == active.id)
                 .map((leg) => leg.debitMinor),
             unorderedEquals(
-              version == 9 ? [-150, 2000, 150, -2000] : [-150, 150],
+              version >= 9 ? [-150, 2000, 150, -2000] : [-150, 150],
             ),
           );
           final table = await after
@@ -71,10 +71,13 @@ void main() {
           final schema = await after
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(schema.read<int>('user_version'), 10);
+          expect(schema.read<int>('user_version'), 11);
           final valuation = await upgraded.watchValuationSettings().first;
-          expect(valuation.baseCurrency, 'CNY');
-          expect(valuation.rates, isEmpty);
+          expect(valuation.baseCurrency, version >= 10 ? 'EUR' : 'CNY');
+          expect(
+            valuation.rates.map((rate) => rate.rate),
+            version >= 10 ? ['0.13'] : isEmpty,
+          );
         } finally {
           await after.close();
         }
@@ -172,7 +175,7 @@ class _LegacyDatabase extends AppDatabase {
                  ('hidden', 1, NULL, 'CNY', 50, 'expense')
         ''');
       }
-      if (schemaVersion == 9) {
+      if (schemaVersion >= 9) {
         await migrator.addColumn(
           ledgerEntries,
           ledgerEntries.settlementAmountMinor,
@@ -202,6 +205,17 @@ class _LegacyDatabase extends AppDatabase {
           INSERT INTO ledger_postings (transaction_id, position, currency_code, debit_minor, role)
           VALUES ('bank-to-cash', 2, 'CNY', 150, 'exchange'),
                  ('bank-to-cash', 3, 'JPY', -2000, 'exchange')
+        ''');
+      }
+      if (schemaVersion >= 10) {
+        await migrator.createTable(valuationPreferences);
+        await migrator.createTable(valuationRates);
+        await customStatement(
+          "INSERT INTO valuation_preferences (id, base_currency) VALUES (1, 'EUR')",
+        );
+        await customStatement('''
+          INSERT INTO valuation_rates (base_currency, source_currency, rate, updated_at)
+          VALUES ('EUR', 'CNY', '0.13', 2000)
         ''');
       }
     },

@@ -162,6 +162,9 @@ LedgerImportDraft _parseRow(
   List<LedgerCategory> incomeCategories,
   String languageCode,
 ) {
+  accounts = accounts
+      .where((account) => !account.kind.isAdvancedFunding)
+      .toList();
   final number = index + 1;
   if (value is! Map<String, dynamic>) {
     throw LedgerImportException(
@@ -208,7 +211,7 @@ LedgerImportDraft _parseRow(
   final type = LedgerTransactionType.values
       .where((item) => item.name == rawType)
       .firstOrNull;
-  if (type == null) {
+  if (type == null || type.isReceivableFlow) {
     throw LedgerImportException(
       _localized(
         languageCode,
@@ -383,7 +386,7 @@ LedgerAccount _newAccount(
     final parsed = AccountKind.values
         .where((item) => item.name == rawKind)
         .firstOrNull;
-    if (parsed == null) {
+    if (parsed == null || parsed.isAdvancedFunding) {
       throw LedgerImportException(
         _localized(
           languageCode,

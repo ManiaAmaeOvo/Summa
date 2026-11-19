@@ -9,6 +9,7 @@ import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/analytics/financial_activity.dart';
 import 'package:summa/domain/import_export/ledger_export.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
@@ -61,6 +62,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
         final selected = periodRecords
             .where((item) => item.currencyCode == currency)
             .toList();
+        final activity = summarizeFinancialActivity(periodRecords, currency);
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
           children: [
@@ -119,7 +121,13 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            _SummaryGrid(records: selected, currency: currency),
+            _SummaryGrid(
+              records: selected,
+              currency: currency,
+              activity: activity,
+            ),
+            const SizedBox(height: 16),
+            _FundingSummary(currency: currency, activity: activity),
             const SizedBox(height: 16),
             _TrendCard(
               records: selected,
@@ -177,15 +185,19 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 }
 
 class _SummaryGrid extends StatelessWidget {
-  const _SummaryGrid({required this.records, required this.currency});
+  const _SummaryGrid({
+    required this.records,
+    required this.currency,
+    required this.activity,
+  });
 
   final List<LedgerRecord> records;
 
   final String currency;
+  final FinancialActivity activity;
 
   @override
   Widget build(BuildContext context) {
-    final expense = _sum(records, LedgerTransactionType.expense);
     final income = _sum(records, LedgerTransactionType.income);
     final borrowing = _sum(records, LedgerTransactionType.borrowing);
     final repayment = _sum(records, LedgerTransactionType.repayment);
@@ -202,12 +214,15 @@ class _SummaryGrid extends StatelessWidget {
           text: formatMoney(income, currency),
         ),
         _Metric(
-          label: context.l10n.expense,
-          text: formatMoney(expense, currency),
+          label: context.l10n.grossSpending,
+          text: formatMoneyTotal(activity.grossSpending, currency),
         ),
         _Metric(
-          label: context.l10n.incomeExpenseBalance,
-          text: formatMoney(income - expense, currency),
+          label: context.l10n.personalCashFlowNet,
+          text: formatMoneyTotal(
+            activity.personalCashInflow - activity.personalCashOutflow,
+            currency,
+          ),
         ),
         _Metric(
           label: context.l10n.borrowingRepayment,
@@ -215,6 +230,57 @@ class _SummaryGrid extends StatelessWidget {
               '${formatMoney(borrowing, currency)} / ${formatMoney(repayment, currency)}',
         ),
       ],
+    );
+  }
+}
+
+class _FundingSummary extends StatelessWidget {
+  const _FundingSummary({required this.currency, required this.activity});
+
+  final String currency;
+  final FinancialActivity activity;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = context.l10n;
+    final lines = [
+      (labels.personalSpending, activity.personalSpending),
+      (labels.familyDirectFunding, activity.familyDirectSpending),
+      (labels.entrustedSpending, activity.entrustedSpending),
+      if (activity.thirdPartyPayableSpending != BigInt.zero)
+        (labels.thirdPartyPayableSpending, activity.thirdPartyPayableSpending),
+      if (activity.unclassifiedSpending != BigInt.zero)
+        (labels.unclassifiedSpending, activity.unclassifiedSpending),
+      if (activity.familySupportReceived != BigInt.zero)
+        (labels.familySupportReceived, activity.familySupportReceived),
+      (labels.personalCashInflow, activity.personalCashInflow),
+      (labels.personalCashOutflow, activity.personalCashOutflow),
+    ];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              labels.fundingAndCashFlow,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            for (final (label, amount) in lines)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(label)),
+                    const SizedBox(width: 8),
+                    Text(formatMoneyTotal(amount, currency)),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

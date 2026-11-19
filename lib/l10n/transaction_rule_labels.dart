@@ -34,6 +34,8 @@ String localizedTransactionRule(
       context.l10n.archivedPostingAccount,
     TransactionRuleError.invalidTransferSettlement =>
       context.l10n.invalidTransferSettlement,
+    TransactionRuleError.receivableBalanceExceeded =>
+      context.l10n.receivableBalanceExceeded,
     TransactionRuleError.currencyMismatch => context.l10n.currencyMismatch,
     TransactionRuleError.fixedOtherCategory => context.l10n.fixedOtherCategory,
     TransactionRuleError.otherCategoryRequired =>

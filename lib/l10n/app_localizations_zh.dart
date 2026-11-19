@@ -1230,4 +1230,76 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get invalidBackupValuation => '备份包含无效或重复的估值设置。';
+
+  @override
+  String get familyDirectFunding => '家庭直接承担';
+
+  @override
+  String get familyDirectExplanation => '使用家庭资金承担这笔消费。';
+
+  @override
+  String get lending => '借出';
+
+  @override
+  String get advance => '垫付';
+
+  @override
+  String get collection => '收回本金';
+
+  @override
+  String get reimbursement => '报销到账';
+
+  @override
+  String get receivableAccount => '应收款账户';
+
+  @override
+  String get accountKindReceivable => '应收款';
+
+  @override
+  String get accountKindThirdPartyPayable => '他人代付待偿';
+
+  @override
+  String get receivableAccounts => '应收款';
+
+  @override
+  String get receivableAccountsDescription => '借款和垫付款尚未收回的本金。';
+
+  @override
+  String get quickAddReceivable => '添加应收款账户';
+
+  @override
+  String get receivableBalanceExceeded => '这项变更会使当时的应收款余额为负。';
+
+  @override
+  String get grossSpending => '总消费';
+
+  @override
+  String get personalSpending => '本人承担';
+
+  @override
+  String get entrustedSpending => '受托资金承担';
+
+  @override
+  String get thirdPartyPayableSpending => '本人承担中由他人先付';
+
+  @override
+  String get unclassifiedSpending => '待确认归属';
+
+  @override
+  String get familySupportReceived => '家庭资金转入';
+
+  @override
+  String get fundingAndCashFlow => '资金归属与个人现金流';
+
+  @override
+  String get personalCashInflow => '个人现金流入';
+
+  @override
+  String get personalCashOutflow => '个人现金流出';
+
+  @override
+  String get personalCashFlowNet => '个人净现金流';
+
+  @override
+  String get advancedFundingBackupError => '备份与资金归属或应收款记录冲突。';
 }

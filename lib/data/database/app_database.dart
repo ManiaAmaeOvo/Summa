@@ -125,7 +125,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -347,6 +347,46 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _addVersion5Categories() async {
     final now = DateTime.now();
     await batch((batch) => _insertIncomeAndFlowCategories(batch, now));
+  }
+
+  Future<void> ensureReceivableCategories() async {
+    final now = DateTime.now();
+    const categories = [
+      ('lending', '借出'),
+      ('advance', '垫付'),
+      ('collection', '收回本金'),
+      ('reimbursement', '报销到账'),
+    ];
+    await batch((batch) {
+      for (final (index, (type, label)) in categories.indexed) {
+        final id = 'flow-$type';
+        final order = 2300 + index * 100;
+        batch.insert(
+          ledgerCategories,
+          _category(
+            '$id-parent',
+            label,
+            null,
+            order,
+            now,
+            transactionType: type,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+        batch.insert(
+          ledgerCategories,
+          _category(
+            id,
+            label,
+            '$id-parent',
+            order + 1,
+            now,
+            transactionType: type,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
+    });
   }
 
   Future<void> ensureTransferCategory() async {

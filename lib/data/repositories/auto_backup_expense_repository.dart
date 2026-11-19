@@ -150,6 +150,27 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       _mutate(() => _delegate.postTransaction(id));
 
   @override
+  Future<void> saveFamilyExpense({
+    String? id,
+    required int amountMinor,
+    required String currencyCode,
+    required DateTime occurredAt,
+    required String categoryId,
+    required String note,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
+  }) => _mutate(
+    () => _delegate.saveFamilyExpense(
+      id: id,
+      amountMinor: amountMinor,
+      currencyCode: currencyCode,
+      occurredAt: occurredAt,
+      categoryId: categoryId,
+      note: note,
+      status: status,
+    ),
+  );
+
+  @override
   Future<void> saveRefund({
     String? id,
     required String originalId,

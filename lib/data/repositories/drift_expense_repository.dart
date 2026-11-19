@@ -31,7 +31,11 @@ class DriftExpenseRepository implements ExpenseRepository {
   @override
   Stream<List<LedgerAccount>> watchAccounts() {
     final query = _database.select(_database.ledgerAccounts)
-      ..where((table) => table.isArchived.equals(false))
+      ..where(
+        (table) =>
+            table.isArchived.equals(false) &
+            table.kind.equals(AccountKind.familyDirect.name).not(),
+      )
       ..orderBy([(table) => OrderingTerm.asc(table.sortOrder)]);
     return query.watch().map(
       (rows) => rows
@@ -413,6 +417,16 @@ class DriftExpenseRepository implements ExpenseRepository {
           ),
         );
     await _replacePostings(id, postings);
+    if (type.isReceivableFlow || _isReceivableEntry(previous)) {
+      await _checkReceivableBalances(
+        accountIds: {
+          accountId,
+          ?targetAccountId,
+          ?previous?.accountId,
+          ?previous?.targetAccountId,
+        },
+      );
+    }
   }
 
   Future<void> _replacePostings(String id, List<PostingLeg> postings) async {
@@ -481,7 +495,7 @@ class DriftExpenseRepository implements ExpenseRepository {
 
   @override
   Future<void> deleteTransaction(String id) => _database.transaction(() async {
-    await _activeEntry(id);
+    final entry = await _activeEntry(id);
     await _requireNoActiveRefunds(id);
     await (_database.update(
       _database.ledgerEntries,
@@ -491,6 +505,11 @@ class DriftExpenseRepository implements ExpenseRepository {
         updatedAt: Value(DateTime.now()),
       ),
     );
+    if (_isReceivableEntry(entry)) {
+      await _checkReceivableBalances(
+        accountIds: {entry.accountId, ?entry.targetAccountId},
+      );
+    }
   });
 
   @override
@@ -531,6 +550,63 @@ class DriftExpenseRepository implements ExpenseRepository {
         status: Value(LedgerPostingStatus.posted.name),
         updatedAt: Value(DateTime.now()),
       ),
+    );
+    if (type.isReceivableFlow) {
+      await _checkReceivableBalances(
+        accountIds: {entry.accountId, ?entry.targetAccountId},
+      );
+    }
+  });
+
+  @override
+  Future<void> saveFamilyExpense({
+    String? id,
+    required int amountMinor,
+    required String currencyCode,
+    required DateTime occurredAt,
+    required String categoryId,
+    required String note,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
+  }) => _database.transaction(() async {
+    if (!currencyMinorDigits.containsKey(currencyCode)) {
+      throw const TransactionRuleException(
+        TransactionRuleError.currencyMismatch,
+      );
+    }
+    final accountId = _familyAccountId(currencyCode);
+    final now = DateTime.now();
+    await _database
+        .into(_database.ledgerAccounts)
+        .insert(
+          LedgerAccountsCompanion.insert(
+            id: accountId,
+            name: '家庭直接承担',
+            kind: AccountKind.familyDirect.name,
+            currencyCode: Value(currencyCode),
+            createdAt: now,
+            updatedAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+    final account = await (_database.select(
+      _database.ledgerAccounts,
+    )..where((table) => table.id.equals(accountId))).getSingle();
+    if (account.kind != AccountKind.familyDirect.name ||
+        account.currencyCode != currencyCode) {
+      throw StateError('The reserved family funding account is in use');
+    }
+    await _saveTransaction(
+      id: id,
+      type: LedgerTransactionType.expense,
+      amountMinor: amountMinor,
+      occurredAt: occurredAt,
+      accountId: accountId,
+      targetAccountId: null,
+      categoryId: categoryId,
+      payments: [AccountPayment(accountId, amountMinor)],
+      requiredCurrency: currencyCode,
+      status: status,
+      note: note,
     );
   });
 
@@ -758,6 +834,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       throw ArgumentError.value(amountMinor, 'amountMinor', 'must be positive');
     }
     final resolvedCategoryId = switch (type) {
+      _ when type.isReceivableFlow => 'flow-${type.name}',
       LedgerTransactionType.borrowing => 'flow-borrowing',
       LedgerTransactionType.repayment => 'flow-repayment',
       LedgerTransactionType.transfer => 'flow-transfer',
@@ -772,6 +849,10 @@ class DriftExpenseRepository implements ExpenseRepository {
     if (category == null && type == LedgerTransactionType.transfer) {
       // A complete legacy snapshot can contain only the categories it used.
       await _database.ensureTransferCategory();
+      category = await categoryQuery.getSingleOrNull();
+    }
+    if (category == null && type.isReceivableFlow) {
+      await _database.ensureReceivableCategories();
       category = await categoryQuery.getSingleOrNull();
     }
     if (category == null ||
@@ -857,6 +938,15 @@ class DriftExpenseRepository implements ExpenseRepository {
     final targetKind = target == null
         ? null
         : AccountKind.values.byName(target.kind);
+    if (!_validAccountFlow(type, accountKind, targetKind) ||
+        !_validFundingAccounts(
+          allocations.map(
+            (payment) =>
+                AccountKind.values.byName(accounts[payment.accountId]!.kind),
+          ),
+        )) {
+      throw ArgumentError('The accounts do not match the transaction type');
+    }
     Future<void> requireFunds(AccountRow source, int amount) =>
         _requireAvailableBalance(
           accountId: source.id,
@@ -875,49 +965,32 @@ class DriftExpenseRepository implements ExpenseRepository {
 
     switch (type) {
       case LedgerTransactionType.expense:
-        if (target != null) {
-          throw ArgumentError('expense and income have no target account');
-        }
         if (posting) {
           for (final payment in allocations) {
             final source = accounts[payment.accountId]!;
-            if (source.kind != AccountKind.creditLine.name) {
+            final kind = AccountKind.values.byName(source.kind);
+            if (!kind.isLiability && kind != AccountKind.familyDirect) {
               await requireFunds(source, payment.amountMinor);
             }
           }
         }
       case LedgerTransactionType.income:
-        if (target != null) {
-          throw ArgumentError('expense and income have no target account');
-        }
-        if (posting && accountKind == AccountKind.creditLine) {
-          await requireDebt(account);
-        }
+        if (posting && accountKind.isLiability) await requireDebt(account);
       case LedgerTransactionType.borrowing:
-        if (accountKind != AccountKind.creditLine ||
-            targetKind == null ||
-            targetKind == AccountKind.creditLine ||
-            targetKind == AccountKind.entrustedFunds) {
-          throw ArgumentError('borrowing requires liability to personal asset');
-        }
+        break;
       case LedgerTransactionType.transfer:
-        if (accountKind == AccountKind.creditLine ||
-            targetKind == null ||
-            targetKind == AccountKind.creditLine) {
-          throw ArgumentError('transfer requires two non-liability accounts');
-        }
+      case LedgerTransactionType.lending:
+      case LedgerTransactionType.advance:
         if (posting) await requireFunds(account, amountMinor);
       case LedgerTransactionType.repayment:
-        if (accountKind == AccountKind.creditLine ||
-            targetKind != AccountKind.creditLine) {
-          throw ArgumentError(
-            'repayment requires a non-liability account to liability',
-          );
-        }
         if (posting) {
           await requireFunds(account, amountMinor);
           await requireDebt(target!);
         }
+      case LedgerTransactionType.collection:
+      case LedgerTransactionType.reimbursement:
+        // The completed ledger is checked chronologically after the write.
+        break;
     }
     return (
       categoryId: resolvedCategoryId,
@@ -931,10 +1004,57 @@ class DriftExpenseRepository implements ExpenseRepository {
         payments: allocations,
         settlement: settlement,
         isCreditIncome:
-            type == LedgerTransactionType.income &&
-            accountKind == AccountKind.creditLine,
+            type == LedgerTransactionType.income && accountKind.isLiability,
       ),
     );
+  }
+
+  Future<void> _checkReceivableBalances({Set<String>? accountIds}) async {
+    if (accountIds != null && accountIds.isEmpty) return;
+    final filter = accountIds == null
+        ? ''
+        : "AND a.id IN (${List.filled(accountIds.length, '?').join(', ')})";
+    final violation = await _database
+        .customSelect(
+          """
+      WITH movements AS (
+        SELECT p.account_id, e.occurred_at, SUM(p.debit_minor) AS change
+        FROM ledger_postings AS p
+        JOIN ledger_entries AS e ON e.id = p.transaction_id
+        JOIN ledger_accounts AS a ON a.id = p.account_id
+        WHERE a.kind = 'receivable' AND e.status = 'posted' AND e.is_deleted = 0
+          AND p.currency_code = a.currency_code
+          $filter
+        GROUP BY p.account_id, e.occurred_at
+      ), running AS (
+        SELECT account_id, SUM(change) OVER (
+          PARTITION BY account_id ORDER BY occurred_at
+        ) AS balance_change
+        FROM movements
+      )
+      SELECT a.id, a.name, a.currency_code
+      FROM ledger_accounts AS a
+      WHERE a.kind = 'receivable'
+        AND (a.opening_balance_minor < 0 OR a.opening_balance_minor + COALESCE((
+          SELECT MIN(balance_change) FROM running WHERE account_id = a.id
+        ), 0) < 0)
+        $filter
+      LIMIT 1
+      """,
+          variables: [
+            if (accountIds != null) ...accountIds.map(Variable.withString),
+            if (accountIds != null) ...accountIds.map(Variable.withString),
+          ],
+        )
+        .getSingleOrNull();
+    if (violation != null) {
+      throw TransactionRuleException(
+        TransactionRuleError.receivableBalanceExceeded,
+        accountId: violation.read<String>('id'),
+        accountName: violation.read<String>('name'),
+        currencyCode: violation.read<String>('currency_code'),
+      );
+    }
   }
 
   Future<void> _requireAvailableBalance({
@@ -989,12 +1109,14 @@ class DriftExpenseRepository implements ExpenseRepository {
     final exclusion = excludingEntryId == null
         ? ''
         : 'AND leg.transaction_id != ?';
-    final selection = accountId == null ? 'a.is_archived = 0' : 'a.id = ?';
+    final selection = accountId == null
+        ? "a.is_archived = 0 AND a.kind <> 'familyDirect'"
+        : 'a.id = ?';
     return _database.customSelect(
       """
       SELECT a.id, a.name, a.kind, a.currency_code, a.opening_balance_minor,
         a.opening_balance_minor + COALESCE(p.net_debit, 0) *
-          CASE WHEN a.kind = 'creditLine' THEN -1 ELSE 1 END AS current_balance
+          CASE WHEN a.kind IN ('creditLine', 'thirdPartyPayable') THEN -1 ELSE 1 END AS current_balance
       FROM ledger_accounts AS a
       LEFT JOIN (
         SELECT leg.account_id, leg.currency_code, SUM(leg.debit_minor) AS net_debit
@@ -1050,6 +1172,9 @@ class DriftExpenseRepository implements ExpenseRepository {
       if (snapshot == null) {
         throw ArgumentError.value(accountId, 'accountId', 'account not found');
       }
+      if (snapshot.read<String>('kind') == AccountKind.familyDirect.name) {
+        throw ArgumentError('A family funding account has no editable balance');
+      }
       final difference = amountMinor - snapshot.read<int>('current_balance');
       final opening = snapshot.read<int>('opening_balance_minor');
       await (_database.update(
@@ -1060,6 +1185,9 @@ class DriftExpenseRepository implements ExpenseRepository {
           updatedAt: Value(DateTime.now()),
         ),
       );
+      if (snapshot.read<String>('kind') == AccountKind.receivable.name) {
+        await _checkReceivableBalances(accountIds: {accountId});
+      }
     });
   }
 
@@ -1070,6 +1198,9 @@ class DriftExpenseRepository implements ExpenseRepository {
     required int currentBalanceMinor,
     String currencyCode = defaultCurrency,
   }) async {
+    if (kind == AccountKind.familyDirect) {
+      throw ArgumentError('Family funding accounts are managed by the ledger');
+    }
     final normalizedName = name.trim();
     final currency = currencyCode.trim().toUpperCase();
     if (!currencyMinorDigits.containsKey(currency)) {
@@ -1132,7 +1263,10 @@ class DriftExpenseRepository implements ExpenseRepository {
   Future<void> archiveAccount(String id) async {
     final updated =
         await (_database.update(_database.ledgerAccounts)..where(
-              (table) => table.id.equals(id) & table.isArchived.equals(false),
+              (table) =>
+                  table.id.equals(id) &
+                  table.isArchived.equals(false) &
+                  table.kind.equals(AccountKind.familyDirect.name).not(),
             ))
             .write(
               LedgerAccountsCompanion(
@@ -1502,7 +1636,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 4,
+      'backup_version': 5,
       'valuation': {
         'base_currency': valuation.baseCurrency,
         'rates': [
@@ -1555,23 +1689,47 @@ class DriftExpenseRepository implements ExpenseRepository {
       }
 
       for (final raw in payload.accounts) {
+        final id = _requiredString(raw, 'id');
+        final kind = AccountKind.values.byName(
+          _requiredEnum(
+            raw,
+            'kind',
+            AccountKind.values.map((item) => item.name),
+          ),
+        );
+        final code = _requiredString(raw, 'currency_code');
+        final opening = _requiredInt(raw, 'opening_balance_minor');
+        final archived = _requiredBool(raw, 'is_archived');
+        if ((payload.version < 5 && kind.isAdvancedFunding) ||
+            (kind == AccountKind.familyDirect &&
+                (id != _familyAccountId(code) ||
+                    !currencyMinorDigits.containsKey(code) ||
+                    opening != 0 ||
+                    archived))) {
+          throw const LedgerBackupException('备份资金归属账户无效');
+        }
+        if (mode == BackupRestoreMode.merge) {
+          final old = await (_database.select(
+            _database.ledgerAccounts,
+          )..where((table) => table.id.equals(id))).getSingleOrNull();
+          if (old != null &&
+              old.kind != kind.name &&
+              (kind.isAdvancedFunding ||
+                  AccountKind.values.byName(old.kind).isAdvancedFunding)) {
+            throw const LedgerBackupException('备份与已有资金归属账户冲突');
+          }
+        }
         await _database
             .into(_database.ledgerAccounts)
             .insertOnConflictUpdate(
               LedgerAccountsCompanion.insert(
-                id: _requiredString(raw, 'id'),
+                id: id,
                 name: _requiredString(raw, 'name'),
-                kind: _requiredEnum(
-                  raw,
-                  'kind',
-                  AccountKind.values.map((e) => e.name),
-                ),
-                currencyCode: Value(_requiredString(raw, 'currency_code')),
-                openingBalanceMinor: Value(
-                  _requiredInt(raw, 'opening_balance_minor'),
-                ),
+                kind: kind.name,
+                currencyCode: Value(code),
+                openingBalanceMinor: Value(opening),
                 sortOrder: Value(_requiredInt(raw, 'sort_order')),
-                isArchived: Value(_requiredBool(raw, 'is_archived')),
+                isArchived: Value(archived),
                 createdAt: _requiredDate(raw, 'created_at'),
                 updatedAt: _requiredDate(raw, 'updated_at'),
               ),
@@ -1630,7 +1788,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         );
       final legacyReviews = <String, List<PostingLeg>>{};
       for (final entry in ordered) {
-        if (payload.version < 3 && mode == BackupRestoreMode.merge) {
+        if (payload.version < 5 && mode == BackupRestoreMode.merge) {
           await _guardLegacyMerge(entry.id, payload.version);
         }
         await _database
@@ -1664,6 +1822,11 @@ class DriftExpenseRepository implements ExpenseRepository {
         }
       }
       await _validateRestoredLedger();
+      try {
+        await _checkReceivableBalances();
+      } on TransactionRuleException {
+        throw const LedgerBackupException('备份会使应收款历史余额为负');
+      }
       if (payload.valuation case final valuation?) {
         await _valuation.restore(
           valuation,
@@ -1678,7 +1841,12 @@ class DriftExpenseRepository implements ExpenseRepository {
     final current = await (_database.select(
       entries,
     )..where((table) => table.id.equals(id))).getSingleOrNull();
-    if (current?.settlementAmountMinor != null) {
+    if (current != null &&
+        (_isReceivableEntry(current) ||
+            await _hasAdvancedFundingPostings(id))) {
+      throw const LedgerBackupException('旧备份与已有资金归属或应收款交易冲突');
+    }
+    if (version < 3 && current?.settlementAmountMinor != null) {
       throw const LedgerBackupException('旧备份与已有跨币种转账冲突');
     }
     if (version == 1 &&
@@ -1690,6 +1858,22 @@ class DriftExpenseRepository implements ExpenseRepository {
                     await _hasActiveRefunds(id))))) {
       throw const LedgerBackupException('旧备份与已有拆分、待入账或退款交易冲突');
     }
+  }
+
+  Future<bool> _hasAdvancedFundingPostings(String id) async {
+    final row = await _database
+        .customSelect(
+          """
+      SELECT 1
+      FROM ledger_postings AS p
+      JOIN ledger_accounts AS a ON a.id = p.account_id
+      WHERE p.transaction_id = ? AND a.kind IN ('receivable', 'thirdPartyPayable', 'familyDirect')
+      LIMIT 1
+      """,
+          variables: [Variable.withString(id)],
+        )
+        .getSingleOrNull();
+    return row != null;
   }
 
   Future<void> _validateRestoredLedger() async {
@@ -1735,6 +1919,45 @@ class DriftExpenseRepository implements ExpenseRepository {
 
   @override
   Future<void> resetToFactoryDefaults() => _database.resetToFactoryDefaults();
+}
+
+String _familyAccountId(String currency) => 'system-family-direct-$currency';
+
+bool _isReceivableEntry(EntryRow? entry) =>
+    entry != null &&
+    LedgerTransactionType.values.byName(entry.transactionType).isReceivableFlow;
+
+bool _validFundingAccounts(Iterable<AccountKind> allocations) =>
+    allocations.every((kind) => kind != AccountKind.receivable) &&
+    (!allocations.contains(AccountKind.familyDirect) ||
+        allocations.length == 1);
+
+bool _validAccountFlow(
+  LedgerTransactionType type,
+  AccountKind source,
+  AccountKind? target,
+) {
+  bool isTransferAccount(AccountKind? kind) =>
+      kind?.isPersonalCash == true || kind == AccountKind.entrustedFunds;
+  return switch (type) {
+    LedgerTransactionType.expense =>
+      target == null && source != AccountKind.receivable,
+    LedgerTransactionType.income =>
+      target == null &&
+          source != AccountKind.receivable &&
+          source != AccountKind.familyDirect &&
+          source != AccountKind.thirdPartyPayable,
+    LedgerTransactionType.borrowing =>
+      source.isLiability && target?.isPersonalCash == true,
+    LedgerTransactionType.repayment =>
+      isTransferAccount(source) && target?.isLiability == true,
+    LedgerTransactionType.transfer =>
+      isTransferAccount(source) && isTransferAccount(target),
+    LedgerTransactionType.lending || LedgerTransactionType.advance =>
+      source.isPersonalCash && target == AccountKind.receivable,
+    LedgerTransactionType.collection || LedgerTransactionType.reimbursement =>
+      source == AccountKind.receivable && target?.isPersonalCash == true,
+  };
 }
 
 TransferSettlement? _entrySettlement(EntryRow entry) {
@@ -1821,6 +2044,10 @@ EntryRow _restoreEntry(Map<String, dynamic> raw, int version) {
     'transaction_type',
     LedgerTransactionType.values.map((type) => type.name),
   );
+  if (version < 5 &&
+      LedgerTransactionType.values.byName(type).isReceivableFlow) {
+    throw const LedgerBackupException('旧备份不能包含应收款交易');
+  }
   if (original != null &&
       (id == original || type != LedgerTransactionType.expense.name)) {
     throw const LedgerBackupException('备份退款关联无效');
@@ -1935,20 +2162,18 @@ List<PostingLeg> _restorePostings(
       type != LedgerTransactionType.income;
   final source = accounts[entry.accountId]!;
   final target = accounts[entry.targetAccountId];
-  final sourceCredit = source.kind == AccountKind.creditLine.name;
-  final targetCredit = target?.kind == AccountKind.creditLine.name;
-  final validAccounts = switch (type) {
-    LedgerTransactionType.expense ||
-    LedgerTransactionType.income => entry.targetAccountId == null,
-    LedgerTransactionType.borrowing =>
-      sourceCredit &&
-          target != null &&
-          !targetCredit &&
-          target.kind != AccountKind.entrustedFunds.name,
-    LedgerTransactionType.repayment => !sourceCredit && targetCredit,
-    LedgerTransactionType.transfer =>
-      !sourceCredit && target != null && !targetCredit,
-  };
+  final sourceKind = AccountKind.values.byName(source.kind);
+  final targetKind = target == null
+      ? null
+      : AccountKind.values.byName(target.kind);
+  final validAccounts =
+      _validAccountFlow(type, sourceKind, targetKind) &&
+      _validFundingAccounts(
+        payments.map(
+          (payment) =>
+              AccountKind.values.byName(accounts[payment.accountId]!.kind),
+        ),
+      );
   if (entry.amountMinor <= 0 ||
       !validAccounts ||
       source.currencyCode != entry.currencyCode ||
@@ -1972,7 +2197,8 @@ List<PostingLeg> _restorePostings(
     isRefund: isRefund,
     payments: payments,
     settlement: settlement,
-    isCreditIncome: type == LedgerTransactionType.income && sourceCredit,
+    isCreditIncome:
+        type == LedgerTransactionType.income && sourceKind.isLiability,
   );
   if (postings.length != expected.length ||
       postings.indexed.any((item) => item.$2 != expected[item.$1])) {
@@ -2018,7 +2244,7 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 4) ||
+      !(format == _backupFormat && (version >= 1 && version <= 5) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
@@ -2229,6 +2455,11 @@ Map<String, int> _requiredImportOpeningBalances(
       case LedgerTransactionType.repayment:
         change(draft.accountId, -draft.amountMinor);
         change(draft.targetAccountId, -draft.amountMinor);
+      case LedgerTransactionType.lending:
+      case LedgerTransactionType.advance:
+      case LedgerTransactionType.collection:
+      case LedgerTransactionType.reimbursement:
+        throw const LedgerImportException('应收款交易请通过完整备份恢复');
     }
   }
   return {

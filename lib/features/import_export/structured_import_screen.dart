@@ -37,7 +37,12 @@ class _StructuredImportScreenState
 
   @override
   Widget build(BuildContext context) {
-    final accounts = ref.watch(accountsProvider).asData?.value;
+    final accounts = ref
+        .watch(accountsProvider)
+        .asData
+        ?.value
+        .where((account) => !account.kind.isAdvancedFunding)
+        .toList();
     final expenses = ref.watch(expenseCategoriesProvider).asData?.value;
     final incomes = ref.watch(incomeCategoriesProvider).asData?.value;
     final ready = accounts != null && expenses != null && incomes != null;
@@ -602,6 +607,10 @@ String _typeLabel(BuildContext context, LedgerTransactionType type) =>
       LedgerTransactionType.transfer => context.l10n.transfer,
       LedgerTransactionType.borrowing => context.l10n.borrowing,
       LedgerTransactionType.repayment => context.l10n.repayment,
+      LedgerTransactionType.lending => context.l10n.lending,
+      LedgerTransactionType.advance => context.l10n.advance,
+      LedgerTransactionType.collection => context.l10n.collection,
+      LedgerTransactionType.reimbursement => context.l10n.reimbursement,
     };
 
 String _accountKindLabel(BuildContext context, AccountKind kind) =>
@@ -611,6 +620,10 @@ String _accountKindLabel(BuildContext context, AccountKind kind) =>
       AccountKind.wallet => context.l10n.accountKindElectronicWallet,
       AccountKind.creditLine => context.l10n.liability,
       AccountKind.entrustedFunds => context.l10n.accountKindEntrustedShort,
+      AccountKind.receivable => context.l10n.accountKindReceivable,
+      AccountKind.familyDirect => context.l10n.familyDirectFunding,
+      AccountKind.thirdPartyPayable =>
+        context.l10n.accountKindThirdPartyPayable,
     };
 
 String _draftAccountName(

@@ -15,6 +15,7 @@ enum TransactionRuleError {
   archivedPostingAccount,
   invalidTransferSettlement,
   currencyMismatch,
+  receivableBalanceExceeded,
   fixedOtherCategory,
   otherCategoryRequired,
 }
@@ -95,6 +96,16 @@ abstract interface class ExpenseRepository {
   });
 
   Future<void> postTransaction(String id);
+
+  Future<void> saveFamilyExpense({
+    String? id,
+    required int amountMinor,
+    required String currencyCode,
+    required DateTime occurredAt,
+    required String categoryId,
+    required String note,
+    LedgerPostingStatus status = LedgerPostingStatus.posted,
+  });
 
   Future<void> saveRefund({
     String? id,

@@ -674,6 +674,9 @@ String _localizedBackupError(BuildContext context, String message) {
     return context.l10n.backupUnsupported;
   }
   if (message == '备份时间无效') return context.l10n.backupInvalidTime;
+  if (message.contains('资金归属') || message.contains('应收款')) {
+    return context.l10n.advancedFundingBackupError;
+  }
   if (message.startsWith('备份估值')) {
     return context.l10n.invalidBackupValuation;
   }

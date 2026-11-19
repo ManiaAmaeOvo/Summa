@@ -1317,4 +1317,80 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get invalidBackupValuation =>
       'The backup contains invalid or duplicate valuation settings.';
+
+  @override
+  String get familyDirectFunding => 'Paid directly by family';
+
+  @override
+  String get familyDirectExplanation =>
+      'Records the purchase against family funding.';
+
+  @override
+  String get lending => 'Lend';
+
+  @override
+  String get advance => 'Pay for someone';
+
+  @override
+  String get collection => 'Collect principal';
+
+  @override
+  String get reimbursement => 'Receive reimbursement';
+
+  @override
+  String get receivableAccount => 'Receivable account';
+
+  @override
+  String get accountKindReceivable => 'Receivable';
+
+  @override
+  String get accountKindThirdPartyPayable => 'Third-party payment due';
+
+  @override
+  String get receivableAccounts => 'Receivables';
+
+  @override
+  String get receivableAccountsDescription =>
+      'Outstanding principal from loans and payments made for others.';
+
+  @override
+  String get quickAddReceivable => 'Add a receivable account';
+
+  @override
+  String get receivableBalanceExceeded =>
+      'This change would make the outstanding receivable negative on its transaction date.';
+
+  @override
+  String get grossSpending => 'Total spending';
+
+  @override
+  String get personalSpending => 'Personally borne';
+
+  @override
+  String get entrustedSpending => 'Paid from entrusted funds';
+
+  @override
+  String get thirdPartyPayableSpending => 'Of personally borne, paid by others';
+
+  @override
+  String get unclassifiedSpending => 'Funding to review';
+
+  @override
+  String get familySupportReceived => 'Family money received';
+
+  @override
+  String get fundingAndCashFlow => 'Funding and personal cash flow';
+
+  @override
+  String get personalCashInflow => 'Personal cash inflow';
+
+  @override
+  String get personalCashOutflow => 'Personal cash outflow';
+
+  @override
+  String get personalCashFlowNet => 'Net personal cash flow';
+
+  @override
+  String get advancedFundingBackupError =>
+      'The backup conflicts with funding or receivable records.';
 }
