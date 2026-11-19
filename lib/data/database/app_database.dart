@@ -110,6 +110,26 @@ class ValuationRates extends Table {
   Set<Column<Object>> get primaryKey => {baseCurrency, sourceCurrency};
 }
 
+@DataClassName('CheckpointRow')
+class BalanceCheckpoints extends Table {
+  TextColumn get id => text()();
+  TextColumn get accountId => text().references(LedgerAccounts, #id)();
+  TextColumn get currencyCode => text()();
+  DateTimeColumn get observedAt => dateTime()();
+  IntColumn get actualMinor =>
+      integer().check(const CustomExpression<bool>('actual_minor >= 0'))();
+  IntColumn get recordedBookMinor => integer()();
+  TextColumn get adjustmentId =>
+      text().nullable().unique().references(LedgerEntries, #id)();
+  IntColumn get adjustedBookMinor => integer().nullable()();
+  TextColumn get note => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get voidedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     LedgerAccounts,
@@ -118,6 +138,7 @@ class ValuationRates extends Table {
     LedgerPostings,
     ValuationPreferences,
     ValuationRates,
+    BalanceCheckpoints,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -126,7 +147,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -134,6 +155,7 @@ class AppDatabase extends _$AppDatabase {
       await migrator.createAll();
       await _createPostingIndexes();
       await _createReversalIndex();
+      await _createCheckpointIndex();
       await _seedDefaults();
       await customStatement('PRAGMA user_version = $schemaVersion');
     }),
@@ -192,6 +214,10 @@ class AppDatabase extends _$AppDatabase {
           await migrator.addColumn(ledgerEntries, ledgerEntries.termsJson);
           await _createReversalIndex();
         }
+        if (from < 13) {
+          await migrator.createTable(balanceCheckpoints);
+          await _createCheckpointIndex();
+        }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
         await customStatement('PRAGMA user_version = $to');
@@ -218,6 +244,11 @@ class AppDatabase extends _$AppDatabase {
     ON ledger_entries (json_extract(terms_json, '\$.reversal_of_id'))
     WHERE is_deleted = 0 AND json_extract(terms_json, '\$.reversal_of_id') IS NOT NULL
   """);
+
+  Future<void> _createCheckpointIndex() => customStatement('''
+    CREATE INDEX balance_checkpoints_account_date
+    ON balance_checkpoints (account_id, observed_at DESC)
+  ''');
 
   Future<void> backfillLegacyPostings() =>
       customInsert(insertLegacyPostings, updates: {ledgerPostings});
@@ -275,6 +306,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> resetLedgerData() async {
     await transaction(() async {
+      await delete(balanceCheckpoints).go();
       await delete(ledgerEntries).go();
       await delete(ledgerAccounts).go();
       final now = DateTime.now();
@@ -293,6 +325,7 @@ class AppDatabase extends _$AppDatabase {
     await transaction(() async {
       await delete(valuationPreferences).go();
       await delete(valuationRates).go();
+      await delete(balanceCheckpoints).go();
       await delete(ledgerEntries).go();
       await delete(ledgerCategories).go();
       await delete(ledgerAccounts).go();

@@ -95,6 +95,7 @@ class LedgerRecord {
     this.terms = const TransactionTerms(),
     this.allocationLabels = const {},
     this.hasReversal = false,
+    this.isReconciliationAdjustment = false,
     required this.note,
   });
 
@@ -121,6 +122,7 @@ class LedgerRecord {
   final Map<String, ({String parentId, String parentName, String name})>
   allocationLabels;
   final bool hasReversal;
+  final bool isReconciliationAdjustment;
   final String note;
 
   bool get isPending => status == LedgerPostingStatus.pending;
@@ -129,7 +131,12 @@ class LedgerRecord {
   int get direction => isReversal ? -1 : 1;
   bool get needsReview => accountPostings.any((posting) => posting.needsReview);
   bool get canReverse =>
-      !isPending && !isRefund && !isReversal && !hasReversal && !needsReview;
+      !isPending &&
+      !isRefund &&
+      !isReversal &&
+      !hasReversal &&
+      !needsReview &&
+      !isReconciliationAdjustment;
   int get chargesMinor => terms.feeMinor + terms.interestMinor;
   int get spendingMinor =>
       actualExpenseMinor + (isPending ? 0 : direction * chargesMinor);

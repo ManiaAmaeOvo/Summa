@@ -1500,4 +1500,118 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get prepaidAccountsDescription =>
       'Stored value available for future purchases. Excluded from liquid assets.';
+
+  @override
+  String get reconciliation => 'Reconcile account';
+
+  @override
+  String get recordCheckpoint => 'Record checkpoint';
+
+  @override
+  String get checkpointDetails => 'Checkpoint details';
+
+  @override
+  String get checkpointTime => 'Observed at';
+
+  @override
+  String get observedBalance => 'Observed balance';
+
+  @override
+  String get noCheckpoints =>
+      'There are no balance checkpoints for this account.';
+
+  @override
+  String get noSuccessfulReconciliation => 'No balanced checkpoint yet';
+
+  @override
+  String lastSuccessfulReconciliation(String date) {
+    return 'Last balanced checkpoint $date';
+  }
+
+  @override
+  String get checkpointBalanced => 'Balanced';
+
+  @override
+  String get checkpointUnbalanced => 'Difference to review';
+
+  @override
+  String get checkpointDifference => 'Difference (observed minus book)';
+
+  @override
+  String get bookBalanceAtCheckpoint => 'Book balance at this time';
+
+  @override
+  String get recordedBookBalance => 'Book balance when recorded';
+
+  @override
+  String get voidedCheckpoint => 'Voided';
+
+  @override
+  String get voidCheckpoint => 'Void checkpoint';
+
+  @override
+  String get confirmVoidCheckpoint =>
+      'Void this observation? It will remain in the account history.';
+
+  @override
+  String get confirmVoidAdjustedCheckpoint =>
+      'Void this observation and undo its linked balance adjustment? Both records will be kept in the audit history.';
+
+  @override
+  String get applyCheckpointAdjustment => 'Post difference as adjustment';
+
+  @override
+  String get confirmCheckpointAdjustment =>
+      'Post an adjustment at the observed time using the displayed difference?';
+
+  @override
+  String get linkedAdjustmentRecorded =>
+      'This checkpoint has a linked balance adjustment.';
+
+  @override
+  String get linkedCheckpoint =>
+      'Void the linked checkpoint to undo this adjustment.';
+
+  @override
+  String get checkpointUnavailable =>
+      'The checkpoint or account is unavailable. Check that the date is in the past and the account is active.';
+
+  @override
+  String get checkpointChanged =>
+      'The book balance changed. Review the new difference and confirm again.';
+
+  @override
+  String get reconciliationCandidates => 'Transactions to review';
+
+  @override
+  String checkpointRange(String start, String end) {
+    return 'After $start through $end';
+  }
+
+  @override
+  String checkpointRangeThrough(String end) {
+    return 'Through $end';
+  }
+
+  @override
+  String get checkpointMatchingAmount => 'Could account for the difference';
+
+  @override
+  String get similarCheckpointMovement => 'Similar transaction in this period';
+
+  @override
+  String get noReconciliationCandidates =>
+      'No transactions in this interval. Check for missing entries.';
+
+  @override
+  String get checkpointCandidateLimit => 'Showing the first 12 candidates.';
+
+  @override
+  String backupCheckpointCount(int count) {
+    return 'Balance checkpoints $count';
+  }
+
+  @override
+  String get checkpointBackupConflict =>
+      'The backup has invalid or conflicting balance checkpoints.';
 }

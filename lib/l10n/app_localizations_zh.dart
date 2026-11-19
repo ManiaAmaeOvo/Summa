@@ -1401,4 +1401,108 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get prepaidAccountsDescription => '供后续消费的储值余额，单独列示于流动资产之外。';
+
+  @override
+  String get reconciliation => '账户对账';
+
+  @override
+  String get recordCheckpoint => '记录余额检查点';
+
+  @override
+  String get checkpointDetails => '余额检查点详情';
+
+  @override
+  String get checkpointTime => '实测时间';
+
+  @override
+  String get observedBalance => '实测余额';
+
+  @override
+  String get noCheckpoints => '此账户暂无余额检查点。';
+
+  @override
+  String get noSuccessfulReconciliation => '暂无对账成功记录';
+
+  @override
+  String lastSuccessfulReconciliation(String date) {
+    return '上次对账成功 $date';
+  }
+
+  @override
+  String get checkpointBalanced => '已对平';
+
+  @override
+  String get checkpointUnbalanced => '差额待核对';
+
+  @override
+  String get checkpointDifference => '差额（实测减账面）';
+
+  @override
+  String get bookBalanceAtCheckpoint => '同一时点的账面余额';
+
+  @override
+  String get recordedBookBalance => '记录时的账面快照';
+
+  @override
+  String get voidedCheckpoint => '已作废';
+
+  @override
+  String get voidCheckpoint => '作废检查点';
+
+  @override
+  String get confirmVoidCheckpoint => '作废这次实测记录？历史中会保留作废记录。';
+
+  @override
+  String get confirmVoidAdjustedCheckpoint => '作废此次实测并撤销关联的余额调整？两条记录均保留在审计历史中。';
+
+  @override
+  String get applyCheckpointAdjustment => '将差额记为余额调整';
+
+  @override
+  String get confirmCheckpointAdjustment => '按当前显示的差额，在实测时点写入余额调整？';
+
+  @override
+  String get linkedAdjustmentRecorded => '此检查点已关联一笔余额调整。';
+
+  @override
+  String get linkedCheckpoint => '在账户对账中作废关联的检查点，可撤销这笔余额调整。';
+
+  @override
+  String get checkpointUnavailable => '检查点或账户不可用。请核对实测时间和账户状态。';
+
+  @override
+  String get checkpointChanged => '账面余额已变动，请核对新差额再确认。';
+
+  @override
+  String get reconciliationCandidates => '可核对的交易';
+
+  @override
+  String checkpointRange(String start, String end) {
+    return '核对 $start 之后至 $end 的交易';
+  }
+
+  @override
+  String checkpointRangeThrough(String end) {
+    return '核对截至 $end 的交易';
+  }
+
+  @override
+  String get checkpointMatchingAmount => '可能解释差额';
+
+  @override
+  String get similarCheckpointMovement => '区间内有相似交易';
+
+  @override
+  String get noReconciliationCandidates => '该区间暂无交易，可检查是否漏记。';
+
+  @override
+  String get checkpointCandidateLimit => '显示优先级最高的 12 条候选交易。';
+
+  @override
+  String backupCheckpointCount(int count) {
+    return '余额检查点 $count';
+  }
+
+  @override
+  String get checkpointBackupConflict => '备份中的余额检查点无效或与现有记录冲突。';
 }

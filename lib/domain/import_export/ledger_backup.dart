@@ -7,6 +7,7 @@ class LedgerBackupPreview {
     required this.categoryCount,
     required this.entryCount,
     required this.deletedEntryCount,
+    this.checkpointCount = 0,
   });
 
   final DateTime createdAt;
@@ -14,6 +15,7 @@ class LedgerBackupPreview {
   final int categoryCount;
   final int entryCount;
   final int deletedEntryCount;
+  final int checkpointCount;
 }
 
 class LedgerBackupException implements Exception {

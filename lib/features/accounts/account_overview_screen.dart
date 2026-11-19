@@ -4,6 +4,7 @@ import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/features/reconciliation/reconciliation_screen.dart';
 import 'package:summa/features/valuation/valuation_screen.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/input_error_labels.dart';
@@ -651,13 +652,27 @@ class _AccountGroup extends StatelessWidget {
                       PopupMenuButton<_AccountAction>(
                         tooltip: context.l10n.accountActions,
                         onSelected: (action) {
-                          if (action == _AccountAction.editBalance) {
-                            onEdit(items[index]);
-                          } else {
-                            onDelete(items[index]);
+                          final account = items[index];
+                          switch (action) {
+                            case _AccountAction.reconcile:
+                              Navigator.push<void>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ReconciliationScreen(account: account),
+                                ),
+                              );
+                            case _AccountAction.editBalance:
+                              onEdit(account);
+                            case _AccountAction.delete:
+                              onDelete(account);
                           }
                         },
                         itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: _AccountAction.reconcile,
+                            child: Text(context.l10n.reconciliation),
+                          ),
                           PopupMenuItem(
                             value: _AccountAction.editBalance,
                             child: Text(context.l10n.calibrateBalanceAction),
@@ -681,4 +696,4 @@ class _AccountGroup extends StatelessWidget {
   }
 }
 
-enum _AccountAction { editBalance, delete }
+enum _AccountAction { reconcile, editBalance, delete }

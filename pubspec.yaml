@@ -1,7 +1,7 @@
 name: summa
 description: "Summa, a local-first personal ledger for Android and future desktop platforms."
 publish_to: 'none'
-version: 2.0.0-dev.6+12
+version: 2.0.0-dev.7+13
 
 environment:
   sdk: ^3.13.2

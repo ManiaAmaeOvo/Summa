@@ -4,6 +4,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
+import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
@@ -157,6 +158,40 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
   @override
   Future<void> reverseTransaction(String id, {required DateTime occurredAt}) =>
       _mutate(() => _delegate.reverseTransaction(id, occurredAt: occurredAt));
+
+  @override
+  Stream<List<BalanceCheckpoint>> watchBalanceCheckpoints(String accountId) =>
+      _delegate.watchBalanceCheckpoints(accountId);
+
+  @override
+  Future<void> saveBalanceCheckpoint({
+    required String accountId,
+    required DateTime observedAt,
+    required int actualMinor,
+    required String note,
+  }) => _mutate(
+    () => _delegate.saveBalanceCheckpoint(
+      accountId: accountId,
+      observedAt: observedAt,
+      actualMinor: actualMinor,
+      note: note,
+    ),
+  );
+
+  @override
+  Future<void> adjustBalanceCheckpoint(
+    String id, {
+    required int expectedBookMinor,
+  }) => _mutate(
+    () => _delegate.adjustBalanceCheckpoint(
+      id,
+      expectedBookMinor: expectedBookMinor,
+    ),
+  );
+
+  @override
+  Future<void> voidBalanceCheckpoint(String id) =>
+      _mutate(() => _delegate.voidBalanceCheckpoint(id));
 
   @override
   Future<void> recordBalanceAdjustment({

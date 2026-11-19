@@ -3,6 +3,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/domain/valuation/net_worth_valuation.dart';
@@ -19,6 +20,7 @@ enum TransactionRuleError {
   receivableBalanceExceeded,
   invalidTransactionDetails,
   linkedReversal,
+  linkedCheckpoint,
   fixedOtherCategory,
   otherCategoryRequired,
 }
@@ -103,6 +105,22 @@ abstract interface class ExpenseRepository {
   Future<void> postTransaction(String id);
 
   Future<void> reverseTransaction(String id, {required DateTime occurredAt});
+
+  Stream<List<BalanceCheckpoint>> watchBalanceCheckpoints(String accountId);
+
+  Future<void> saveBalanceCheckpoint({
+    required String accountId,
+    required DateTime observedAt,
+    required int actualMinor,
+    required String note,
+  });
+
+  Future<void> adjustBalanceCheckpoint(
+    String id, {
+    required int expectedBookMinor,
+  });
+
+  Future<void> voidBalanceCheckpoint(String id);
 
   Future<void> recordBalanceAdjustment({
     required String accountId,

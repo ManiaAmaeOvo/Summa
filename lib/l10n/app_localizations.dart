@@ -2671,6 +2671,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stored value available for future purchases. Excluded from liquid assets.'**
   String get prepaidAccountsDescription;
+
+  /// No description provided for @reconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconcile account'**
+  String get reconciliation;
+
+  /// No description provided for @recordCheckpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Record checkpoint'**
+  String get recordCheckpoint;
+
+  /// No description provided for @checkpointDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkpoint details'**
+  String get checkpointDetails;
+
+  /// No description provided for @checkpointTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed at'**
+  String get checkpointTime;
+
+  /// No description provided for @observedBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed balance'**
+  String get observedBalance;
+
+  /// No description provided for @noCheckpoints.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no balance checkpoints for this account.'**
+  String get noCheckpoints;
+
+  /// No description provided for @noSuccessfulReconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'No balanced checkpoint yet'**
+  String get noSuccessfulReconciliation;
+
+  /// No description provided for @lastSuccessfulReconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'Last balanced checkpoint {date}'**
+  String lastSuccessfulReconciliation(String date);
+
+  /// No description provided for @checkpointBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get checkpointBalanced;
+
+  /// No description provided for @checkpointUnbalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Difference to review'**
+  String get checkpointUnbalanced;
+
+  /// No description provided for @checkpointDifference.
+  ///
+  /// In en, this message translates to:
+  /// **'Difference (observed minus book)'**
+  String get checkpointDifference;
+
+  /// No description provided for @bookBalanceAtCheckpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Book balance at this time'**
+  String get bookBalanceAtCheckpoint;
+
+  /// No description provided for @recordedBookBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Book balance when recorded'**
+  String get recordedBookBalance;
+
+  /// No description provided for @voidedCheckpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Voided'**
+  String get voidedCheckpoint;
+
+  /// No description provided for @voidCheckpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Void checkpoint'**
+  String get voidCheckpoint;
+
+  /// No description provided for @confirmVoidCheckpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Void this observation? It will remain in the account history.'**
+  String get confirmVoidCheckpoint;
+
+  /// No description provided for @confirmVoidAdjustedCheckpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Void this observation and undo its linked balance adjustment? Both records will be kept in the audit history.'**
+  String get confirmVoidAdjustedCheckpoint;
+
+  /// No description provided for @applyCheckpointAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Post difference as adjustment'**
+  String get applyCheckpointAdjustment;
+
+  /// No description provided for @confirmCheckpointAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Post an adjustment at the observed time using the displayed difference?'**
+  String get confirmCheckpointAdjustment;
+
+  /// No description provided for @linkedAdjustmentRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'This checkpoint has a linked balance adjustment.'**
+  String get linkedAdjustmentRecorded;
+
+  /// No description provided for @linkedCheckpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Void the linked checkpoint to undo this adjustment.'**
+  String get linkedCheckpoint;
+
+  /// No description provided for @checkpointUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The checkpoint or account is unavailable. Check that the date is in the past and the account is active.'**
+  String get checkpointUnavailable;
+
+  /// No description provided for @checkpointChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The book balance changed. Review the new difference and confirm again.'**
+  String get checkpointChanged;
+
+  /// No description provided for @reconciliationCandidates.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions to review'**
+  String get reconciliationCandidates;
+
+  /// No description provided for @checkpointRange.
+  ///
+  /// In en, this message translates to:
+  /// **'After {start} through {end}'**
+  String checkpointRange(String start, String end);
+
+  /// No description provided for @checkpointRangeThrough.
+  ///
+  /// In en, this message translates to:
+  /// **'Through {end}'**
+  String checkpointRangeThrough(String end);
+
+  /// No description provided for @checkpointMatchingAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Could account for the difference'**
+  String get checkpointMatchingAmount;
+
+  /// No description provided for @similarCheckpointMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'Similar transaction in this period'**
+  String get similarCheckpointMovement;
+
+  /// No description provided for @noReconciliationCandidates.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions in this interval. Check for missing entries.'**
+  String get noReconciliationCandidates;
+
+  /// No description provided for @checkpointCandidateLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the first 12 candidates.'**
+  String get checkpointCandidateLimit;
+
+  /// No description provided for @backupCheckpointCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance checkpoints {count}'**
+  String backupCheckpointCount(int count);
+
+  /// No description provided for @checkpointBackupConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup has invalid or conflicting balance checkpoints.'**
+  String get checkpointBackupConflict;
 }
 
 class _AppLocalizationsDelegate

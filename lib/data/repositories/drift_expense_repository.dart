@@ -8,6 +8,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
@@ -16,6 +17,7 @@ import 'package:summa/domain/defaults/default_ledger_names.dart';
 import 'package:summa/domain/valuation/net_worth_valuation.dart';
 import 'package:uuid/uuid.dart';
 
+import 'drift_reconciliation_store.dart';
 import 'drift_valuation_store.dart';
 
 const _backupFormat = 'summa_full_backup';
@@ -23,10 +25,12 @@ const _legacyBackupFormat = 'ledgerpro_full_backup';
 
 class DriftExpenseRepository implements ExpenseRepository {
   DriftExpenseRepository(this._database)
-    : _valuation = DriftValuationStore(_database);
+    : _valuation = DriftValuationStore(_database),
+      _reconciliation = DriftReconciliationStore(_database);
 
   final AppDatabase _database;
   final DriftValuationStore _valuation;
+  final DriftReconciliationStore _reconciliation;
   final Uuid _uuid = const Uuid();
 
   @override
@@ -128,6 +132,10 @@ class DriftExpenseRepository implements ExpenseRepository {
             leftOuterJoin(
               targetAccount,
               targetAccount.id.equalsExp(entry.targetAccountId),
+            ),
+            leftOuterJoin(
+              _database.balanceCheckpoints,
+              _database.balanceCheckpoints.adjustmentId.equalsExp(entry.id),
             ),
             leftOuterJoin(
               postings,
@@ -249,6 +257,8 @@ class DriftExpenseRepository implements ExpenseRepository {
       settlement: _entrySettlement(item),
       terms: terms,
       hasReversal: hasReversal,
+      isReconciliationAdjustment:
+          row.readTableOrNull(_database.balanceCheckpoints) != null,
       allocationLabels: {
         for (final category in terms.categories)
           category.categoryId: ?labels[category.categoryId],
@@ -446,6 +456,7 @@ class DriftExpenseRepository implements ExpenseRepository {
 
   Future<void> _writeEntry({
     EntryRow? previous,
+    String? entryId,
     required LedgerTransactionType type,
     required int amountMinor,
     required DateTime occurredAt,
@@ -461,7 +472,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     required List<PostingLeg> postings,
   }) async {
     final now = DateTime.now();
-    final id = previous?.id ?? _uuid.v4();
+    final id = previous?.id ?? entryId ?? _uuid.v4();
     await _database
         .into(_database.ledgerEntries)
         .insertOnConflictUpdate(
@@ -564,20 +575,34 @@ class DriftExpenseRepository implements ExpenseRepository {
   Future<void> deleteTransaction(String id) => _database.transaction(() async {
     final entry = await _activeEntry(id);
     await _requireEditable(entry);
+    await _requireIndependentAdjustment(entry);
     await _requireNoActiveRefunds(id);
+    await _softDeleteEntry(entry, DateTime.now());
+  });
+
+  Future<void> _softDeleteEntry(EntryRow entry, DateTime at) async {
     await (_database.update(
       _database.ledgerEntries,
-    )..where((table) => table.id.equals(id))).write(
+    )..where((table) => table.id.equals(entry.id))).write(
       LedgerEntriesCompanion(
         isDeleted: const Value(true),
-        updatedAt: Value(DateTime.now()),
+        updatedAt: Value(at),
       ),
     );
     final receivableIds = _entryReceivableAccounts(entry);
     if (receivableIds.isNotEmpty) {
       await _checkReceivableBalances(accountIds: receivableIds);
     }
-  });
+  }
+
+  Future<void> _requireIndependentAdjustment(EntryRow entry) async {
+    if (entry.transactionType == LedgerTransactionType.adjustment.name &&
+        await _reconciliation.ownsAdjustment(entry.id)) {
+      throw const TransactionRuleException(
+        TransactionRuleError.linkedCheckpoint,
+      );
+    }
+  }
 
   @override
   Future<void> postTransaction(String id) => _database.transaction(() async {
@@ -653,6 +678,7 @@ class DriftExpenseRepository implements ExpenseRepository {
   Future<void> reverseTransaction(String id, {required DateTime occurredAt}) =>
       _database.transaction(() async {
         final original = await _activeEntry(id);
+        await _requireIndependentAdjustment(original);
         final terms = _decodeTerms(original.termsJson);
         if (await _hasActiveReversal(id)) return;
         await _requireNoActiveRefunds(id);
@@ -712,6 +738,95 @@ class DriftExpenseRepository implements ExpenseRepository {
           .get();
 
   @override
+  Stream<List<BalanceCheckpoint>> watchBalanceCheckpoints(String accountId) =>
+      _reconciliation.watch(accountId);
+
+  @override
+  Future<void> saveBalanceCheckpoint({
+    required String accountId,
+    required DateTime observedAt,
+    required int actualMinor,
+    required String note,
+  }) => _database.transaction(() async {
+    final now = DateTime.now();
+    if (actualMinor < 0 || observedAt.isAfter(now)) {
+      throw const ReconciliationException(ReconciliationError.unavailable);
+    }
+    final snapshot = await _checkpointBalance(accountId, observedAt);
+    await _reconciliation.insert(
+      CheckpointRow(
+        id: _uuid.v4(),
+        accountId: accountId,
+        observedAt: observedAt,
+        currencyCode: snapshot.read<String>('currency_code'),
+        actualMinor: actualMinor,
+        recordedBookMinor: snapshot.read<int>('current_balance'),
+        note: note.trim(),
+        createdAt: now,
+      ),
+    );
+  });
+
+  @override
+  Future<void> adjustBalanceCheckpoint(
+    String id, {
+    required int expectedBookMinor,
+  }) => _database.transaction(() async {
+    final checkpoint = await _reconciliation.read(id);
+    if (checkpoint == null ||
+        checkpoint.voidedAt != null ||
+        checkpoint.adjustmentId != null) {
+      throw const ReconciliationException(ReconciliationError.unavailable);
+    }
+    final snapshot = await _checkpointBalance(
+      checkpoint.accountId,
+      checkpoint.observedAt,
+    );
+    final book = snapshot.read<int>('current_balance');
+    if (book != expectedBookMinor) {
+      throw const ReconciliationException(ReconciliationError.changed);
+    }
+    if (checkpoint.actualMinor == book) return;
+    final entryId = _uuid.v4();
+    await _writeBalanceAdjustment(
+      snapshot: snapshot,
+      amountMinor: checkpoint.actualMinor,
+      occurredAt: checkpoint.observedAt,
+      note: checkpoint.note,
+      entryId: entryId,
+    );
+    await _reconciliation.setAdjustment(id, entryId, book);
+  });
+
+  @override
+  Future<void> voidBalanceCheckpoint(String id) =>
+      _database.transaction(() async {
+        final checkpoint = await _reconciliation.read(id);
+        if (checkpoint == null || checkpoint.voidedAt != null) return;
+        final now = DateTime.now();
+        if (checkpoint.adjustmentId case final adjustmentId?) {
+          await _softDeleteEntry(await _activeEntry(adjustmentId), now);
+        }
+        await _reconciliation.voidCheckpoint(id, now);
+      });
+
+  Future<QueryRow> _checkpointBalance(
+    String accountId,
+    DateTime observedAt,
+  ) async {
+    final snapshot = await _balanceQuery(
+      accountId: accountId,
+      asOf: observedAt,
+    ).getSingleOrNull();
+    if (snapshot == null ||
+        snapshot.read<bool>('is_archived') ||
+        snapshot.read<String>('kind') == AccountKind.familyDirect.name) {
+      throw const ReconciliationException(ReconciliationError.unavailable);
+    }
+    return snapshot;
+  }
+
+  @override
   Future<void> recordBalanceAdjustment({
     required String accountId,
     required int amountMinor,
@@ -719,8 +834,26 @@ class DriftExpenseRepository implements ExpenseRepository {
   }) => _database.transaction(() async {
     if (amountMinor < 0) throw ArgumentError.value(amountMinor, 'amountMinor');
     final snapshot = await _balanceQuery(accountId: accountId).getSingle();
+    if (snapshot.read<String>('kind') == AccountKind.familyDirect.name) {
+      throw ArgumentError.value(accountId);
+    }
+    await _writeBalanceAdjustment(
+      snapshot: snapshot,
+      amountMinor: amountMinor,
+      occurredAt: DateTime.now(),
+      note: note,
+    );
+  });
+
+  Future<void> _writeBalanceAdjustment({
+    required QueryRow snapshot,
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String note,
+    String? entryId,
+  }) async {
+    final accountId = snapshot.read<String>('id');
     final kind = AccountKind.values.byName(snapshot.read<String>('kind'));
-    if (kind == AccountKind.familyDirect) throw ArgumentError.value(accountId);
     final currency = snapshot.read<String>('currency_code');
     final difference =
         BigInt.from(amountMinor) -
@@ -735,9 +868,10 @@ class DriftExpenseRepository implements ExpenseRepository {
     final adjustment = debit.toInt();
     await _ensureSystemCategories(adjustment: true);
     await _writeEntry(
+      entryId: entryId,
       type: LedgerTransactionType.adjustment,
       amountMinor: adjustment,
-      occurredAt: DateTime.now(),
+      occurredAt: occurredAt,
       categoryId: _adjustmentCategory,
       currencyCode: currency,
       accountId: accountId,
@@ -750,7 +884,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         accountId: accountId,
       ),
     );
-  });
+  }
 
   Future<void> _validateAllocationCategories(TransactionTerms terms) async {
     if (terms.feeMinor + terms.interestMinor > 0) {
@@ -1486,17 +1620,19 @@ class DriftExpenseRepository implements ExpenseRepository {
   Selectable<QueryRow> _balanceQuery({
     String? accountId,
     String? excludingEntryId,
+    DateTime? asOf,
   }) {
     final postingAccount = accountId == null ? '' : 'AND leg.account_id = ?';
     final exclusion = excludingEntryId == null
         ? ''
         : 'AND leg.transaction_id != ?';
+    final cutoff = asOf == null ? '' : 'AND entry.occurred_at <= ?';
     final selection = accountId == null
         ? "a.is_archived = 0 AND a.kind <> 'familyDirect'"
         : 'a.id = ?';
     return _database.customSelect(
       """
-      SELECT a.id, a.name, a.kind, a.currency_code, a.opening_balance_minor,
+      SELECT a.id, a.name, a.kind, a.currency_code, a.opening_balance_minor, a.is_archived,
         a.opening_balance_minor + COALESCE(p.net_debit, 0) *
           CASE WHEN a.kind IN ('creditLine', 'thirdPartyPayable') THEN -1 ELSE 1 END AS current_balance
       FROM ledger_accounts AS a
@@ -1506,7 +1642,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         JOIN ledger_entries AS entry ON entry.id = leg.transaction_id
         WHERE leg.account_id IS NOT NULL
           AND entry.status = 'posted' AND entry.is_deleted = 0
-          $postingAccount $exclusion
+          $postingAccount $exclusion $cutoff
         GROUP BY leg.account_id, leg.currency_code
       ) AS p ON p.account_id = a.id AND p.currency_code = a.currency_code
       WHERE $selection
@@ -1515,6 +1651,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       variables: [
         if (accountId != null) Variable.withString(accountId),
         if (excludingEntryId != null) Variable.withString(excludingEntryId),
+        if (asOf != null) Variable.withDateTime(asOf),
         if (accountId != null) Variable.withString(accountId),
       ],
       readsFrom: {
@@ -2018,7 +2155,8 @@ class DriftExpenseRepository implements ExpenseRepository {
     final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 6,
+      'backup_version': 7,
+      'balance_checkpoints': await _reconciliation.backup(),
       'valuation': {
         'base_currency': valuation.baseCurrency,
         'rates': [
@@ -2049,6 +2187,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     return LedgerBackupPreview(
       createdAt: payload.createdAt,
       accountCount: payload.accounts.length,
+      checkpointCount: payload.checkpoints.length,
       categoryCount: payload.categories.length,
       entryCount: entries.length,
       deletedEntryCount: entries
@@ -2065,6 +2204,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     final payload = _parseBackup(source);
     await _database.transaction(() async {
       if (mode == BackupRestoreMode.replace) {
+        await _database.delete(_database.balanceCheckpoints).go();
         await _database.delete(_database.ledgerEntries).go();
         await _database.delete(_database.ledgerCategories).go();
         await _database.delete(_database.ledgerAccounts).go();
@@ -2095,6 +2235,11 @@ class DriftExpenseRepository implements ExpenseRepository {
           final old = await (_database.select(
             _database.ledgerAccounts,
           )..where((table) => table.id.equals(id))).getSingleOrNull();
+          if (old != null &&
+              (old.currencyCode != code || old.kind != kind.name) &&
+              await _reconciliation.hasCheckpoints(id)) {
+            throw const LedgerBackupException('备份与余额检查点的账户类型或币种冲突');
+          }
           if (old != null &&
               old.kind != kind.name &&
               (kind.isAdvancedFunding ||
@@ -2213,6 +2358,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         }
       }
       await _validateRestoredLedger();
+      await _reconciliation.restore(payload.checkpoints);
       try {
         await _checkReceivableBalances();
       } on TransactionRuleException {
@@ -2844,6 +2990,7 @@ Map<String, Object?> _backupPosting(PostingRow posting) => {
   List<Map<String, dynamic>> accounts,
   List<Map<String, dynamic>> categories,
   List<Map<String, dynamic>> entries,
+  List<Map<String, dynamic>> checkpoints,
 })
 _parseBackup(String source) {
   dynamic decoded;
@@ -2858,7 +3005,7 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 6) ||
+      !(format == _backupFormat && (version >= 1 && version <= 7) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
@@ -2871,6 +3018,9 @@ _parseBackup(String source) {
     accounts: _requiredObjectList(decoded, 'accounts'),
     categories: _requiredObjectList(decoded, 'categories'),
     entries: _requiredObjectList(decoded, 'entries'),
+    checkpoints: version >= 7
+        ? _requiredObjectList(decoded, 'balance_checkpoints')
+        : const [],
   );
 }
 

@@ -3245,6 +3245,699 @@ class ValuationRatesCompanion extends UpdateCompanion<ValuationRateRow> {
   }
 }
 
+class $BalanceCheckpointsTable extends BalanceCheckpoints
+    with TableInfo<$BalanceCheckpointsTable, CheckpointRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BalanceCheckpointsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_accounts (id)',
+    ),
+  );
+  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
+    'currencyCode',
+  );
+  @override
+  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
+    'currency_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _observedAtMeta = const VerificationMeta(
+    'observedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> observedAt = GeneratedColumn<DateTime>(
+    'observed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actualMinorMeta = const VerificationMeta(
+    'actualMinor',
+  );
+  @override
+  late final GeneratedColumn<int> actualMinor = GeneratedColumn<int>(
+    'actual_minor',
+    aliasedName,
+    false,
+    check: () => const CustomExpression<bool>('actual_minor >= 0'),
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recordedBookMinorMeta = const VerificationMeta(
+    'recordedBookMinor',
+  );
+  @override
+  late final GeneratedColumn<int> recordedBookMinor = GeneratedColumn<int>(
+    'recorded_book_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _adjustmentIdMeta = const VerificationMeta(
+    'adjustmentId',
+  );
+  @override
+  late final GeneratedColumn<String> adjustmentId = GeneratedColumn<String>(
+    'adjustment_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'UNIQUE REFERENCES ledger_entries (id)',
+    ),
+  );
+  static const VerificationMeta _adjustedBookMinorMeta = const VerificationMeta(
+    'adjustedBookMinor',
+  );
+  @override
+  late final GeneratedColumn<int> adjustedBookMinor = GeneratedColumn<int>(
+    'adjusted_book_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _voidedAtMeta = const VerificationMeta(
+    'voidedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> voidedAt = GeneratedColumn<DateTime>(
+    'voided_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    accountId,
+    currencyCode,
+    observedAt,
+    actualMinor,
+    recordedBookMinor,
+    adjustmentId,
+    adjustedBookMinor,
+    note,
+    createdAt,
+    voidedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'balance_checkpoints';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CheckpointRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('currency_code')) {
+      context.handle(
+        _currencyCodeMeta,
+        currencyCode.isAcceptableOrUnknown(
+          data['currency_code']!,
+          _currencyCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyCodeMeta);
+    }
+    if (data.containsKey('observed_at')) {
+      context.handle(
+        _observedAtMeta,
+        observedAt.isAcceptableOrUnknown(data['observed_at']!, _observedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_observedAtMeta);
+    }
+    if (data.containsKey('actual_minor')) {
+      context.handle(
+        _actualMinorMeta,
+        actualMinor.isAcceptableOrUnknown(
+          data['actual_minor']!,
+          _actualMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_actualMinorMeta);
+    }
+    if (data.containsKey('recorded_book_minor')) {
+      context.handle(
+        _recordedBookMinorMeta,
+        recordedBookMinor.isAcceptableOrUnknown(
+          data['recorded_book_minor']!,
+          _recordedBookMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recordedBookMinorMeta);
+    }
+    if (data.containsKey('adjustment_id')) {
+      context.handle(
+        _adjustmentIdMeta,
+        adjustmentId.isAcceptableOrUnknown(
+          data['adjustment_id']!,
+          _adjustmentIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('adjusted_book_minor')) {
+      context.handle(
+        _adjustedBookMinorMeta,
+        adjustedBookMinor.isAcceptableOrUnknown(
+          data['adjusted_book_minor']!,
+          _adjustedBookMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_noteMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('voided_at')) {
+      context.handle(
+        _voidedAtMeta,
+        voidedAt.isAcceptableOrUnknown(data['voided_at']!, _voidedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CheckpointRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CheckpointRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+      currencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_code'],
+      )!,
+      observedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}observed_at'],
+      )!,
+      actualMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}actual_minor'],
+      )!,
+      recordedBookMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recorded_book_minor'],
+      )!,
+      adjustmentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}adjustment_id'],
+      ),
+      adjustedBookMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}adjusted_book_minor'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      voidedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}voided_at'],
+      ),
+    );
+  }
+
+  @override
+  $BalanceCheckpointsTable createAlias(String alias) {
+    return $BalanceCheckpointsTable(attachedDatabase, alias);
+  }
+}
+
+class CheckpointRow extends DataClass implements Insertable<CheckpointRow> {
+  final String id;
+  final String accountId;
+  final String currencyCode;
+  final DateTime observedAt;
+  final int actualMinor;
+  final int recordedBookMinor;
+  final String? adjustmentId;
+  final int? adjustedBookMinor;
+  final String note;
+  final DateTime createdAt;
+  final DateTime? voidedAt;
+  const CheckpointRow({
+    required this.id,
+    required this.accountId,
+    required this.currencyCode,
+    required this.observedAt,
+    required this.actualMinor,
+    required this.recordedBookMinor,
+    this.adjustmentId,
+    this.adjustedBookMinor,
+    required this.note,
+    required this.createdAt,
+    this.voidedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['account_id'] = Variable<String>(accountId);
+    map['currency_code'] = Variable<String>(currencyCode);
+    map['observed_at'] = Variable<DateTime>(observedAt);
+    map['actual_minor'] = Variable<int>(actualMinor);
+    map['recorded_book_minor'] = Variable<int>(recordedBookMinor);
+    if (!nullToAbsent || adjustmentId != null) {
+      map['adjustment_id'] = Variable<String>(adjustmentId);
+    }
+    if (!nullToAbsent || adjustedBookMinor != null) {
+      map['adjusted_book_minor'] = Variable<int>(adjustedBookMinor);
+    }
+    map['note'] = Variable<String>(note);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || voidedAt != null) {
+      map['voided_at'] = Variable<DateTime>(voidedAt);
+    }
+    return map;
+  }
+
+  BalanceCheckpointsCompanion toCompanion(bool nullToAbsent) {
+    return BalanceCheckpointsCompanion(
+      id: Value(id),
+      accountId: Value(accountId),
+      currencyCode: Value(currencyCode),
+      observedAt: Value(observedAt),
+      actualMinor: Value(actualMinor),
+      recordedBookMinor: Value(recordedBookMinor),
+      adjustmentId: adjustmentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(adjustmentId),
+      adjustedBookMinor: adjustedBookMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(adjustedBookMinor),
+      note: Value(note),
+      createdAt: Value(createdAt),
+      voidedAt: voidedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voidedAt),
+    );
+  }
+
+  factory CheckpointRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CheckpointRow(
+      id: serializer.fromJson<String>(json['id']),
+      accountId: serializer.fromJson<String>(json['accountId']),
+      currencyCode: serializer.fromJson<String>(json['currencyCode']),
+      observedAt: serializer.fromJson<DateTime>(json['observedAt']),
+      actualMinor: serializer.fromJson<int>(json['actualMinor']),
+      recordedBookMinor: serializer.fromJson<int>(json['recordedBookMinor']),
+      adjustmentId: serializer.fromJson<String?>(json['adjustmentId']),
+      adjustedBookMinor: serializer.fromJson<int?>(json['adjustedBookMinor']),
+      note: serializer.fromJson<String>(json['note']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      voidedAt: serializer.fromJson<DateTime?>(json['voidedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'accountId': serializer.toJson<String>(accountId),
+      'currencyCode': serializer.toJson<String>(currencyCode),
+      'observedAt': serializer.toJson<DateTime>(observedAt),
+      'actualMinor': serializer.toJson<int>(actualMinor),
+      'recordedBookMinor': serializer.toJson<int>(recordedBookMinor),
+      'adjustmentId': serializer.toJson<String?>(adjustmentId),
+      'adjustedBookMinor': serializer.toJson<int?>(adjustedBookMinor),
+      'note': serializer.toJson<String>(note),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'voidedAt': serializer.toJson<DateTime?>(voidedAt),
+    };
+  }
+
+  CheckpointRow copyWith({
+    String? id,
+    String? accountId,
+    String? currencyCode,
+    DateTime? observedAt,
+    int? actualMinor,
+    int? recordedBookMinor,
+    Value<String?> adjustmentId = const Value.absent(),
+    Value<int?> adjustedBookMinor = const Value.absent(),
+    String? note,
+    DateTime? createdAt,
+    Value<DateTime?> voidedAt = const Value.absent(),
+  }) => CheckpointRow(
+    id: id ?? this.id,
+    accountId: accountId ?? this.accountId,
+    currencyCode: currencyCode ?? this.currencyCode,
+    observedAt: observedAt ?? this.observedAt,
+    actualMinor: actualMinor ?? this.actualMinor,
+    recordedBookMinor: recordedBookMinor ?? this.recordedBookMinor,
+    adjustmentId: adjustmentId.present ? adjustmentId.value : this.adjustmentId,
+    adjustedBookMinor: adjustedBookMinor.present
+        ? adjustedBookMinor.value
+        : this.adjustedBookMinor,
+    note: note ?? this.note,
+    createdAt: createdAt ?? this.createdAt,
+    voidedAt: voidedAt.present ? voidedAt.value : this.voidedAt,
+  );
+  CheckpointRow copyWithCompanion(BalanceCheckpointsCompanion data) {
+    return CheckpointRow(
+      id: data.id.present ? data.id.value : this.id,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      currencyCode: data.currencyCode.present
+          ? data.currencyCode.value
+          : this.currencyCode,
+      observedAt: data.observedAt.present
+          ? data.observedAt.value
+          : this.observedAt,
+      actualMinor: data.actualMinor.present
+          ? data.actualMinor.value
+          : this.actualMinor,
+      recordedBookMinor: data.recordedBookMinor.present
+          ? data.recordedBookMinor.value
+          : this.recordedBookMinor,
+      adjustmentId: data.adjustmentId.present
+          ? data.adjustmentId.value
+          : this.adjustmentId,
+      adjustedBookMinor: data.adjustedBookMinor.present
+          ? data.adjustedBookMinor.value
+          : this.adjustedBookMinor,
+      note: data.note.present ? data.note.value : this.note,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      voidedAt: data.voidedAt.present ? data.voidedAt.value : this.voidedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CheckpointRow(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('observedAt: $observedAt, ')
+          ..write('actualMinor: $actualMinor, ')
+          ..write('recordedBookMinor: $recordedBookMinor, ')
+          ..write('adjustmentId: $adjustmentId, ')
+          ..write('adjustedBookMinor: $adjustedBookMinor, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('voidedAt: $voidedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    accountId,
+    currencyCode,
+    observedAt,
+    actualMinor,
+    recordedBookMinor,
+    adjustmentId,
+    adjustedBookMinor,
+    note,
+    createdAt,
+    voidedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CheckpointRow &&
+          other.id == this.id &&
+          other.accountId == this.accountId &&
+          other.currencyCode == this.currencyCode &&
+          other.observedAt == this.observedAt &&
+          other.actualMinor == this.actualMinor &&
+          other.recordedBookMinor == this.recordedBookMinor &&
+          other.adjustmentId == this.adjustmentId &&
+          other.adjustedBookMinor == this.adjustedBookMinor &&
+          other.note == this.note &&
+          other.createdAt == this.createdAt &&
+          other.voidedAt == this.voidedAt);
+}
+
+class BalanceCheckpointsCompanion extends UpdateCompanion<CheckpointRow> {
+  final Value<String> id;
+  final Value<String> accountId;
+  final Value<String> currencyCode;
+  final Value<DateTime> observedAt;
+  final Value<int> actualMinor;
+  final Value<int> recordedBookMinor;
+  final Value<String?> adjustmentId;
+  final Value<int?> adjustedBookMinor;
+  final Value<String> note;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> voidedAt;
+  final Value<int> rowid;
+  const BalanceCheckpointsCompanion({
+    this.id = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.currencyCode = const Value.absent(),
+    this.observedAt = const Value.absent(),
+    this.actualMinor = const Value.absent(),
+    this.recordedBookMinor = const Value.absent(),
+    this.adjustmentId = const Value.absent(),
+    this.adjustedBookMinor = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.voidedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BalanceCheckpointsCompanion.insert({
+    required String id,
+    required String accountId,
+    required String currencyCode,
+    required DateTime observedAt,
+    required int actualMinor,
+    required int recordedBookMinor,
+    this.adjustmentId = const Value.absent(),
+    this.adjustedBookMinor = const Value.absent(),
+    required String note,
+    required DateTime createdAt,
+    this.voidedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       accountId = Value(accountId),
+       currencyCode = Value(currencyCode),
+       observedAt = Value(observedAt),
+       actualMinor = Value(actualMinor),
+       recordedBookMinor = Value(recordedBookMinor),
+       note = Value(note),
+       createdAt = Value(createdAt);
+  static Insertable<CheckpointRow> custom({
+    Expression<String>? id,
+    Expression<String>? accountId,
+    Expression<String>? currencyCode,
+    Expression<DateTime>? observedAt,
+    Expression<int>? actualMinor,
+    Expression<int>? recordedBookMinor,
+    Expression<String>? adjustmentId,
+    Expression<int>? adjustedBookMinor,
+    Expression<String>? note,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? voidedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (accountId != null) 'account_id': accountId,
+      if (currencyCode != null) 'currency_code': currencyCode,
+      if (observedAt != null) 'observed_at': observedAt,
+      if (actualMinor != null) 'actual_minor': actualMinor,
+      if (recordedBookMinor != null) 'recorded_book_minor': recordedBookMinor,
+      if (adjustmentId != null) 'adjustment_id': adjustmentId,
+      if (adjustedBookMinor != null) 'adjusted_book_minor': adjustedBookMinor,
+      if (note != null) 'note': note,
+      if (createdAt != null) 'created_at': createdAt,
+      if (voidedAt != null) 'voided_at': voidedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BalanceCheckpointsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? accountId,
+    Value<String>? currencyCode,
+    Value<DateTime>? observedAt,
+    Value<int>? actualMinor,
+    Value<int>? recordedBookMinor,
+    Value<String?>? adjustmentId,
+    Value<int?>? adjustedBookMinor,
+    Value<String>? note,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? voidedAt,
+    Value<int>? rowid,
+  }) {
+    return BalanceCheckpointsCompanion(
+      id: id ?? this.id,
+      accountId: accountId ?? this.accountId,
+      currencyCode: currencyCode ?? this.currencyCode,
+      observedAt: observedAt ?? this.observedAt,
+      actualMinor: actualMinor ?? this.actualMinor,
+      recordedBookMinor: recordedBookMinor ?? this.recordedBookMinor,
+      adjustmentId: adjustmentId ?? this.adjustmentId,
+      adjustedBookMinor: adjustedBookMinor ?? this.adjustedBookMinor,
+      note: note ?? this.note,
+      createdAt: createdAt ?? this.createdAt,
+      voidedAt: voidedAt ?? this.voidedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (currencyCode.present) {
+      map['currency_code'] = Variable<String>(currencyCode.value);
+    }
+    if (observedAt.present) {
+      map['observed_at'] = Variable<DateTime>(observedAt.value);
+    }
+    if (actualMinor.present) {
+      map['actual_minor'] = Variable<int>(actualMinor.value);
+    }
+    if (recordedBookMinor.present) {
+      map['recorded_book_minor'] = Variable<int>(recordedBookMinor.value);
+    }
+    if (adjustmentId.present) {
+      map['adjustment_id'] = Variable<String>(adjustmentId.value);
+    }
+    if (adjustedBookMinor.present) {
+      map['adjusted_book_minor'] = Variable<int>(adjustedBookMinor.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (voidedAt.present) {
+      map['voided_at'] = Variable<DateTime>(voidedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BalanceCheckpointsCompanion(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('observedAt: $observedAt, ')
+          ..write('actualMinor: $actualMinor, ')
+          ..write('recordedBookMinor: $recordedBookMinor, ')
+          ..write('adjustmentId: $adjustmentId, ')
+          ..write('adjustedBookMinor: $adjustedBookMinor, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('voidedAt: $voidedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3257,6 +3950,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ValuationPreferencesTable valuationPreferences =
       $ValuationPreferencesTable(this);
   late final $ValuationRatesTable valuationRates = $ValuationRatesTable(this);
+  late final $BalanceCheckpointsTable balanceCheckpoints =
+      $BalanceCheckpointsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3268,6 +3963,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ledgerPostings,
     valuationPreferences,
     valuationRates,
+    balanceCheckpoints,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3367,6 +4063,27 @@ final class $$LedgerAccountsTableReferences
     ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_ledgerPostingsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$BalanceCheckpointsTable, List<CheckpointRow>>
+  _balanceCheckpointsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.balanceCheckpoints,
+        aliasName: 'ledger_accounts__id__balance_checkpoints__account_id',
+      );
+
+  $$BalanceCheckpointsTableProcessedTableManager get balanceCheckpointsRefs {
+    final manager = $$BalanceCheckpointsTableTableManager(
+      $_db,
+      $_db.balanceCheckpoints,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _balanceCheckpointsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -3493,6 +4210,31 @@ class $$LedgerAccountsTableFilterComposer
           }) => $$LedgerPostingsTableFilterComposer(
             $db: $db,
             $table: $db.ledgerPostings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> balanceCheckpointsRefs(
+    Expression<bool> Function($$BalanceCheckpointsTableFilterComposer f) f,
+  ) {
+    final $$BalanceCheckpointsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.balanceCheckpoints,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BalanceCheckpointsTableFilterComposer(
+            $db: $db,
+            $table: $db.balanceCheckpoints,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3674,6 +4416,32 @@ class $$LedgerAccountsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> balanceCheckpointsRefs<T extends Object>(
+    Expression<T> Function($$BalanceCheckpointsTableAnnotationComposer a) f,
+  ) {
+    final $$BalanceCheckpointsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.balanceCheckpoints,
+          getReferencedColumn: (t) => t.accountId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$BalanceCheckpointsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.balanceCheckpoints,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LedgerAccountsTableTableManager
@@ -3693,6 +4461,7 @@ class $$LedgerAccountsTableTableManager
             bool ledgerEntriesRefs,
             bool targetLedgerEntries,
             bool ledgerPostingsRefs,
+            bool balanceCheckpointsRefs,
           })
         > {
   $$LedgerAccountsTableTableManager(
@@ -3769,6 +4538,7 @@ class $$LedgerAccountsTableTableManager
                 ledgerEntriesRefs = false,
                 targetLedgerEntries = false,
                 ledgerPostingsRefs = false,
+                balanceCheckpointsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -3776,6 +4546,7 @@ class $$LedgerAccountsTableTableManager
                     if (ledgerEntriesRefs) db.ledgerEntries,
                     if (targetLedgerEntries) db.ledgerEntries,
                     if (ledgerPostingsRefs) db.ledgerPostings,
+                    if (balanceCheckpointsRefs) db.balanceCheckpoints,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -3843,6 +4614,27 @@ class $$LedgerAccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (balanceCheckpointsRefs)
+                        await $_getPrefetchedData<
+                          AccountRow,
+                          $LedgerAccountsTable,
+                          CheckpointRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerAccountsTableReferences
+                              ._balanceCheckpointsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerAccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).balanceCheckpointsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -3867,6 +4659,7 @@ typedef $$LedgerAccountsTableProcessedTableManager =
         bool ledgerEntriesRefs,
         bool targetLedgerEntries,
         bool ledgerPostingsRefs,
+        bool balanceCheckpointsRefs,
       })
     >;
 typedef $$LedgerCategoriesTableCreateCompanionBuilder =
@@ -4489,6 +5282,27 @@ final class $$LedgerEntriesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$BalanceCheckpointsTable, List<CheckpointRow>>
+  _balanceCheckpointsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.balanceCheckpoints,
+        aliasName: 'ledger_entries__id__balance_checkpoints__adjustment_id',
+      );
+
+  $$BalanceCheckpointsTableProcessedTableManager get balanceCheckpointsRefs {
+    final manager = $$BalanceCheckpointsTableTableManager(
+      $_db,
+      $_db.balanceCheckpoints,
+    ).filter((f) => f.adjustmentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _balanceCheckpointsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LedgerEntriesTableFilterComposer
@@ -4683,6 +5497,31 @@ class $$LedgerEntriesTableFilterComposer
           }) => $$LedgerPostingsTableFilterComposer(
             $db: $db,
             $table: $db.ledgerPostings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> balanceCheckpointsRefs(
+    Expression<bool> Function($$BalanceCheckpointsTableFilterComposer f) f,
+  ) {
+    final $$BalanceCheckpointsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.balanceCheckpoints,
+      getReferencedColumn: (t) => t.adjustmentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BalanceCheckpointsTableFilterComposer(
+            $db: $db,
+            $table: $db.balanceCheckpoints,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5056,6 +5895,32 @@ class $$LedgerEntriesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> balanceCheckpointsRefs<T extends Object>(
+    Expression<T> Function($$BalanceCheckpointsTableAnnotationComposer a) f,
+  ) {
+    final $$BalanceCheckpointsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.balanceCheckpoints,
+          getReferencedColumn: (t) => t.adjustmentId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$BalanceCheckpointsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.balanceCheckpoints,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LedgerEntriesTableTableManager
@@ -5077,6 +5942,7 @@ class $$LedgerEntriesTableTableManager
             bool targetAccountId,
             bool refundOfId,
             bool ledgerPostingsRefs,
+            bool balanceCheckpointsRefs,
           })
         > {
   $$LedgerEntriesTableTableManager(_$AppDatabase db, $LedgerEntriesTable table)
@@ -5193,11 +6059,13 @@ class $$LedgerEntriesTableTableManager
                 targetAccountId = false,
                 refundOfId = false,
                 ledgerPostingsRefs = false,
+                balanceCheckpointsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (ledgerPostingsRefs) db.ledgerPostings,
+                    if (balanceCheckpointsRefs) db.balanceCheckpoints,
                   ],
                   addJoins:
                       <
@@ -5285,6 +6153,27 @@ class $$LedgerEntriesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (balanceCheckpointsRefs)
+                        await $_getPrefetchedData<
+                          EntryRow,
+                          $LedgerEntriesTable,
+                          CheckpointRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerEntriesTableReferences
+                              ._balanceCheckpointsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerEntriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).balanceCheckpointsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.adjustmentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -5311,6 +6200,7 @@ typedef $$LedgerEntriesTableProcessedTableManager =
         bool targetAccountId,
         bool refundOfId,
         bool ledgerPostingsRefs,
+        bool balanceCheckpointsRefs,
       })
     >;
 typedef $$LedgerPostingsTableCreateCompanionBuilder =
@@ -6130,6 +7020,541 @@ typedef $$ValuationRatesTableProcessedTableManager =
       ValuationRateRow,
       PrefetchHooks Function()
     >;
+typedef $$BalanceCheckpointsTableCreateCompanionBuilder =
+    BalanceCheckpointsCompanion Function({
+      required String id,
+      required String accountId,
+      required String currencyCode,
+      required DateTime observedAt,
+      required int actualMinor,
+      required int recordedBookMinor,
+      Value<String?> adjustmentId,
+      Value<int?> adjustedBookMinor,
+      required String note,
+      required DateTime createdAt,
+      Value<DateTime?> voidedAt,
+      Value<int> rowid,
+    });
+typedef $$BalanceCheckpointsTableUpdateCompanionBuilder =
+    BalanceCheckpointsCompanion Function({
+      Value<String> id,
+      Value<String> accountId,
+      Value<String> currencyCode,
+      Value<DateTime> observedAt,
+      Value<int> actualMinor,
+      Value<int> recordedBookMinor,
+      Value<String?> adjustmentId,
+      Value<int?> adjustedBookMinor,
+      Value<String> note,
+      Value<DateTime> createdAt,
+      Value<DateTime?> voidedAt,
+      Value<int> rowid,
+    });
+
+final class $$BalanceCheckpointsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $BalanceCheckpointsTable, CheckpointRow> {
+  $$BalanceCheckpointsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LedgerAccountsTable _accountIdTable(_$AppDatabase db) => db
+      .ledgerAccounts
+      .createAlias('balance_checkpoints__account_id__ledger_accounts__id');
+
+  $$LedgerAccountsTableProcessedTableManager get accountId {
+    final $_column = $_itemColumn<String>('account_id')!;
+
+    final manager = $$LedgerAccountsTableTableManager(
+      $_db,
+      $_db.ledgerAccounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LedgerEntriesTable _adjustmentIdTable(_$AppDatabase db) => db
+      .ledgerEntries
+      .createAlias('balance_checkpoints__adjustment_id__ledger_entries__id');
+
+  $$LedgerEntriesTableProcessedTableManager? get adjustmentId {
+    final $_column = $_itemColumn<String>('adjustment_id');
+    if ($_column == null) return null;
+    final manager = $$LedgerEntriesTableTableManager(
+      $_db,
+      $_db.ledgerEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_adjustmentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$BalanceCheckpointsTableFilterComposer
+    extends Composer<_$AppDatabase, $BalanceCheckpointsTable> {
+  $$BalanceCheckpointsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get observedAt => $composableBuilder(
+    column: $table.observedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get actualMinor => $composableBuilder(
+    column: $table.actualMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get recordedBookMinor => $composableBuilder(
+    column: $table.recordedBookMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get adjustedBookMinor => $composableBuilder(
+    column: $table.adjustedBookMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get voidedAt => $composableBuilder(
+    column: $table.voidedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LedgerAccountsTableFilterComposer get accountId {
+    final $$LedgerAccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerEntriesTableFilterComposer get adjustmentId {
+    final $$LedgerEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.adjustmentId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BalanceCheckpointsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BalanceCheckpointsTable> {
+  $$BalanceCheckpointsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get observedAt => $composableBuilder(
+    column: $table.observedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get actualMinor => $composableBuilder(
+    column: $table.actualMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get recordedBookMinor => $composableBuilder(
+    column: $table.recordedBookMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get adjustedBookMinor => $composableBuilder(
+    column: $table.adjustedBookMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get voidedAt => $composableBuilder(
+    column: $table.voidedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LedgerAccountsTableOrderingComposer get accountId {
+    final $$LedgerAccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerEntriesTableOrderingComposer get adjustmentId {
+    final $$LedgerEntriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.adjustmentId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BalanceCheckpointsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BalanceCheckpointsTable> {
+  $$BalanceCheckpointsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get observedAt => $composableBuilder(
+    column: $table.observedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get actualMinor => $composableBuilder(
+    column: $table.actualMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get recordedBookMinor => $composableBuilder(
+    column: $table.recordedBookMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get adjustedBookMinor => $composableBuilder(
+    column: $table.adjustedBookMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get voidedAt =>
+      $composableBuilder(column: $table.voidedAt, builder: (column) => column);
+
+  $$LedgerAccountsTableAnnotationComposer get accountId {
+    final $$LedgerAccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerEntriesTableAnnotationComposer get adjustmentId {
+    final $$LedgerEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.adjustmentId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BalanceCheckpointsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BalanceCheckpointsTable,
+          CheckpointRow,
+          $$BalanceCheckpointsTableFilterComposer,
+          $$BalanceCheckpointsTableOrderingComposer,
+          $$BalanceCheckpointsTableAnnotationComposer,
+          $$BalanceCheckpointsTableCreateCompanionBuilder,
+          $$BalanceCheckpointsTableUpdateCompanionBuilder,
+          (CheckpointRow, $$BalanceCheckpointsTableReferences),
+          CheckpointRow,
+          PrefetchHooks Function({bool accountId, bool adjustmentId})
+        > {
+  $$BalanceCheckpointsTableTableManager(
+    _$AppDatabase db,
+    $BalanceCheckpointsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BalanceCheckpointsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BalanceCheckpointsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BalanceCheckpointsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<String> currencyCode = const Value.absent(),
+                Value<DateTime> observedAt = const Value.absent(),
+                Value<int> actualMinor = const Value.absent(),
+                Value<int> recordedBookMinor = const Value.absent(),
+                Value<String?> adjustmentId = const Value.absent(),
+                Value<int?> adjustedBookMinor = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> voidedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BalanceCheckpointsCompanion(
+                id: id,
+                accountId: accountId,
+                currencyCode: currencyCode,
+                observedAt: observedAt,
+                actualMinor: actualMinor,
+                recordedBookMinor: recordedBookMinor,
+                adjustmentId: adjustmentId,
+                adjustedBookMinor: adjustedBookMinor,
+                note: note,
+                createdAt: createdAt,
+                voidedAt: voidedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String accountId,
+                required String currencyCode,
+                required DateTime observedAt,
+                required int actualMinor,
+                required int recordedBookMinor,
+                Value<String?> adjustmentId = const Value.absent(),
+                Value<int?> adjustedBookMinor = const Value.absent(),
+                required String note,
+                required DateTime createdAt,
+                Value<DateTime?> voidedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BalanceCheckpointsCompanion.insert(
+                id: id,
+                accountId: accountId,
+                currencyCode: currencyCode,
+                observedAt: observedAt,
+                actualMinor: actualMinor,
+                recordedBookMinor: recordedBookMinor,
+                adjustmentId: adjustmentId,
+                adjustedBookMinor: adjustedBookMinor,
+                note: note,
+                createdAt: createdAt,
+                voidedAt: voidedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BalanceCheckpointsTable, CheckpointRow>(table),
+                  $$BalanceCheckpointsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({accountId = false, adjustmentId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (accountId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.accountId,
+                        referencedTable: $$BalanceCheckpointsTableReferences
+                            ._accountIdTable(db),
+                        referencedColumn: $$BalanceCheckpointsTableReferences
+                            ._accountIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (adjustmentId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.adjustmentId,
+                        referencedTable: $$BalanceCheckpointsTableReferences
+                            ._adjustmentIdTable(db),
+                        referencedColumn: $$BalanceCheckpointsTableReferences
+                            ._adjustmentIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$BalanceCheckpointsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BalanceCheckpointsTable,
+      CheckpointRow,
+      $$BalanceCheckpointsTableFilterComposer,
+      $$BalanceCheckpointsTableOrderingComposer,
+      $$BalanceCheckpointsTableAnnotationComposer,
+      $$BalanceCheckpointsTableCreateCompanionBuilder,
+      $$BalanceCheckpointsTableUpdateCompanionBuilder,
+      (CheckpointRow, $$BalanceCheckpointsTableReferences),
+      CheckpointRow,
+      PrefetchHooks Function({bool accountId, bool adjustmentId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6146,4 +7571,6 @@ class $AppDatabaseManager {
       $$ValuationPreferencesTableTableManager(_db, _db.valuationPreferences);
   $$ValuationRatesTableTableManager get valuationRates =>
       $$ValuationRatesTableTableManager(_db, _db.valuationRates);
+  $$BalanceCheckpointsTableTableManager get balanceCheckpoints =>
+      $$BalanceCheckpointsTableTableManager(_db, _db.balanceCheckpoints);
 }

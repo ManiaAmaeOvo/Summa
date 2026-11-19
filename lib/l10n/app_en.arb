@@ -474,5 +474,68 @@
   "accountKindSavings": "Savings account",
   "accountKindPrepaid": "Prepaid balance",
   "prepaidAccounts": "Prepaid accounts",
-  "prepaidAccountsDescription": "Stored value available for future purchases. Excluded from liquid assets."
+  "prepaidAccountsDescription": "Stored value available for future purchases. Excluded from liquid assets.",
+  "reconciliation": "Reconcile account",
+  "recordCheckpoint": "Record checkpoint",
+  "checkpointDetails": "Checkpoint details",
+  "checkpointTime": "Observed at",
+  "observedBalance": "Observed balance",
+  "noCheckpoints": "There are no balance checkpoints for this account.",
+  "noSuccessfulReconciliation": "No balanced checkpoint yet",
+  "lastSuccessfulReconciliation": "Last balanced checkpoint {date}",
+  "@lastSuccessfulReconciliation": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "checkpointBalanced": "Balanced",
+  "checkpointUnbalanced": "Difference to review",
+  "checkpointDifference": "Difference (observed minus book)",
+  "bookBalanceAtCheckpoint": "Book balance at this time",
+  "recordedBookBalance": "Book balance when recorded",
+  "voidedCheckpoint": "Voided",
+  "voidCheckpoint": "Void checkpoint",
+  "confirmVoidCheckpoint": "Void this observation? It will remain in the account history.",
+  "confirmVoidAdjustedCheckpoint": "Void this observation and undo its linked balance adjustment? Both records will be kept in the audit history.",
+  "applyCheckpointAdjustment": "Post difference as adjustment",
+  "confirmCheckpointAdjustment": "Post an adjustment at the observed time using the displayed difference?",
+  "linkedAdjustmentRecorded": "This checkpoint has a linked balance adjustment.",
+  "linkedCheckpoint": "Void the linked checkpoint to undo this adjustment.",
+  "checkpointUnavailable": "The checkpoint or account is unavailable. Check that the date is in the past and the account is active.",
+  "checkpointChanged": "The book balance changed. Review the new difference and confirm again.",
+  "reconciliationCandidates": "Transactions to review",
+  "checkpointRange": "After {start} through {end}",
+  "@checkpointRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "checkpointRangeThrough": "Through {end}",
+  "@checkpointRangeThrough": {
+    "placeholders": {
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "checkpointMatchingAmount": "Could account for the difference",
+  "similarCheckpointMovement": "Similar transaction in this period",
+  "noReconciliationCandidates": "No transactions in this interval. Check for missing entries.",
+  "checkpointCandidateLimit": "Showing the first 12 candidates.",
+  "backupCheckpointCount": "Balance checkpoints {count}",
+  "@backupCheckpointCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkpointBackupConflict": "The backup has invalid or conflicting balance checkpoints."
 }

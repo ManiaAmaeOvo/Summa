@@ -5,6 +5,7 @@ import 'package:summa/data/repositories/auto_backup_expense_repository.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/domain/valuation/net_worth_valuation.dart';
@@ -49,3 +50,8 @@ final incomeCategoriesProvider = StreamProvider<List<LedgerCategory>>((ref) {
 final valuationSettingsProvider = StreamProvider<ValuationSettings>((ref) {
   return ref.watch(expenseRepositoryProvider).watchValuationSettings();
 });
+
+final balanceCheckpointsProvider = StreamProvider.autoDispose
+    .family<List<BalanceCheckpoint>, String>((ref, id) {
+      return ref.watch(expenseRepositoryProvider).watchBalanceCheckpoints(id);
+    });

@@ -32,6 +32,7 @@ String localizedTransactionRule(
     TransactionRuleError.invalidTransactionDetails =>
       context.l10n.invalidTransactionDetails,
     TransactionRuleError.linkedReversal => context.l10n.linkedReversal,
+    TransactionRuleError.linkedCheckpoint => context.l10n.linkedCheckpoint,
     TransactionRuleError.linkedRefunds => context.l10n.linkedRefunds,
     TransactionRuleError.archivedPostingAccount =>
       context.l10n.archivedPostingAccount,
