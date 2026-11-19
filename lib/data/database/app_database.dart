@@ -5,6 +5,8 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'ledger_postings_sql.dart';
+
 part 'app_database.g.dart';
 
 @DataClassName('AccountRow')
@@ -70,30 +72,59 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (migrator) async {
+    onCreate: (migrator) => transaction(() async {
       await migrator.createAll();
+      await _createPostingViews();
       await _seedDefaults();
-    },
+      await customStatement('PRAGMA user_version = $schemaVersion');
+    }),
     onUpgrade: (migrator, from, to) async {
-      if (from < 2) await _addVersion2Defaults();
-      if (from < 3) await _addVersion3Defaults();
-      if (from < 4) {
-        await migrator.addColumn(ledgerEntries, ledgerEntries.isDeleted);
+      if (from > to) {
+        throw UnsupportedError(
+          'Cannot open ledger schema $from with schema $to',
+        );
       }
-      if (from < 5) {
-        await migrator.addColumn(ledgerEntries, ledgerEntries.targetAccountId);
-        await _addVersion5Categories();
-      }
-      if (from < 6) await _addVersion6Categories();
+      await transaction(() async {
+        if (from < 2) await _addVersion2Defaults();
+        if (from < 3) await _addVersion3Defaults();
+        if (from < 4) {
+          await migrator.addColumn(ledgerEntries, ledgerEntries.isDeleted);
+        }
+        if (from < 5) {
+          await migrator.addColumn(
+            ledgerEntries,
+            ledgerEntries.targetAccountId,
+          );
+          await _addVersion5Categories();
+        }
+        if (from < 6) await _addVersion6Categories();
+        if (from < 7) await _createPostingViews();
+        // Drift updates the version after this callback. Set it in the same
+        // transaction as the schema so an interrupted open cannot replay DDL.
+        await customStatement('PRAGMA user_version = $to');
+      });
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  Future<void> _createPostingViews() async {
+    await customStatement('''
+      CREATE INDEX ledger_entries_active_account ON ledger_entries (account_id)
+      WHERE is_deleted = 0
+    ''');
+    await customStatement('''
+      CREATE INDEX ledger_entries_active_target ON ledger_entries (target_account_id)
+      WHERE is_deleted = 0
+    ''');
+    await customStatement(createLedgerAccountPostingsView);
+    await customStatement(createLedgerPostingsView);
+  }
 
   Future<void> _seedDefaults() async {
     final now = DateTime.now();

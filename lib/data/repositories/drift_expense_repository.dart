@@ -41,57 +41,18 @@ class DriftExpenseRepository implements ExpenseRepository {
 
   @override
   Stream<List<AccountBalance>> watchAccountBalances() {
-    final query = _database.customSelect(
-      '''
-      SELECT
-        a.id,
-        a.name,
-        a.kind,
-        a.opening_balance_minor,
-        COALESCE(SUM(
-          CASE
-            WHEN e.is_deleted = 1 THEN 0
-            WHEN e.transaction_type = 'expense' AND e.account_id = a.id
-              THEN CASE WHEN a.kind = 'creditLine'
-                THEN e.amount_minor ELSE -e.amount_minor END
-            WHEN e.transaction_type = 'income' AND e.account_id = a.id
-              THEN CASE WHEN a.kind = 'creditLine'
-                THEN -e.amount_minor ELSE e.amount_minor END
-            WHEN e.transaction_type = 'borrowing' AND
-              (e.account_id = a.id OR e.target_account_id = a.id)
-              THEN e.amount_minor
-            WHEN e.transaction_type = 'repayment' AND
-              (e.account_id = a.id OR e.target_account_id = a.id)
-              THEN -e.amount_minor
-            WHEN e.transaction_type = 'transfer' AND e.account_id = a.id
-              THEN -e.amount_minor
-            WHEN e.transaction_type = 'transfer' AND e.target_account_id = a.id
-              THEN e.amount_minor
-            ELSE 0
-          END
-        ), 0) AS net_change
-      FROM ledger_accounts AS a
-      LEFT JOIN ledger_entries AS e
-        ON e.account_id = a.id OR e.target_account_id = a.id
-      WHERE a.is_archived = 0
-      GROUP BY a.id, a.name, a.kind, a.opening_balance_minor, a.sort_order
-      ORDER BY a.sort_order
-      ''',
-      readsFrom: {_database.ledgerAccounts, _database.ledgerEntries},
-    );
+    final query = _balanceQuery();
     return query.watch().map(
       (rows) => rows
           .map((row) {
             final kind = AccountKind.values.byName(row.read<String>('kind'));
             final opening = row.read<int>('opening_balance_minor');
-            final netChange = row.read<int>('net_change');
-            final current = opening + netChange;
             return AccountBalance(
               id: row.read<String>('id'),
               name: row.read<String>('name'),
               kind: kind,
               openingBalanceMinor: opening,
-              currentBalanceMinor: current,
+              currentBalanceMinor: row.read<int>('current_balance'),
             );
           })
           .toList(growable: false),
@@ -232,7 +193,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     required String note,
   }) async {
     await _database.transaction(() async {
-      final resolvedCategoryId = await _validateTransaction(
+      final validation = await _validateTransaction(
         type: type,
         amountMinor: amountMinor,
         categoryId: categoryId,
@@ -249,7 +210,8 @@ class DriftExpenseRepository implements ExpenseRepository {
               amountMinor: amountMinor,
               occurredAt: occurredAt,
               timezoneOffsetMinutes: occurredAt.timeZoneOffset.inMinutes,
-              categoryId: resolvedCategoryId,
+              categoryId: validation.categoryId,
+              currencyCode: Value(validation.currencyCode),
               accountId: accountId,
               targetAccountId: Value(targetAccountId),
               note: Value(note.trim()),
@@ -272,7 +234,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     required String note,
   }) async {
     await _database.transaction(() async {
-      final resolvedCategoryId = await _validateTransaction(
+      final validation = await _validateTransaction(
         type: type,
         amountMinor: amountMinor,
         categoryId: categoryId,
@@ -292,7 +254,7 @@ class DriftExpenseRepository implements ExpenseRepository {
                   timezoneOffsetMinutes: Value(
                     occurredAt.timeZoneOffset.inMinutes,
                   ),
-                  categoryId: Value(resolvedCategoryId),
+                  categoryId: Value(validation.categoryId),
                   accountId: Value(accountId),
                   targetAccountId: Value(targetAccountId),
                   note: Value(note.trim()),
@@ -430,7 +392,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     return id;
   }
 
-  Future<String> _validateTransaction({
+  Future<({String categoryId, String currencyCode})> _validateTransaction({
     required LedgerTransactionType type,
     required int amountMinor,
     String? categoryId,
@@ -482,6 +444,32 @@ class DriftExpenseRepository implements ExpenseRepository {
     }
     if (accountId == targetAccountId) {
       throw ArgumentError('source and target accounts must differ');
+    }
+    if (target != null && account.currencyCode != target.currencyCode) {
+      throw ArgumentError(
+        'A cross-currency transaction requires explicit settlement amounts',
+      );
+    }
+    if (excludingEntryId != null) {
+      final entry =
+          await (_database.select(_database.ledgerEntries)..where(
+                (table) =>
+                    table.id.equals(excludingEntryId) &
+                    table.isDeleted.equals(false),
+              ))
+              .getSingleOrNull();
+      if (entry == null) {
+        throw ArgumentError.value(
+          excludingEntryId,
+          'id',
+          'transaction not found',
+        );
+      }
+      if (account.currencyCode != entry.currencyCode) {
+        throw ArgumentError(
+          'An existing transaction must keep its original currency',
+        );
+      }
     }
     final accountKind = AccountKind.values.byName(account.kind);
     final targetKind = target == null
@@ -556,7 +544,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         );
         break;
     }
-    return resolvedCategoryId;
+    return (categoryId: resolvedCategoryId, currencyCode: account.currencyCode);
   }
 
   Future<void> _requireAvailableBalance({
@@ -599,50 +587,45 @@ class DriftExpenseRepository implements ExpenseRepository {
     }
   }
 
+  Selectable<QueryRow> _balanceQuery({
+    String? accountId,
+    String? excludingEntryId,
+  }) {
+    final postingAccount = accountId == null ? '' : 'AND account_id = ?';
+    final exclusion = excludingEntryId == null ? '' : 'AND transaction_id != ?';
+    final selection = accountId == null ? 'a.is_archived = 0' : 'a.id = ?';
+    return _database.customSelect(
+      """
+      SELECT a.id, a.name, a.kind, a.opening_balance_minor,
+        a.opening_balance_minor + COALESCE(p.net_debit, 0) *
+          CASE WHEN a.kind = 'creditLine' THEN -1 ELSE 1 END AS current_balance
+      FROM ledger_accounts AS a
+      LEFT JOIN (
+        SELECT account_id, currency_code, SUM(debit_minor) AS net_debit
+        FROM ledger_account_postings
+        WHERE 1 = 1 $postingAccount $exclusion
+        GROUP BY account_id, currency_code
+      ) AS p ON p.account_id = a.id AND p.currency_code = a.currency_code
+      WHERE $selection
+      ORDER BY a.sort_order
+      """,
+      variables: [
+        if (accountId != null) Variable.withString(accountId),
+        if (excludingEntryId != null) Variable.withString(excludingEntryId),
+        if (accountId != null) Variable.withString(accountId),
+      ],
+      readsFrom: {_database.ledgerAccounts, _database.ledgerEntries},
+    );
+  }
+
   Future<int> _currentBalance(
     String accountId, {
     String? excludingEntryId,
   }) async {
-    final exclusion = excludingEntryId == null ? '' : 'AND e.id != ?';
-    final row = await _database
-        .customSelect(
-          '''
-      SELECT a.opening_balance_minor + COALESCE(SUM(
-        CASE
-          WHEN e.transaction_type = 'expense' AND e.account_id = a.id
-            THEN CASE WHEN a.kind = 'creditLine'
-              THEN e.amount_minor ELSE -e.amount_minor END
-          WHEN e.transaction_type = 'income' AND e.account_id = a.id
-            THEN CASE WHEN a.kind = 'creditLine'
-              THEN -e.amount_minor ELSE e.amount_minor END
-          WHEN e.transaction_type = 'borrowing' AND
-            (e.account_id = a.id OR e.target_account_id = a.id)
-            THEN e.amount_minor
-          WHEN e.transaction_type = 'repayment' AND
-            (e.account_id = a.id OR e.target_account_id = a.id)
-            THEN -e.amount_minor
-          WHEN e.transaction_type = 'transfer' AND e.account_id = a.id
-            THEN -e.amount_minor
-          WHEN e.transaction_type = 'transfer' AND e.target_account_id = a.id
-            THEN e.amount_minor
-          ELSE 0
-        END
-      ), 0) AS current_balance
-      FROM ledger_accounts AS a
-      LEFT JOIN ledger_entries AS e ON
-        (e.account_id = a.id OR e.target_account_id = a.id)
-        AND e.is_deleted = 0
-        $exclusion
-      WHERE a.id = ?
-      GROUP BY a.id, a.opening_balance_minor
-      ''',
-          variables: [
-            if (excludingEntryId != null) Variable.withString(excludingEntryId),
-            Variable.withString(accountId),
-          ],
-          readsFrom: {_database.ledgerAccounts, _database.ledgerEntries},
-        )
-        .getSingle();
+    final row = await _balanceQuery(
+      accountId: accountId,
+      excludingEntryId: excludingEntryId,
+    ).getSingle();
     return row.read<int>('current_balance');
   }
 
@@ -658,60 +641,23 @@ class DriftExpenseRepository implements ExpenseRepository {
         'must not be negative',
       );
     }
-    final snapshot = await _database
-        .customSelect(
-          '''
-      SELECT
-        a.kind,
-        COALESCE(SUM(
-          CASE
-            WHEN e.is_deleted = 1 THEN 0
-            WHEN e.transaction_type = 'expense' AND e.account_id = a.id
-              THEN CASE WHEN a.kind = 'creditLine'
-                THEN e.amount_minor ELSE -e.amount_minor END
-            WHEN e.transaction_type = 'income' AND e.account_id = a.id
-              THEN CASE WHEN a.kind = 'creditLine'
-                THEN -e.amount_minor ELSE e.amount_minor END
-            WHEN e.transaction_type = 'borrowing' AND
-              (e.account_id = a.id OR e.target_account_id = a.id)
-              THEN e.amount_minor
-            WHEN e.transaction_type = 'repayment' AND
-              (e.account_id = a.id OR e.target_account_id = a.id)
-              THEN -e.amount_minor
-            WHEN e.transaction_type = 'transfer' AND e.account_id = a.id
-              THEN -e.amount_minor
-            WHEN e.transaction_type = 'transfer' AND e.target_account_id = a.id
-              THEN e.amount_minor
-            ELSE 0
-          END
-        ), 0) AS net_change
-      FROM ledger_accounts AS a
-      LEFT JOIN ledger_entries AS e
-        ON e.account_id = a.id OR e.target_account_id = a.id
-      WHERE a.id = ?
-      GROUP BY a.id, a.kind
-      ''',
-          variables: [Variable.withString(accountId)],
-          readsFrom: {_database.ledgerAccounts, _database.ledgerEntries},
-        )
-        .getSingleOrNull();
-    if (snapshot == null) {
-      throw ArgumentError.value(accountId, 'accountId', 'account not found');
-    }
-    final netChange = snapshot.read<int>('net_change');
-    final recalculatedOpening = amountMinor - netChange;
-    final updated =
-        await (_database.update(
-          _database.ledgerAccounts,
-        )..where((table) => table.id.equals(accountId))).write(
-          LedgerAccountsCompanion(
-            openingBalanceMinor: Value(recalculatedOpening),
-            updatedAt: Value(DateTime.now()),
-          ),
-        );
-    if (updated != 1) {
-      throw ArgumentError.value(accountId, 'accountId', 'account not found');
-    }
+    await _database.transaction(() async {
+      final snapshot = await _balanceQuery(accountId: accountId)
+          .getSingleOrNull();
+      if (snapshot == null) {
+        throw ArgumentError.value(accountId, 'accountId', 'account not found');
+      }
+      final difference = amountMinor - snapshot.read<int>('current_balance');
+      final opening = snapshot.read<int>('opening_balance_minor');
+      await (_database.update(
+        _database.ledgerAccounts,
+      )..where((table) => table.id.equals(accountId))).write(
+        LedgerAccountsCompanion(
+          openingBalanceMinor: Value(opening + difference),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+    });
   }
 
   @override
@@ -1101,19 +1047,20 @@ class DriftExpenseRepository implements ExpenseRepository {
   }
 
   @override
-  Future<String> createFullBackup() async {
+  Future<String> createFullBackup() => _database.transaction(() async {
     final accounts = await _database.select(_database.ledgerAccounts).get();
     final categories = await _database.select(_database.ledgerCategories).get();
     final entries = await _database.select(_database.ledgerEntries).get();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
       'backup_version': 1,
+      'schema_version': _database.schemaVersion,
       'created_at': DateTime.now().toIso8601String(),
       'accounts': [for (final item in accounts) _backupAccount(item)],
       'categories': [for (final item in categories) _backupCategory(item)],
       'entries': [for (final item in entries) _backupEntry(item)],
     });
-  }
+  });
 
   @override
   LedgerBackupPreview inspectFullBackup(String source) {

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:summa/data/database/app_database.dart';
@@ -41,6 +42,144 @@ void main() {
     expect(categories.where((category) => !category.isParent).length, 22);
     expect(incomeCategories.where((category) => category.isParent).length, 4);
     expect(incomeCategories.where((category) => !category.isParent).length, 13);
+  });
+
+  test(
+    'posted transactions produce balanced expense and account legs',
+    () async {
+      final day = DateTime(2026, 9, 9);
+      await repository.setCurrentBalance(
+        accountId: 'account-bank',
+        amountMinor: 1000,
+      );
+      await repository.setCurrentBalance(
+        accountId: 'account-family-card',
+        amountMinor: 1000,
+      );
+      for (final account in [
+        'account-bank',
+        'account-huabei',
+        'account-family-card',
+      ]) {
+        await repository.addExpense(
+          amountMinor: 200,
+          occurredAt: day,
+          categoryId: 'expense-parent-0-child-0',
+          accountId: account,
+          note: '',
+        );
+      }
+      for (final (type, account, target) in [
+        (LedgerTransactionType.borrowing, 'account-huabei', 'account-bank'),
+        (LedgerTransactionType.repayment, 'account-bank', 'account-huabei'),
+        (LedgerTransactionType.transfer, 'account-bank', 'account-cash'),
+      ]) {
+        await repository.addTransaction(
+          type: type,
+          amountMinor: 100,
+          occurredAt: day,
+          accountId: account,
+          targetAccountId: target,
+          note: '',
+        );
+      }
+
+      final postings = await database.customSelect('''
+      SELECT transaction_id, currency_code, COUNT(*) AS legs,
+             SUM(debit_minor) AS net, SUM(needs_review) AS review
+      FROM ledger_postings
+      GROUP BY transaction_id, currency_code
+    ''').get();
+      expect(postings, hasLength(6));
+      for (final group in postings) {
+        expect(group.read<String>('currency_code'), 'CNY');
+        expect(group.read<int>('legs'), 2);
+        expect(group.read<int>('net'), 0);
+        expect(group.read<int>('review'), 0);
+      }
+
+      final expenseLegs = await database.customSelect('''
+      SELECT debit_minor FROM ledger_postings WHERE role = 'expense'
+    ''').get();
+      expect(expenseLegs.map((row) => row.read<int>('debit_minor')), [
+        200,
+        200,
+        200,
+      ]);
+      final balances = await repository.watchAccountBalances().first;
+      expect({
+        for (final account in balances) account.id: account.currentBalanceMinor,
+      }, containsPair('account-huabei', 200));
+      expect(
+        balances
+            .where((account) => account.group == AccountGroup.personalAsset)
+            .fold(0, (total, account) => total + account.currentBalanceMinor),
+        800,
+      );
+    },
+  );
+
+  test('keeps legacy currency mismatches reviewable and rejects new cross-currency flows', () async {
+    final payload =
+        jsonDecode(await repository.createFullBackup()) as Map<String, dynamic>;
+    final accounts = (payload['accounts'] as List).cast<Map<String, dynamic>>();
+    accounts.singleWhere((account) => account['id'] == 'account-bank')
+      ..['currency_code'] = 'USD'
+      ..['opening_balance_minor'] = 500;
+    await repository.restoreFullBackup(
+      jsonEncode(payload),
+      mode: BackupRestoreMode.replace,
+    );
+    final day = DateTime(2026, 9, 9);
+    await expectLater(
+      repository.addTransaction(
+        type: LedgerTransactionType.transfer,
+        amountMinor: 100,
+        occurredAt: day,
+        accountId: 'account-bank',
+        targetAccountId: 'account-cash',
+        note: '',
+      ),
+      throwsArgumentError,
+    );
+    expect(await repository.watchTransactions().first, isEmpty);
+
+    await database
+        .into(database.ledgerEntries)
+        .insert(
+          LedgerEntriesCompanion.insert(
+            id: 'legacy-transfer',
+            transactionType: 'transfer',
+            amountMinor: 100,
+            occurredAt: day,
+            timezoneOffsetMinutes: 0,
+            categoryId: 'flow-transfer',
+            accountId: 'account-bank',
+            targetAccountId: const Value('account-cash'),
+            createdAt: day,
+            updatedAt: day,
+          ),
+        );
+    final groups = await database.customSelect('''
+      SELECT currency_code, SUM(debit_minor) AS net, MIN(needs_review) AS review
+      FROM ledger_postings
+      GROUP BY currency_code
+      ORDER BY currency_code
+    ''').get();
+    expect(groups.map((group) => group.read<String>('currency_code')), [
+      'CNY',
+      'USD',
+    ]);
+    expect(groups.map((group) => group.read<int>('net')), [0, 0]);
+    expect(groups.map((group) => group.read<int>('review')), [1, 1]);
+    final balances = await repository.watchAccountBalances().first;
+    expect(
+      {for (final account in balances) account.id: account.currentBalanceMinor},
+      allOf(
+        containsPair('account-bank', 400),
+        containsPair('account-cash', 100),
+      ),
+    );
   });
 
   test('persists an expense and resolves category and account', () async {
@@ -791,6 +930,7 @@ void main() {
     final backup = await repository.createFullBackup();
     final payload = jsonDecode(backup) as Map<String, dynamic>;
     expect(payload['format'], 'summa_full_backup');
+    expect(payload['schema_version'], 7);
     final preview = repository.inspectFullBackup(backup);
     expect(preview.entryCount, 2);
     expect(preview.deletedEntryCount, 1);
@@ -803,10 +943,9 @@ void main() {
     expect((await repository.watchTransactions().first).single.note, '保留');
     await repository.resetToFactoryDefaults();
 
-    final legacyBackup = jsonEncode({
-      ...payload,
-      'format': 'ledgerpro_full_backup',
-    });
+    payload.remove('schema_version');
+    payload['format'] = 'ledgerpro_full_backup';
+    final legacyBackup = jsonEncode(payload);
     expect(repository.inspectFullBackup(legacyBackup).entryCount, 2);
     await repository.restoreFullBackup(
       legacyBackup,
