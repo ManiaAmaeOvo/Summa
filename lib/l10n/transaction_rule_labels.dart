@@ -17,19 +17,24 @@ String localizedTransactionRule(
     TransactionRuleError.insufficientBalance =>
       context.l10n.insufficientBalance(
         account,
-        formatCny(exception.amountMinor ?? 0),
+        formatMoney(exception.amountMinor ?? 0, exception.currencyCode),
       ),
     TransactionRuleError.overpayment => context.l10n.overpayment(
       account,
-      formatCny(exception.amountMinor ?? 0),
+      formatMoney(exception.amountMinor ?? 0, exception.currencyCode),
     ),
     TransactionRuleError.invalidPaymentSplit =>
       context.l10n.invalidPaymentSplit,
     TransactionRuleError.refundLimitExceeded =>
-      context.l10n.refundLimitExceeded(formatCny(exception.amountMinor ?? 0)),
+      context.l10n.refundLimitExceeded(
+        formatMoney(exception.amountMinor ?? 0, exception.currencyCode),
+      ),
     TransactionRuleError.linkedRefunds => context.l10n.linkedRefunds,
     TransactionRuleError.archivedPostingAccount =>
       context.l10n.archivedPostingAccount,
+    TransactionRuleError.invalidTransferSettlement =>
+      context.l10n.invalidTransferSettlement,
+    TransactionRuleError.currencyMismatch => context.l10n.currencyMismatch,
     TransactionRuleError.fixedOtherCategory => context.l10n.fixedOtherCategory,
     TransactionRuleError.otherCategoryRequired =>
       context.l10n.otherCategoryRequired,

@@ -65,6 +65,9 @@ class LedgerEntries extends Table {
       .check(const CustomExpression<bool>("status IN ('posted', 'pending')"))();
   TextColumn get refundOfId =>
       text().nullable().references(LedgerEntries, #id)();
+  IntColumn get settlementAmountMinor => integer().nullable()();
+  TextColumn get settlementCurrencyCode => text().nullable()();
+  TextColumn get quotedExchangeRate => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -95,7 +98,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -124,7 +127,7 @@ class AppDatabase extends _$AppDatabase {
           );
           await _addVersion5Categories();
         }
-        if (from < 6) await _addVersion6Categories();
+        if (from < 6) await ensureTransferCategory();
         if (from < 8) {
           if (from == 7) {
             await customStatement('DROP VIEW ledger_postings');
@@ -137,6 +140,20 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(ledgerPostings);
           await _createPostingIndexes();
           await backfillLegacyPostings();
+        }
+        if (from < 9) {
+          await migrator.addColumn(
+            ledgerEntries,
+            ledgerEntries.settlementAmountMinor,
+          );
+          await migrator.addColumn(
+            ledgerEntries,
+            ledgerEntries.settlementCurrencyCode,
+          );
+          await migrator.addColumn(
+            ledgerEntries,
+            ledgerEntries.quotedExchangeRate,
+          );
         }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
@@ -299,7 +316,7 @@ class AppDatabase extends _$AppDatabase {
     await batch((batch) => _insertIncomeAndFlowCategories(batch, now));
   }
 
-  Future<void> _addVersion6Categories() async {
+  Future<void> ensureTransferCategory() async {
     final now = DateTime.now();
     await batch((batch) => _insertTransferCategories(batch, now));
   }

@@ -15,12 +15,18 @@ List<PostingLeg> transactionPostings({
   required String accountId,
   String? targetAccountId,
   List<AccountPayment> payments = const [],
+  TransferSettlement? settlement,
   bool isRefund = false,
   bool isCreditIncome = false,
 }) {
-  PostingLeg leg(String? id, int debit, LedgerPostingRole role) => (
+  PostingLeg leg(
+    String? id,
+    int debit,
+    LedgerPostingRole role, {
+    String? currency,
+  }) => (
     accountId: id,
-    currencyCode: currencyCode,
+    currencyCode: currency ?? currencyCode,
     debitMinor: debit,
     role: role,
     needsReview: isCreditIncome,
@@ -44,6 +50,22 @@ List<PostingLeg> transactionPostings({
         isCreditIncome
             ? LedgerPostingRole.unclassified
             : LedgerPostingRole.income,
+      ),
+    ],
+    LedgerTransactionType.transfer when settlement != null => [
+      leg(accountId, -amountMinor, LedgerPostingRole.account),
+      leg(
+        targetAccountId!,
+        settlement.amountMinor,
+        LedgerPostingRole.account,
+        currency: settlement.currencyCode,
+      ),
+      leg(null, amountMinor, LedgerPostingRole.exchange),
+      leg(
+        null,
+        -settlement.amountMinor,
+        LedgerPostingRole.exchange,
+        currency: settlement.currencyCode,
       ),
     ],
     _ => [

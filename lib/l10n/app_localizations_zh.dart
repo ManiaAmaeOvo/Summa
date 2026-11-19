@@ -1122,4 +1122,48 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupLedgerConflict => '此备份与当前账本冲突，或包含无效分录或退款。';
+
+  @override
+  String get currencyLabel => '币种';
+
+  @override
+  String get summaryCurrency => '汇总币种';
+
+  @override
+  String invalidCurrencyAmount(String currency) {
+    return '请输入符合 $currency 精度的金额。';
+  }
+
+  @override
+  String get transferSettlementAmount => '实际到账金额';
+
+  @override
+  String get quotedExchangeRate => '报价汇率（可选）';
+
+  @override
+  String exchangeRateDirection(String target, String source) {
+    return '1 $source 兑换的 $target 金额';
+  }
+
+  @override
+  String effectiveExchangeRateLabel(String source, String rate, String target) {
+    return '实际汇率：1 $source = $rate $target';
+  }
+
+  @override
+  String quotedExchangeRateLabel(String source, String rate, String target) {
+    return '报价汇率：1 $source = $rate $target';
+  }
+
+  @override
+  String get invalidQuotedExchangeRate => '请输入正数汇率，最多保留 18 位小数。';
+
+  @override
+  String get invalidTransferSettlement => '跨币种转账需要实际到账金额。其他交易类型须使用同币种账户。';
+
+  @override
+  String get currencyMismatch => '请选择与交易币种一致的账户。';
+
+  @override
+  String get legacyTransferConflict => '旧备份会覆盖已有的跨币种转账。';
 }

@@ -378,5 +378,21 @@
   "@refundLimitExceeded": {"placeholders": {"amount": {"type": "String"}}},
   "linkedRefunds": "请先删除关联退款，再修改或删除原消费。",
   "archivedPostingAccount": "有账户已归档，请先恢复账户或选择其他账户。",
-  "backupLedgerConflict": "此备份与当前账本冲突，或包含无效分录或退款。"
+  "backupLedgerConflict": "此备份与当前账本冲突，或包含无效分录或退款。",
+  "currencyLabel": "币种",
+  "summaryCurrency": "汇总币种",
+  "invalidCurrencyAmount": "请输入符合 {currency} 精度的金额。",
+  "@invalidCurrencyAmount": {"placeholders": {"currency": {"type": "String"}}},
+  "transferSettlementAmount": "实际到账金额",
+  "quotedExchangeRate": "报价汇率（可选）",
+  "exchangeRateDirection": "1 {source} 兑换的 {target} 金额",
+  "@exchangeRateDirection": {"placeholders": {"target": {"type": "String"}, "source": {"type": "String"}}},
+  "effectiveExchangeRateLabel": "实际汇率：1 {source} = {rate} {target}",
+  "@effectiveExchangeRateLabel": {"placeholders": {"source": {"type": "String"}, "rate": {"type": "String"}, "target": {"type": "String"}}},
+  "quotedExchangeRateLabel": "报价汇率：1 {source} = {rate} {target}",
+  "@quotedExchangeRateLabel": {"placeholders": {"source": {"type": "String"}, "rate": {"type": "String"}, "target": {"type": "String"}}},
+  "invalidQuotedExchangeRate": "请输入正数汇率，最多保留 18 位小数。",
+  "invalidTransferSettlement": "跨币种转账需要实际到账金额。其他交易类型须使用同币种账户。",
+  "currencyMismatch": "请选择与交易币种一致的账户。",
+  "legacyTransferConflict": "旧备份会覆盖已有的跨币种转账。"
 }

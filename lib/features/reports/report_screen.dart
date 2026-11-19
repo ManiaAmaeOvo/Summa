@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:summa/app/providers.dart';
+import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/import_export/ledger_export.dart';
@@ -26,6 +27,7 @@ class ReportScreen extends ConsumerStatefulWidget {
 class _ReportScreenState extends ConsumerState<ReportScreen> {
   _ReportPeriod _period = _ReportPeriod.month;
   DateTime _anchor = DateTime.now();
+  String? _currency;
 
   @override
   Widget build(BuildContext context) {
@@ -42,16 +44,35 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
         final posted = all
             .where((item) => !item.isPending)
             .toList(growable: false);
-        final selected = posted
+        final currencies = currencyOptions([
+          ...balances.map((account) => account.currencyCode),
+          ...posted.map((item) => item.currencyCode),
+        ]);
+        final currency = currencies.contains(_currency)
+            ? _currency!
+            : currencies.first;
+        final periodRecords = posted
             .where(
               (item) =>
                   !item.occurredAt.isBefore(range.start) &&
                   item.occurredAt.isBefore(range.end),
             )
             .toList(growable: false);
+        final selected = periodRecords
+            .where((item) => item.currencyCode == currency)
+            .toList();
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
           children: [
+            if (currencies.length > 1) ...[
+              CurrencySelector(
+                currencies: currencies,
+                value: currency,
+                label: context.l10n.summaryCurrency,
+                onChanged: (code) => setState(() => _currency = code),
+              ),
+              const SizedBox(height: 12),
+            ],
             SegmentedButton<_ReportPeriod>(
               segments: [
                 ButtonSegment(
@@ -98,15 +119,21 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            _SummaryGrid(records: selected),
+            _SummaryGrid(records: selected, currency: currency),
             const SizedBox(height: 16),
-            _TrendCard(records: selected, range: range, period: _period),
+            _TrendCard(
+              records: selected,
+              range: range,
+              period: _period,
+              currency: currency,
+            ),
             const SizedBox(height: 16),
             _CategoryPieCard(
               title: context.l10n.expenseCategories,
               emptyText: context.l10n.noExpenseCategoryData,
               type: LedgerTransactionType.expense,
               records: selected,
+              currency: currency,
             ),
             const SizedBox(height: 16),
             _CategoryPieCard(
@@ -114,12 +141,16 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               emptyText: context.l10n.noIncomeCategoryData,
               type: LedgerTransactionType.income,
               records: selected,
+              currency: currency,
             ),
             const SizedBox(height: 16),
             _DebtTrendCard(
               allRecords: posted,
-              selectedRecords: selected,
-              balances: balances,
+              selectedRecords: periodRecords,
+              balances: balances
+                  .where((item) => item.currencyCode == currency)
+                  .toList(),
+              currency: currency,
               range: range,
             ),
             const SizedBox(height: 16),
@@ -146,9 +177,11 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 }
 
 class _SummaryGrid extends StatelessWidget {
-  const _SummaryGrid({required this.records});
+  const _SummaryGrid({required this.records, required this.currency});
 
   final List<LedgerRecord> records;
+
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -164,15 +197,22 @@ class _SummaryGrid extends StatelessWidget {
       mainAxisSpacing: 10,
       mainAxisExtent: 104,
       children: [
-        _Metric(label: context.l10n.income, value: income),
-        _Metric(label: context.l10n.expense, value: expense),
+        _Metric(
+          label: context.l10n.income,
+          text: formatMoney(income, currency),
+        ),
+        _Metric(
+          label: context.l10n.expense,
+          text: formatMoney(expense, currency),
+        ),
         _Metric(
           label: context.l10n.incomeExpenseBalance,
-          value: income - expense,
+          text: formatMoney(income - expense, currency),
         ),
         _Metric(
           label: context.l10n.borrowingRepayment,
-          text: '${formatCny(borrowing)} / ${formatCny(repayment)}',
+          text:
+              '${formatMoney(borrowing, currency)} / ${formatMoney(repayment, currency)}',
         ),
       ],
     );
@@ -180,10 +220,9 @@ class _SummaryGrid extends StatelessWidget {
 }
 
 class _Metric extends StatelessWidget {
-  const _Metric({required this.label, this.value, this.text});
+  const _Metric({required this.label, required this.text});
   final String label;
-  final int? value;
-  final String? text;
+  final String text;
 
   @override
   Widget build(BuildContext context) => Card.filled(
@@ -208,10 +247,7 @@ class _Metric extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              text ?? formatCny(value!),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            child: Text(text, style: Theme.of(context).textTheme.titleLarge),
           ),
         ],
       ),
@@ -223,11 +259,14 @@ class _TrendCard extends StatelessWidget {
   const _TrendCard({
     required this.records,
     required this.range,
+    required this.currency,
     required this.period,
   });
   final List<LedgerRecord> records;
   final _DateRange range;
   final _ReportPeriod period;
+
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +303,7 @@ class _TrendCard extends StatelessWidget {
                   ? Center(child: Text(context.l10n.noExpensesThisPeriod))
                   : CustomPaint(
                       painter: _TrendPainter(
+                        currency: currency,
                         values: points.map((e) => e.value).toList(),
                         xLabels: _axisDateLabels(
                           points.map((e) => e.key).toList(),
@@ -289,6 +329,7 @@ class _TrendCard extends StatelessWidget {
 class _TrendPainter extends CustomPainter {
   _TrendPainter({
     required this.values,
+    required this.currency,
     required this.xLabels,
     required this.lineColor,
     required this.gridColor,
@@ -297,6 +338,7 @@ class _TrendPainter extends CustomPainter {
   });
 
   final List<int> values;
+  final String currency;
   final List<String> xLabels;
   final Color lineColor;
   final Color gridColor;
@@ -346,7 +388,7 @@ class _TrendPainter extends CustomPainter {
       final value = (maxValue - span * fraction).round();
       _paintAxisLabel(
         canvas,
-        _compactAxisAmount(value),
+        _compactAxisAmount(value, currency),
         Offset(plot.left - 6, y),
         alignRight: true,
         centerVertically: true,
@@ -421,6 +463,7 @@ class _TrendPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
+      oldDelegate.currency != currency ||
       !listEquals(oldDelegate.values, values) ||
       !listEquals(oldDelegate.xLabels, xLabels) ||
       oldDelegate.lineColor != lineColor ||
@@ -444,17 +487,11 @@ List<String> _axisDateLabels(
   ];
 }
 
-String _compactAxisAmount(int minor) {
-  final yuan = minor / 100;
-  if (yuan.abs() >= 1000) {
-    final thousands = yuan / 1000;
-    final text = thousands == thousands.roundToDouble()
-        ? thousands.toStringAsFixed(0)
-        : thousands.toStringAsFixed(1);
-    return '¥${text}k';
-  }
-  if (yuan == yuan.roundToDouble()) return '¥${yuan.toStringAsFixed(0)}';
-  return '¥${yuan.toStringAsFixed(1)}';
+String _compactAxisAmount(int minor, String currency) {
+  final digits = currencyMinorDigits[currency] ?? 0;
+  final amount = minor / math.pow(10, digits);
+  final compact = NumberFormat.compact(locale: 'en').format(amount);
+  return currency == defaultCurrency ? '¥$compact' : compact;
 }
 
 class _CategoryPieCard extends StatelessWidget {
@@ -463,12 +500,15 @@ class _CategoryPieCard extends StatelessWidget {
     required this.emptyText,
     required this.type,
     required this.records,
+    required this.currency,
   });
 
   final String title;
   final String emptyText;
   final LedgerTransactionType type;
   final List<LedgerRecord> records;
+
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -544,7 +584,7 @@ class _CategoryPieCard extends StatelessWidget {
                     ),
                     Text(
                       '${showPie ? '${(rows[index].value * 100 / total).toStringAsFixed(1)}%  ' : ''}'
-                      '${formatCny(rows[index].value)}',
+                      '${formatMoney(rows[index].value, currency)}',
                     ),
                   ],
                 ),
@@ -593,12 +633,15 @@ class _DebtTrendCard extends StatelessWidget {
     required this.selectedRecords,
     required this.balances,
     required this.range,
+    required this.currency,
   });
 
   final List<LedgerRecord> allRecords;
   final List<LedgerRecord> selectedRecords;
   final List<AccountBalance> balances;
   final _DateRange range;
+
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -650,7 +693,9 @@ class _DebtTrendCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                Text(context.l10n.closingAmount(formatCny(running))),
+                Text(
+                  context.l10n.closingAmount(formatMoney(running, currency)),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -661,6 +706,7 @@ class _DebtTrendCard extends StatelessWidget {
                   ? Center(child: Text(context.l10n.noLiabilityData))
                   : CustomPaint(
                       painter: _TrendPainter(
+                        currency: currency,
                         values: values,
                         xLabels: _axisDateLabels(
                           dates,
@@ -680,8 +726,8 @@ class _DebtTrendCard extends StatelessWidget {
             if (hasLiabilityData)
               Text(
                 context.l10n.liabilityRangeSummary(
-                  formatCny(opening),
-                  formatCny(current),
+                  formatMoney(opening, currency),
+                  formatMoney(current, currency),
                 ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),

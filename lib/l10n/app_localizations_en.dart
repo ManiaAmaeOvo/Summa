@@ -1201,4 +1201,52 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get backupLedgerConflict =>
       'This backup conflicts with the current ledger or contains invalid postings or refunds.';
+
+  @override
+  String get currencyLabel => 'Currency';
+
+  @override
+  String get summaryCurrency => 'Summary currency';
+
+  @override
+  String invalidCurrencyAmount(String currency) {
+    return 'Enter an amount valid for $currency.';
+  }
+
+  @override
+  String get transferSettlementAmount => 'Amount received';
+
+  @override
+  String get quotedExchangeRate => 'Quoted rate (optional)';
+
+  @override
+  String exchangeRateDirection(String target, String source) {
+    return '$target per 1 $source';
+  }
+
+  @override
+  String effectiveExchangeRateLabel(String source, String rate, String target) {
+    return 'Effective rate: 1 $source = $rate $target';
+  }
+
+  @override
+  String quotedExchangeRateLabel(String source, String rate, String target) {
+    return 'Quoted rate: 1 $source = $rate $target';
+  }
+
+  @override
+  String get invalidQuotedExchangeRate =>
+      'Enter a positive decimal rate with up to 18 decimal places.';
+
+  @override
+  String get invalidTransferSettlement =>
+      'A transfer between different currencies requires the actual amount received. Other transaction types require matching currencies.';
+
+  @override
+  String get currencyMismatch =>
+      'Choose accounts in the transaction’s currency.';
+
+  @override
+  String get legacyTransferConflict =>
+      'The old backup would overwrite an existing cross-currency transfer.';
 }

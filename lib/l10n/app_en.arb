@@ -378,5 +378,21 @@
   "@refundLimitExceeded": {"placeholders": {"amount": {"type": "String"}}},
   "linkedRefunds": "Remove the linked refunds before editing or deleting the original purchase.",
   "archivedPostingAccount": "An account is archived. Restore it or choose another account before posting.",
-  "backupLedgerConflict": "This backup conflicts with the current ledger or contains invalid postings or refunds."
+  "backupLedgerConflict": "This backup conflicts with the current ledger or contains invalid postings or refunds.",
+  "currencyLabel": "Currency",
+  "summaryCurrency": "Summary currency",
+  "invalidCurrencyAmount": "Enter an amount valid for {currency}.",
+  "@invalidCurrencyAmount": {"placeholders": {"currency": {"type": "String"}}},
+  "transferSettlementAmount": "Amount received",
+  "quotedExchangeRate": "Quoted rate (optional)",
+  "exchangeRateDirection": "{target} per 1 {source}",
+  "@exchangeRateDirection": {"placeholders": {"target": {"type": "String"}, "source": {"type": "String"}}},
+  "effectiveExchangeRateLabel": "Effective rate: 1 {source} = {rate} {target}",
+  "@effectiveExchangeRateLabel": {"placeholders": {"source": {"type": "String"}, "rate": {"type": "String"}, "target": {"type": "String"}}},
+  "quotedExchangeRateLabel": "Quoted rate: 1 {source} = {rate} {target}",
+  "@quotedExchangeRateLabel": {"placeholders": {"source": {"type": "String"}, "rate": {"type": "String"}, "target": {"type": "String"}}},
+  "invalidQuotedExchangeRate": "Enter a positive decimal rate with up to 18 decimal places.",
+  "invalidTransferSettlement": "A transfer between different currencies requires the actual amount received. Other transaction types require matching currencies.",
+  "currencyMismatch": "Choose accounts in the transaction’s currency.",
+  "legacyTransferConflict": "The old backup would overwrite an existing cross-currency transfer."
 }

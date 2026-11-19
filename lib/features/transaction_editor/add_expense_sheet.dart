@@ -35,6 +35,8 @@ class _TransactionEditorSheetState
     extends ConsumerState<TransactionEditorSheet> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
+  final _settlementController = TextEditingController();
+  final _quoteController = TextEditingController();
   final _noteController = TextEditingController();
   late LedgerTransactionType _type;
   DateTime _occurredAt = DateTime.now();
@@ -46,6 +48,25 @@ class _TransactionEditorSheetState
   bool _isSaving = false;
   bool _pending = false;
   final _extraPayments = <_SplitPaymentInput>[];
+  List<LedgerAccount> _formAccounts = const [];
+
+  String? _accountCurrency(String? id) => _formAccounts
+      .where((account) => account.id == id)
+      .firstOrNull
+      ?.currencyCode;
+
+  String get _sourceCurrency =>
+      _accountCurrency(_accountId) ??
+      widget.record?.currencyCode ??
+      widget.refundFor?.currencyCode ??
+      defaultCurrency;
+
+  String? get _settlementCurrency {
+    final target = _accountCurrency(_targetAccountId);
+    return _type == LedgerTransactionType.transfer && target != _sourceCurrency
+        ? target
+        : null;
+  }
 
   bool get _isRefund => widget.refundFor != null;
   bool get _isEditing => widget.record != null;
@@ -63,7 +84,18 @@ class _TransactionEditorSheetState
       }
       return;
     }
-    _amountController.text = _editableAmount(record.amountMinor);
+    _amountController.text = moneyInputText(
+      record.amountMinor,
+      record.currencyCode,
+    );
+    final settlement = record.settlement;
+    if (settlement != null) {
+      _settlementController.text = moneyInputText(
+        settlement.amountMinor,
+        settlement.currencyCode,
+      );
+      _quoteController.text = settlement.quotedRate ?? '';
+    }
     _noteController.text = record.note;
     _occurredAt = record.occurredAt;
     _parentCategoryId = record.parentCategoryId;
@@ -72,7 +104,9 @@ class _TransactionEditorSheetState
     _targetAccountId = record.targetAccountId;
     if (!_isRefund && _type == LedgerTransactionType.expense) {
       for (final leg in record.accountPostings.skip(1)) {
-        _extraPayments.add(_SplitPaymentInput(leg.accountId, -leg.debitMinor));
+        _extraPayments.add(
+          _SplitPaymentInput(leg.accountId, -leg.debitMinor, leg.currencyCode),
+        );
       }
     }
   }
@@ -80,6 +114,8 @@ class _TransactionEditorSheetState
   @override
   void dispose() {
     _amountController.dispose();
+    _settlementController.dispose();
+    _quoteController.dispose();
     _noteController.dispose();
     for (final payment in _extraPayments) {
       payment.amount.dispose();
@@ -98,7 +134,18 @@ class _TransactionEditorSheetState
             LedgerTransactionType.income => ref.watch(incomeCategoriesProvider),
             _ => null,
           };
-    final accounts = _isRefund ? null : ref.watch(accountsProvider);
+    final accountFields = _isRefund
+        ? _refundAccountFields()
+        : ref
+              .watch(accountsProvider)
+              .when(
+                loading: () => const LinearProgressIndicator(),
+                error: (_, _) => Text(context.l10n.accountLoadFailed),
+                data: _buildAccountFields,
+              );
+    // The account fields select defaults before amount labels and validators are built.
+    final sourceCurrency = _sourceCurrency;
+    final settlementCurrency = _settlementCurrency;
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -177,10 +224,13 @@ class _TransactionEditorSheetState
                 ],
                 decoration: InputDecoration(
                   labelText: context.l10n.amount,
-                  prefixText: '¥ ',
-                  hintText: '0.00',
+                  suffixText: sourceCurrency,
+                  hintText: moneyInputText(0, sourceCurrency),
                 ),
-                validator: _validateAmount,
+                onChanged: settlementCurrency == null
+                    ? null
+                    : (_) => setState(() {}),
+                validator: (value) => _validateAmount(value, sourceCurrency),
               ),
               if (categories != null) ...[
                 const SizedBox(height: 16),
@@ -191,14 +241,9 @@ class _TransactionEditorSheetState
                 ),
               ],
               const SizedBox(height: 16),
-              if (_isRefund)
-                _refundAccountFields()
-              else
-                accounts!.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (_, _) => Text(context.l10n.accountLoadFailed),
-                  data: _buildAccountFields,
-                ),
+              accountFields,
+              if (settlementCurrency != null)
+                _exchangeFields(settlementCurrency),
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: _pickDateTime,
@@ -302,6 +347,8 @@ class _TransactionEditorSheetState
         payment.amount.dispose();
       }
       _extraPayments.clear();
+      _settlementController.clear();
+      _quoteController.clear();
       _type = value;
       _parentCategoryId = null;
       _categoryId = null;
@@ -372,6 +419,7 @@ class _TransactionEditorSheetState
 
   Widget _buildAccountFields(List<LedgerAccount> accounts) {
     final selectable = _withOriginalArchivedAccounts(accounts);
+    _formAccounts = selectable;
     return switch (_type) {
       LedgerTransactionType.expense => _expenseFields(selectable),
       LedgerTransactionType.income => _singleAccountField(
@@ -396,6 +444,7 @@ class _TransactionEditorSheetState
           id: record.accountId,
           name: context.l10n.archivedName(record.accountName),
           kind: AccountKind.values.byName(record.accountKind),
+          currencyCode: record.currencyCode,
         ),
       );
     }
@@ -406,6 +455,12 @@ class _TransactionEditorSheetState
           id: record.targetAccountId!,
           name: context.l10n.archivedName(record.targetAccountName!),
           kind: AccountKind.values.byName(record.targetAccountKind!),
+          currencyCode:
+              record.accountPostings
+                  .where((leg) => leg.accountId == record.targetAccountId)
+                  .firstOrNull
+                  ?.currencyCode ??
+              record.currencyCode,
         ),
       );
     }
@@ -416,6 +471,7 @@ class _TransactionEditorSheetState
             id: leg.accountId,
             name: context.l10n.archivedName(leg.accountName),
             kind: AccountKind.values.byName(leg.accountKind),
+            currencyCode: leg.currencyCode,
           ),
         );
       }
@@ -426,13 +482,23 @@ class _TransactionEditorSheetState
   Widget _expenseFields(List<LedgerAccount> accounts) {
     final extraIds = _extraPayments.map((leg) => leg.accountId).toSet();
     final unused = accounts.where(
-      (account) => account.id != _accountId && !extraIds.contains(account.id),
+      (account) =>
+          account.id != _accountId &&
+          !extraIds.contains(account.id) &&
+          account.currencyCode == _sourceCurrency,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _singleAccountField(
-          accounts.where((account) => !extraIds.contains(account.id)).toList(),
+          accounts
+              .where(
+                (account) =>
+                    !extraIds.contains(account.id) &&
+                    (extraIds.isEmpty ||
+                        account.currencyCode == _sourceCurrency),
+              )
+              .toList(),
           label: context.l10n.paymentAccount,
         ),
         if (_extraPayments.isNotEmpty)
@@ -456,7 +522,8 @@ class _TransactionEditorSheetState
                               (account) =>
                                   account.id == payment.accountId ||
                                   (account.id != _accountId &&
-                                      !extraIds.contains(account.id)),
+                                      !extraIds.contains(account.id) &&
+                                      account.currencyCode == _sourceCurrency),
                             )
                             .toList(),
                         value: payment.accountId,
@@ -491,9 +558,9 @@ class _TransactionEditorSheetState
                   ),
                   decoration: InputDecoration(
                     labelText: context.l10n.extraPaymentAmount,
-                    prefixText: '¥ ',
+                    suffixText: _sourceCurrency,
                   ),
-                  validator: _validateAmount,
+                  validator: (value) => _validateAmount(value, _sourceCurrency),
                 ),
               ],
             ),
@@ -506,7 +573,7 @@ class _TransactionEditorSheetState
                   ? null
                   : () => setState(() {
                       _extraPayments.add(
-                        _SplitPaymentInput(unused.first.id, 0),
+                        _SplitPaymentInput(unused.first.id, 0, _sourceCurrency),
                       );
                     }),
               icon: const Icon(Icons.add),
@@ -525,8 +592,10 @@ class _TransactionEditorSheetState
             id: leg.accountId,
             name: leg.accountName,
             kind: AccountKind.values.byName(leg.accountKind),
+            currencyCode: leg.currencyCode,
           ),
     ];
+    _formAccounts = accounts;
     final dropdown = _singleAccountField(
       accounts,
       label: context.l10n.incomeDestinationAccount,
@@ -538,18 +607,20 @@ class _TransactionEditorSheetState
         dropdown,
         Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Text(context.l10n.refundAvailable(formatCny(maximum))),
+          child: Text(
+            context.l10n.refundAvailable(formatMoney(maximum, _sourceCurrency)),
+          ),
         ),
       ],
     );
   }
 
-  String? _validateAmount(String? value) {
+  String? _validateAmount(String? value, String currency) {
     try {
-      parseCnyMinorUnits(value ?? '');
+      parseMoney(value ?? '', currency);
       return null;
     } on MoneyInputException catch (error) {
-      return localizedMoneyInputError(context, error);
+      return localizedMoneyInputError(context, error, currency: currency);
     }
   }
 
@@ -575,12 +646,16 @@ class _TransactionEditorSheetState
     final liabilities = accounts
         .where((item) => item.group == AccountGroup.liability)
         .toList();
-    final assets = accounts
-        .where((item) => item.group == AccountGroup.personalAsset)
-        .toList();
     _accountId = liabilities.any((item) => item.id == _accountId)
         ? _accountId
         : liabilities.firstOrNull?.id;
+    final assets = accounts
+        .where(
+          (item) =>
+              item.group == AccountGroup.personalAsset &&
+              item.currencyCode == _sourceCurrency,
+        )
+        .toList();
     _targetAccountId = assets.any((item) => item.id == _targetAccountId)
         ? _targetAccountId
         : assets.firstOrNull?.id;
@@ -608,7 +683,7 @@ class _TransactionEditorSheetState
         ),
         const SizedBox(height: 4),
         _accountDropdown(
-          key: const ValueKey('borrowing-target'),
+          key: ValueKey('borrowing-target-$_accountId'),
           accounts: assets,
           value: _targetAccountId,
           label: context.l10n.fundsDestinationAccount,
@@ -622,12 +697,16 @@ class _TransactionEditorSheetState
     final assets = accounts
         .where((item) => item.group != AccountGroup.liability)
         .toList();
-    final liabilities = accounts
-        .where((item) => item.group == AccountGroup.liability)
-        .toList();
     _accountId = assets.any((item) => item.id == _accountId)
         ? _accountId
         : assets.firstOrNull?.id;
+    final liabilities = accounts
+        .where(
+          (item) =>
+              item.group == AccountGroup.liability &&
+              item.currencyCode == _sourceCurrency,
+        )
+        .toList();
     _targetAccountId = liabilities.any((item) => item.id == _targetAccountId)
         ? _targetAccountId
         : liabilities.firstOrNull?.id;
@@ -642,7 +721,7 @@ class _TransactionEditorSheetState
         ),
         const SizedBox(height: 16),
         _accountDropdown(
-          key: const ValueKey('repayment-target'),
+          key: ValueKey('repayment-target-$_accountId'),
           accounts: liabilities,
           value: _targetAccountId,
           label: context.l10n.repaymentLiabilityAccount,
@@ -672,6 +751,8 @@ class _TransactionEditorSheetState
           label: context.l10n.transferFromAccount,
           onChanged: (value) => setState(() {
             _accountId = value;
+            _settlementController.clear();
+            _quoteController.clear();
             if (_targetAccountId == value) _targetAccountId = null;
           }),
         ),
@@ -681,8 +762,75 @@ class _TransactionEditorSheetState
           accounts: targets,
           value: _targetAccountId,
           label: context.l10n.transferToAccount,
-          onChanged: (value) => setState(() => _targetAccountId = value),
+          onChanged: (value) => setState(() {
+            _targetAccountId = value;
+            _settlementController.clear();
+            _quoteController.clear();
+          }),
         ),
+      ],
+    );
+  }
+
+  Widget _exchangeFields(String targetCurrency) {
+    final sourceCurrency = _sourceCurrency;
+    String? effective;
+    try {
+      effective = effectiveExchangeRate(
+        sourceMinor: parseMoney(_amountController.text, sourceCurrency),
+        sourceCurrency: sourceCurrency,
+        settlementMinor: parseMoney(_settlementController.text, targetCurrency),
+        settlementCurrency: targetCurrency,
+      );
+    } on MoneyInputException {
+      // The preview becomes available once both amounts are valid.
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 16),
+        TextFormField(
+          key: const ValueKey('transfer-settlement-amount'),
+          controller: _settlementController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: context.l10n.transferSettlementAmount,
+            suffixText: targetCurrency,
+          ),
+          onChanged: (_) => setState(() {}),
+          validator: (value) => _validateAmount(value, targetCurrency),
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          key: const ValueKey('transfer-exchange-quote'),
+          controller: _quoteController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: context.l10n.quotedExchangeRate,
+            helperText: context.l10n.exchangeRateDirection(
+              targetCurrency,
+              sourceCurrency,
+            ),
+          ),
+          validator: (value) {
+            final quote = value?.trim() ?? '';
+            return quote.isEmpty || isValidExchangeQuote(quote)
+                ? null
+                : context.l10n.invalidQuotedExchangeRate;
+          },
+        ),
+        if (effective != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              context.l10n.effectiveExchangeRateLabel(
+                sourceCurrency,
+                effective,
+                targetCurrency,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -708,17 +856,24 @@ class _TransactionEditorSheetState
           DropdownMenuItem(
             value: account.id,
             child: Text(
-              account.kind == AccountKind.creditLine
-                  ? context.l10n.liabilityName(
-                      DefaultLedgerLabels.account(context, account),
-                    )
-                  : DefaultLedgerLabels.account(context, account),
+              _accountOption(account),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
       ],
       isExpanded: true,
       onChanged: accounts.isEmpty || _isSaving ? null : onChanged,
     );
+  }
+
+  String _accountOption(LedgerAccount account) {
+    final name = DefaultLedgerLabels.account(context, account);
+    final withKind = account.kind == AccountKind.creditLine
+        ? context.l10n.liabilityName(name)
+        : name;
+    return account.currencyCode == defaultCurrency
+        ? withKind
+        : '$withKind · ${account.currencyCode}';
   }
 
   Future<void> _pickDateTime() async {
@@ -772,7 +927,19 @@ class _TransactionEditorSheetState
     try {
       final repository = ref.read(expenseRepositoryProvider);
       final record = widget.record;
-      final amount = parseCnyMinorUnits(_amountController.text);
+      final amount = parseMoney(_amountController.text, _sourceCurrency);
+      final targetCurrency = _settlementCurrency;
+      final quote = _quoteController.text.trim();
+      final settlement = targetCurrency == null
+          ? null
+          : TransferSettlement(
+              amountMinor: parseMoney(
+                _settlementController.text,
+                targetCurrency,
+              ),
+              currencyCode: targetCurrency,
+              quotedRate: quote.isEmpty ? null : quote,
+            );
       final status = _pending
           ? LedgerPostingStatus.pending
           : LedgerPostingStatus.posted;
@@ -782,7 +949,7 @@ class _TransactionEditorSheetState
           for (final input in _extraPayments)
             AccountPayment(
               input.accountId,
-              parseCnyMinorUnits(input.amount.text),
+              parseMoney(input.amount.text, _sourceCurrency),
             ),
         ];
         final primary = rest.fold(
@@ -816,6 +983,7 @@ class _TransactionEditorSheetState
           accountId: accountId,
           targetAccountId: _targetAccountId,
           payments: payments,
+          settlement: settlement,
           status: status,
           note: _noteController.text,
         );
@@ -829,6 +997,7 @@ class _TransactionEditorSheetState
           accountId: accountId,
           targetAccountId: _targetAccountId,
           payments: payments,
+          settlement: settlement,
           note: _noteController.text,
         );
       }
@@ -863,17 +1032,11 @@ class _TransactionEditorSheetState
 }
 
 class _SplitPaymentInput {
-  _SplitPaymentInput(this.accountId, int minor)
+  _SplitPaymentInput(this.accountId, int minor, String currency)
     : amount = TextEditingController(
-        text: minor == 0 ? '' : _editableAmount(minor),
+        text: minor == 0 ? '' : moneyInputText(minor, currency),
       );
 
   String accountId;
   final TextEditingController amount;
-}
-
-String _editableAmount(int minorUnits) {
-  final yuan = minorUnits ~/ 100;
-  final fen = (minorUnits % 100).toString().padLeft(2, '0');
-  return '$yuan.$fen';
 }

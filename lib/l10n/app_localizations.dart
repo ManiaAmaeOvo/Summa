@@ -2149,6 +2149,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This backup conflicts with the current ledger or contains invalid postings or refunds.'**
   String get backupLedgerConflict;
+
+  /// No description provided for @currencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get currencyLabel;
+
+  /// No description provided for @summaryCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary currency'**
+  String get summaryCurrency;
+
+  /// No description provided for @invalidCurrencyAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount valid for {currency}.'**
+  String invalidCurrencyAmount(String currency);
+
+  /// No description provided for @transferSettlementAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount received'**
+  String get transferSettlementAmount;
+
+  /// No description provided for @quotedExchangeRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Quoted rate (optional)'**
+  String get quotedExchangeRate;
+
+  /// No description provided for @exchangeRateDirection.
+  ///
+  /// In en, this message translates to:
+  /// **'{target} per 1 {source}'**
+  String exchangeRateDirection(String target, String source);
+
+  /// No description provided for @effectiveExchangeRateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective rate: 1 {source} = {rate} {target}'**
+  String effectiveExchangeRateLabel(String source, String rate, String target);
+
+  /// No description provided for @quotedExchangeRateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quoted rate: 1 {source} = {rate} {target}'**
+  String quotedExchangeRateLabel(String source, String rate, String target);
+
+  /// No description provided for @invalidQuotedExchangeRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive decimal rate with up to 18 decimal places.'**
+  String get invalidQuotedExchangeRate;
+
+  /// No description provided for @invalidTransferSettlement.
+  ///
+  /// In en, this message translates to:
+  /// **'A transfer between different currencies requires the actual amount received. Other transaction types require matching currencies.'**
+  String get invalidTransferSettlement;
+
+  /// No description provided for @currencyMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose accounts in the transaction’s currency.'**
+  String get currencyMismatch;
+
+  /// No description provided for @legacyTransferConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The old backup would overwrite an existing cross-currency transfer.'**
+  String get legacyTransferConflict;
 }
 
 class _AppLocalizationsDelegate

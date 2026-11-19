@@ -4,9 +4,13 @@ import 'package:summa/l10n/l10n.dart';
 
 String localizedMoneyInputError(
   BuildContext context,
-  MoneyInputException exception,
-) => switch (exception.error) {
-  MoneyInputError.invalidFormat => context.l10n.moneyInvalidFormat,
+  MoneyInputException exception, {
+  String currency = defaultCurrency,
+}) => switch (exception.error) {
+  MoneyInputError.invalidFormat =>
+    currency == defaultCurrency
+        ? context.l10n.moneyInvalidFormat
+        : context.l10n.invalidCurrencyAmount(currency),
   MoneyInputError.negative => context.l10n.moneyNotNegative,
   MoneyInputError.notPositive => context.l10n.moneyGreaterThanZero,
 };

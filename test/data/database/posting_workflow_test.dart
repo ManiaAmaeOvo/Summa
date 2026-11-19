@@ -253,7 +253,7 @@ void main() {
     expect(await balances(), containsPair(_credit, 0));
   });
 
-  test('v2 backups restore postings, pending state and refund links and reject unbalanced data', () async {
+  test('v2 and v3 backups preserve postings, pending state and refunds and reject unbalanced data', () async {
     await repository.setCurrentBalance(accountId: _cash, amountMinor: 3000);
     await addPurchase();
     final purchase = (await repository.watchTransactions().first).single;
@@ -269,7 +269,13 @@ void main() {
     final source = await repository.createFullBackup();
     final before = await repository.watchTransactions().first;
     await repository.resetToFactoryDefaults();
-    await repository.restoreFullBackup(source, mode: BackupRestoreMode.replace);
+    final v2 = jsonDecode(source) as Map<String, dynamic>;
+    v2['backup_version'] = 2;
+    v2['schema_version'] = 8;
+    await repository.restoreFullBackup(
+      jsonEncode(v2),
+      mode: BackupRestoreMode.replace,
+    );
     await repository.restoreFullBackup(source, mode: BackupRestoreMode.merge);
     final after = await repository.watchTransactions().first;
     expect(after.map((record) => record.id), before.map((record) => record.id));

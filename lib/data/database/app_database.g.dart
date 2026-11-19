@@ -1271,6 +1271,38 @@ class $LedgerEntriesTable extends LedgerEntries
       'REFERENCES ledger_entries (id)',
     ),
   );
+  static const VerificationMeta _settlementAmountMinorMeta =
+      const VerificationMeta('settlementAmountMinor');
+  @override
+  late final GeneratedColumn<int> settlementAmountMinor = GeneratedColumn<int>(
+    'settlement_amount_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _settlementCurrencyCodeMeta =
+      const VerificationMeta('settlementCurrencyCode');
+  @override
+  late final GeneratedColumn<String> settlementCurrencyCode =
+      GeneratedColumn<String>(
+        'settlement_currency_code',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _quotedExchangeRateMeta =
+      const VerificationMeta('quotedExchangeRate');
+  @override
+  late final GeneratedColumn<String> quotedExchangeRate =
+      GeneratedColumn<String>(
+        'quoted_exchange_rate',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1288,6 +1320,9 @@ class $LedgerEntriesTable extends LedgerEntries
     isDeleted,
     status,
     refundOfId,
+    settlementAmountMinor,
+    settlementCurrencyCode,
+    quotedExchangeRate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1424,6 +1459,33 @@ class $LedgerEntriesTable extends LedgerEntries
         ),
       );
     }
+    if (data.containsKey('settlement_amount_minor')) {
+      context.handle(
+        _settlementAmountMinorMeta,
+        settlementAmountMinor.isAcceptableOrUnknown(
+          data['settlement_amount_minor']!,
+          _settlementAmountMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('settlement_currency_code')) {
+      context.handle(
+        _settlementCurrencyCodeMeta,
+        settlementCurrencyCode.isAcceptableOrUnknown(
+          data['settlement_currency_code']!,
+          _settlementCurrencyCodeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('quoted_exchange_rate')) {
+      context.handle(
+        _quotedExchangeRateMeta,
+        quotedExchangeRate.isAcceptableOrUnknown(
+          data['quoted_exchange_rate']!,
+          _quotedExchangeRateMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1493,6 +1555,18 @@ class $LedgerEntriesTable extends LedgerEntries
         DriftSqlType.string,
         data['${effectivePrefix}refund_of_id'],
       ),
+      settlementAmountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}settlement_amount_minor'],
+      ),
+      settlementCurrencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}settlement_currency_code'],
+      ),
+      quotedExchangeRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quoted_exchange_rate'],
+      ),
     );
   }
 
@@ -1518,6 +1592,9 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
   final bool isDeleted;
   final String status;
   final String? refundOfId;
+  final int? settlementAmountMinor;
+  final String? settlementCurrencyCode;
+  final String? quotedExchangeRate;
   const EntryRow({
     required this.id,
     required this.transactionType,
@@ -1534,6 +1611,9 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     required this.isDeleted,
     required this.status,
     this.refundOfId,
+    this.settlementAmountMinor,
+    this.settlementCurrencyCode,
+    this.quotedExchangeRate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1556,6 +1636,17 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || refundOfId != null) {
       map['refund_of_id'] = Variable<String>(refundOfId);
+    }
+    if (!nullToAbsent || settlementAmountMinor != null) {
+      map['settlement_amount_minor'] = Variable<int>(settlementAmountMinor);
+    }
+    if (!nullToAbsent || settlementCurrencyCode != null) {
+      map['settlement_currency_code'] = Variable<String>(
+        settlementCurrencyCode,
+      );
+    }
+    if (!nullToAbsent || quotedExchangeRate != null) {
+      map['quoted_exchange_rate'] = Variable<String>(quotedExchangeRate);
     }
     return map;
   }
@@ -1581,6 +1672,15 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       refundOfId: refundOfId == null && nullToAbsent
           ? const Value.absent()
           : Value(refundOfId),
+      settlementAmountMinor: settlementAmountMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(settlementAmountMinor),
+      settlementCurrencyCode: settlementCurrencyCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(settlementCurrencyCode),
+      quotedExchangeRate: quotedExchangeRate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quotedExchangeRate),
     );
   }
 
@@ -1607,6 +1707,15 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       status: serializer.fromJson<String>(json['status']),
       refundOfId: serializer.fromJson<String?>(json['refundOfId']),
+      settlementAmountMinor: serializer.fromJson<int?>(
+        json['settlementAmountMinor'],
+      ),
+      settlementCurrencyCode: serializer.fromJson<String?>(
+        json['settlementCurrencyCode'],
+      ),
+      quotedExchangeRate: serializer.fromJson<String?>(
+        json['quotedExchangeRate'],
+      ),
     );
   }
   @override
@@ -1628,6 +1737,11 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'status': serializer.toJson<String>(status),
       'refundOfId': serializer.toJson<String?>(refundOfId),
+      'settlementAmountMinor': serializer.toJson<int?>(settlementAmountMinor),
+      'settlementCurrencyCode': serializer.toJson<String?>(
+        settlementCurrencyCode,
+      ),
+      'quotedExchangeRate': serializer.toJson<String?>(quotedExchangeRate),
     };
   }
 
@@ -1647,6 +1761,9 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     bool? isDeleted,
     String? status,
     Value<String?> refundOfId = const Value.absent(),
+    Value<int?> settlementAmountMinor = const Value.absent(),
+    Value<String?> settlementCurrencyCode = const Value.absent(),
+    Value<String?> quotedExchangeRate = const Value.absent(),
   }) => EntryRow(
     id: id ?? this.id,
     transactionType: transactionType ?? this.transactionType,
@@ -1665,6 +1782,15 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     isDeleted: isDeleted ?? this.isDeleted,
     status: status ?? this.status,
     refundOfId: refundOfId.present ? refundOfId.value : this.refundOfId,
+    settlementAmountMinor: settlementAmountMinor.present
+        ? settlementAmountMinor.value
+        : this.settlementAmountMinor,
+    settlementCurrencyCode: settlementCurrencyCode.present
+        ? settlementCurrencyCode.value
+        : this.settlementCurrencyCode,
+    quotedExchangeRate: quotedExchangeRate.present
+        ? quotedExchangeRate.value
+        : this.quotedExchangeRate,
   );
   EntryRow copyWithCompanion(LedgerEntriesCompanion data) {
     return EntryRow(
@@ -1699,6 +1825,15 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       refundOfId: data.refundOfId.present
           ? data.refundOfId.value
           : this.refundOfId,
+      settlementAmountMinor: data.settlementAmountMinor.present
+          ? data.settlementAmountMinor.value
+          : this.settlementAmountMinor,
+      settlementCurrencyCode: data.settlementCurrencyCode.present
+          ? data.settlementCurrencyCode.value
+          : this.settlementCurrencyCode,
+      quotedExchangeRate: data.quotedExchangeRate.present
+          ? data.quotedExchangeRate.value
+          : this.quotedExchangeRate,
     );
   }
 
@@ -1719,7 +1854,10 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('status: $status, ')
-          ..write('refundOfId: $refundOfId')
+          ..write('refundOfId: $refundOfId, ')
+          ..write('settlementAmountMinor: $settlementAmountMinor, ')
+          ..write('settlementCurrencyCode: $settlementCurrencyCode, ')
+          ..write('quotedExchangeRate: $quotedExchangeRate')
           ..write(')'))
         .toString();
   }
@@ -1741,6 +1879,9 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     isDeleted,
     status,
     refundOfId,
+    settlementAmountMinor,
+    settlementCurrencyCode,
+    quotedExchangeRate,
   );
   @override
   bool operator ==(Object other) =>
@@ -1760,7 +1901,10 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
           other.updatedAt == this.updatedAt &&
           other.isDeleted == this.isDeleted &&
           other.status == this.status &&
-          other.refundOfId == this.refundOfId);
+          other.refundOfId == this.refundOfId &&
+          other.settlementAmountMinor == this.settlementAmountMinor &&
+          other.settlementCurrencyCode == this.settlementCurrencyCode &&
+          other.quotedExchangeRate == this.quotedExchangeRate);
 }
 
 class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
@@ -1779,6 +1923,9 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
   final Value<bool> isDeleted;
   final Value<String> status;
   final Value<String?> refundOfId;
+  final Value<int?> settlementAmountMinor;
+  final Value<String?> settlementCurrencyCode;
+  final Value<String?> quotedExchangeRate;
   final Value<int> rowid;
   const LedgerEntriesCompanion({
     this.id = const Value.absent(),
@@ -1796,6 +1943,9 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     this.isDeleted = const Value.absent(),
     this.status = const Value.absent(),
     this.refundOfId = const Value.absent(),
+    this.settlementAmountMinor = const Value.absent(),
+    this.settlementCurrencyCode = const Value.absent(),
+    this.quotedExchangeRate = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LedgerEntriesCompanion.insert({
@@ -1814,6 +1964,9 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     this.isDeleted = const Value.absent(),
     this.status = const Value.absent(),
     this.refundOfId = const Value.absent(),
+    this.settlementAmountMinor = const Value.absent(),
+    this.settlementCurrencyCode = const Value.absent(),
+    this.quotedExchangeRate = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        transactionType = Value(transactionType),
@@ -1840,6 +1993,9 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     Expression<bool>? isDeleted,
     Expression<String>? status,
     Expression<String>? refundOfId,
+    Expression<int>? settlementAmountMinor,
+    Expression<String>? settlementCurrencyCode,
+    Expression<String>? quotedExchangeRate,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1859,6 +2015,12 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (status != null) 'status': status,
       if (refundOfId != null) 'refund_of_id': refundOfId,
+      if (settlementAmountMinor != null)
+        'settlement_amount_minor': settlementAmountMinor,
+      if (settlementCurrencyCode != null)
+        'settlement_currency_code': settlementCurrencyCode,
+      if (quotedExchangeRate != null)
+        'quoted_exchange_rate': quotedExchangeRate,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1879,6 +2041,9 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     Value<bool>? isDeleted,
     Value<String>? status,
     Value<String?>? refundOfId,
+    Value<int?>? settlementAmountMinor,
+    Value<String?>? settlementCurrencyCode,
+    Value<String?>? quotedExchangeRate,
     Value<int>? rowid,
   }) {
     return LedgerEntriesCompanion(
@@ -1898,6 +2063,11 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
       isDeleted: isDeleted ?? this.isDeleted,
       status: status ?? this.status,
       refundOfId: refundOfId ?? this.refundOfId,
+      settlementAmountMinor:
+          settlementAmountMinor ?? this.settlementAmountMinor,
+      settlementCurrencyCode:
+          settlementCurrencyCode ?? this.settlementCurrencyCode,
+      quotedExchangeRate: quotedExchangeRate ?? this.quotedExchangeRate,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1952,6 +2122,19 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     if (refundOfId.present) {
       map['refund_of_id'] = Variable<String>(refundOfId.value);
     }
+    if (settlementAmountMinor.present) {
+      map['settlement_amount_minor'] = Variable<int>(
+        settlementAmountMinor.value,
+      );
+    }
+    if (settlementCurrencyCode.present) {
+      map['settlement_currency_code'] = Variable<String>(
+        settlementCurrencyCode.value,
+      );
+    }
+    if (quotedExchangeRate.present) {
+      map['quoted_exchange_rate'] = Variable<String>(quotedExchangeRate.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1976,6 +2159,9 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
           ..write('isDeleted: $isDeleted, ')
           ..write('status: $status, ')
           ..write('refundOfId: $refundOfId, ')
+          ..write('settlementAmountMinor: $settlementAmountMinor, ')
+          ..write('settlementCurrencyCode: $settlementCurrencyCode, ')
+          ..write('quotedExchangeRate: $quotedExchangeRate, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3586,6 +3772,9 @@ typedef $$LedgerEntriesTableCreateCompanionBuilder =
       Value<bool> isDeleted,
       Value<String> status,
       Value<String?> refundOfId,
+      Value<int?> settlementAmountMinor,
+      Value<String?> settlementCurrencyCode,
+      Value<String?> quotedExchangeRate,
       Value<int> rowid,
     });
 typedef $$LedgerEntriesTableUpdateCompanionBuilder =
@@ -3605,6 +3794,9 @@ typedef $$LedgerEntriesTableUpdateCompanionBuilder =
       Value<bool> isDeleted,
       Value<String> status,
       Value<String?> refundOfId,
+      Value<int?> settlementAmountMinor,
+      Value<String?> settlementCurrencyCode,
+      Value<String?> quotedExchangeRate,
       Value<int> rowid,
     });
 
@@ -3768,6 +3960,21 @@ class $$LedgerEntriesTableFilterComposer
 
   ColumnFilters<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get settlementAmountMinor => $composableBuilder(
+    column: $table.settlementAmountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get settlementCurrencyCode => $composableBuilder(
+    column: $table.settlementCurrencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quotedExchangeRate => $composableBuilder(
+    column: $table.quotedExchangeRate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3953,6 +4160,21 @@ class $$LedgerEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get settlementAmountMinor => $composableBuilder(
+    column: $table.settlementAmountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get settlementCurrencyCode => $composableBuilder(
+    column: $table.settlementCurrencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quotedExchangeRate => $composableBuilder(
+    column: $table.quotedExchangeRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LedgerCategoriesTableOrderingComposer get categoryId {
     final $$LedgerCategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4097,6 +4319,21 @@ class $$LedgerEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get settlementAmountMinor => $composableBuilder(
+    column: $table.settlementAmountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get settlementCurrencyCode => $composableBuilder(
+    column: $table.settlementCurrencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get quotedExchangeRate => $composableBuilder(
+    column: $table.quotedExchangeRate,
+    builder: (column) => column,
+  );
 
   $$LedgerCategoriesTableAnnotationComposer get categoryId {
     final $$LedgerCategoriesTableAnnotationComposer composer = $composerBuilder(
@@ -4265,6 +4502,9 @@ class $$LedgerEntriesTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> refundOfId = const Value.absent(),
+                Value<int?> settlementAmountMinor = const Value.absent(),
+                Value<String?> settlementCurrencyCode = const Value.absent(),
+                Value<String?> quotedExchangeRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LedgerEntriesCompanion(
                 id: id,
@@ -4282,6 +4522,9 @@ class $$LedgerEntriesTableTableManager
                 isDeleted: isDeleted,
                 status: status,
                 refundOfId: refundOfId,
+                settlementAmountMinor: settlementAmountMinor,
+                settlementCurrencyCode: settlementCurrencyCode,
+                quotedExchangeRate: quotedExchangeRate,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4301,6 +4544,9 @@ class $$LedgerEntriesTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> refundOfId = const Value.absent(),
+                Value<int?> settlementAmountMinor = const Value.absent(),
+                Value<String?> settlementCurrencyCode = const Value.absent(),
+                Value<String?> quotedExchangeRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LedgerEntriesCompanion.insert(
                 id: id,
@@ -4318,6 +4564,9 @@ class $$LedgerEntriesTableTableManager
                 isDeleted: isDeleted,
                 status: status,
                 refundOfId: refundOfId,
+                settlementAmountMinor: settlementAmountMinor,
+                settlementCurrencyCode: settlementCurrencyCode,
+                quotedExchangeRate: quotedExchangeRate,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

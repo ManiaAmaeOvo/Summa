@@ -109,6 +109,155 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('dashboard and report totals only use the selected currency', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    LedgerRecord expense(String currency, int amount) => LedgerRecord(
+      id: currency,
+      type: LedgerTransactionType.expense,
+      amountMinor: amount,
+      currencyCode: currency,
+      occurredAt: DateTime.now(),
+      parentCategoryId: 'food',
+      parentCategoryName: '饮食',
+      categoryId: 'lunch',
+      categoryName: '午餐',
+      accountId: currency,
+      accountName: '$currency cash',
+      accountKind: AccountKind.cash.name,
+      note: '',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          transactionsProvider.overrideWith(
+            (ref) => Stream.value([expense('CNY', 200), expense('USD', 400)]),
+          ),
+          accountBalancesProvider.overrideWith(
+            (ref) => Stream.value([
+              const AccountBalance(
+                id: 'CNY',
+                name: 'CNY cash',
+                kind: AccountKind.cash,
+                openingBalanceMinor: 1000,
+                currentBalanceMinor: 1000,
+              ),
+              const AccountBalance(
+                id: 'USD',
+                name: 'USD cash',
+                kind: AccountKind.cash,
+                currencyCode: 'USD',
+                openingBalanceMinor: 3000,
+                currentBalanceMinor: 3000,
+              ),
+            ]),
+          ),
+        ],
+        child: const SummaApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    Future<void> selectUsd() async {
+      await tester.tap(find.byType(DropdownButton<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('USD').last);
+      await tester.pumpAndSettle();
+    }
+
+    expect(find.text('¥10.00'), findsOneWidget);
+    expect(find.text('USD 30.00'), findsNothing);
+    await selectUsd();
+    expect(find.text('USD 30.00'), findsOneWidget);
+    expect(find.text('USD 4.00'), findsWidgets);
+    expect(find.text('¥10.00'), findsNothing);
+
+    await tester.tap(find.text('报表'));
+    await tester.pumpAndSettle();
+    expect(find.text('¥2.00'), findsOneWidget);
+    expect(find.text('USD 4.00'), findsNothing);
+    await selectUsd();
+    expect(find.text('USD 4.00'), findsOneWidget);
+    expect(find.text('¥2.00'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'an FX transfer edit keeps both amounts and the quote direction',
+    (tester) async {
+      tester.view.physicalSize = const Size(450, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final transfer = LedgerRecord(
+        id: 'fx',
+        type: LedgerTransactionType.transfer,
+        amountMinor: 2500,
+        occurredAt: DateTime.now(),
+        parentCategoryId: 'flow-transfer-parent',
+        parentCategoryName: '转账',
+        categoryId: 'flow-transfer',
+        categoryName: '账户间转账',
+        accountId: 'cash',
+        accountName: '现金',
+        accountKind: AccountKind.cash.name,
+        targetAccountId: 'jpy',
+        targetAccountName: '东京钱包',
+        targetAccountKind: AccountKind.wallet.name,
+        settlement: const TransferSettlement(
+          amountMinor: 512,
+          currencyCode: 'JPY',
+          quotedRate: '20.5',
+        ),
+        note: '',
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            transactionsProvider.overrideWith(
+              (ref) => Stream.value([transfer]),
+            ),
+            accountBalancesProvider.overrideWith(
+              (ref) => Stream.value([cashBalance]),
+            ),
+            accountsProvider.overrideWith(
+              (ref) => Stream.value([
+                const LedgerAccount(
+                  id: 'cash',
+                  name: '现金',
+                  kind: AccountKind.cash,
+                ),
+                const LedgerAccount(
+                  id: 'jpy',
+                  name: '东京钱包',
+                  kind: AccountKind.wallet,
+                  currencyCode: 'JPY',
+                ),
+              ]),
+            ),
+          ],
+          child: const SummaApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('转账'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('25.00'), findsOneWidget);
+      expect(find.text('512'), findsOneWidget);
+      expect(find.text('20.5'), findsOneWidget);
+      expect(find.text('1 CNY 兑换的 JPY 金额'), findsOneWidget);
+      expect(find.text('实际汇率：1 CNY = 20.48 JPY'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('changes and persists language from Settings', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -574,6 +723,7 @@ class _RejectingExpenseRepository extends DriftExpenseRepository {
     String? targetAccountId,
     String? categoryId,
     List<AccountPayment>? payments,
+    TransferSettlement? settlement,
     LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   }) {

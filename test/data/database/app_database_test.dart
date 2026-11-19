@@ -139,7 +139,13 @@ void main() {
         targetAccountId: 'account-cash',
         note: '',
       ),
-      throwsArgumentError,
+      throwsA(
+        isA<TransactionRuleException>().having(
+          (error) => error.error,
+          'rule',
+          TransactionRuleError.invalidTransferSettlement,
+        ),
+      ),
     );
     expect(await repository.watchTransactions().first, isEmpty);
 
@@ -940,8 +946,8 @@ void main() {
     final backup = await repository.createFullBackup();
     final payload = jsonDecode(backup) as Map<String, dynamic>;
     expect(payload['format'], 'summa_full_backup');
-    expect(payload['schema_version'], 8);
-    expect(payload['backup_version'], 2);
+    expect(payload['schema_version'], 9);
+    expect(payload['backup_version'], 3);
     final preview = repository.inspectFullBackup(backup);
     expect(preview.entryCount, 2);
     expect(preview.deletedEntryCount, 1);

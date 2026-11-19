@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:summa/app/providers.dart';
+import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -135,7 +136,7 @@ class _TransactionBody extends ConsumerWidget {
   }
 }
 
-class _TransactionList extends ConsumerWidget {
+class _TransactionList extends ConsumerStatefulWidget {
   const _TransactionList({
     required this.items,
     required this.balances,
@@ -147,13 +148,33 @@ class _TransactionList extends ConsumerWidget {
   final VoidCallback onOpenAccounts;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_TransactionList> createState() => _TransactionListState();
+}
+
+class _TransactionListState extends ConsumerState<_TransactionList> {
+  String? _currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.items;
+    final balances = widget.balances;
+    final currencies = currencyOptions([
+      ...balances.map((account) => account.currencyCode),
+      ...items.map((record) => record.currencyCode),
+    ]);
+    final currency = currencies.contains(_currency)
+        ? _currency!
+        : currencies.first;
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month);
     final dayStart = DateTime(now.year, now.month, now.day);
     final weekStart = dayStart.subtract(Duration(days: now.weekday - 1));
     final expenses = items
-        .where((item) => item.type == LedgerTransactionType.expense)
+        .where(
+          (item) =>
+              item.currencyCode == currency &&
+              item.type == LedgerTransactionType.expense,
+        )
         .toList(growable: false);
     final total = expenses.fold<int>(
       0,
@@ -162,10 +183,18 @@ class _TransactionList extends ConsumerWidget {
     final monthTotal = _sumSince(expenses, monthStart);
     final weekTotal = _sumSince(expenses, weekStart);
     final personalAssets = balances
-        .where((account) => account.group == AccountGroup.personalAsset)
+        .where(
+          (account) =>
+              account.currencyCode == currency &&
+              account.group == AccountGroup.personalAsset,
+        )
         .fold<int>(0, (sum, account) => sum + account.currentBalanceMinor);
     final liabilities = balances
-        .where((account) => account.group == AccountGroup.liability)
+        .where(
+          (account) =>
+              account.currencyCode == currency &&
+              account.group == AccountGroup.liability,
+        )
         .fold<int>(0, (sum, account) => sum + account.currentBalanceMinor);
     final netAssets = personalAssets - liabilities;
 
@@ -216,6 +245,18 @@ class _TransactionList extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
+        if (currencies.length > 1)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            sliver: SliverToBoxAdapter(
+              child: CurrencySelector(
+                currencies: currencies,
+                value: currency,
+                label: context.l10n.summaryCurrency,
+                onChanged: (code) => setState(() => _currency = code),
+              ),
+            ),
+          ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           sliver: SliverToBoxAdapter(
@@ -230,23 +271,27 @@ class _TransactionList extends ConsumerWidget {
                 _DashboardSummaryCard(
                   label: context.l10n.expenseThisMonth,
                   amount: monthTotal,
+                  currency: currency,
                   icon: Icons.calendar_month_outlined,
                 ),
                 _DashboardSummaryCard(
                   label: context.l10n.expenseThisWeek,
                   amount: weekTotal,
+                  currency: currency,
                   icon: Icons.date_range_outlined,
                 ),
                 _DashboardSummaryCard(
                   label: context.l10n.expenseAllTime,
                   amount: total,
+                  currency: currency,
                   icon: Icons.receipt_long_outlined,
                 ),
                 _DashboardSummaryCard(
                   label: context.l10n.liquidNetWorth,
                   amount: netAssets,
+                  currency: currency,
                   icon: Icons.account_balance_wallet_outlined,
-                  onTap: onOpenAccounts,
+                  onTap: widget.onOpenAccounts,
                 ),
               ],
             ),
@@ -264,6 +309,7 @@ class _TransactionList extends ConsumerWidget {
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final item = items[index];
+                final settlement = item.settlement;
                 return Card(
                   child: ListTile(
                     leading: CircleAvatar(
@@ -283,25 +329,49 @@ class _TransactionList extends ConsumerWidget {
                         ).add_Hm().format(item.occurredAt),
                         if (item.isPending) context.l10n.pendingPosting,
                         _accountDescription(context, item),
+                        if (settlement != null) ...[
+                          context.l10n.effectiveExchangeRateLabel(
+                            item.currencyCode,
+                            effectiveExchangeRate(
+                              sourceMinor: item.amountMinor,
+                              sourceCurrency: item.currencyCode,
+                              settlementMinor: settlement.amountMinor,
+                              settlementCurrency: settlement.currencyCode,
+                            ),
+                            settlement.currencyCode,
+                          ),
+                          if (settlement.quotedRate case final quote?)
+                            context.l10n.quotedExchangeRateLabel(
+                              item.currencyCode,
+                              quote,
+                              settlement.currencyCode,
+                            ),
+                        ],
                         if (item.note.isNotEmpty) item.note,
                       ].join(' · '),
-                      maxLines: 2,
+                      maxLines: settlement == null ? 2 : 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          _amountForRecord(item),
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: _colorForType(
-                                  context,
-                                  item.isRefund
-                                      ? LedgerTransactionType.income
-                                      : item.type,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 124),
+                          child: Text(
+                            textAlign: TextAlign.end,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            _amountForRecord(item),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: _colorForType(
+                                    context,
+                                    item.isRefund
+                                        ? LedgerTransactionType.income
+                                        : item.type,
+                                  ),
                                 ),
-                              ),
+                          ),
                         ),
                         PopupMenuButton<_RecordAction>(
                           tooltip: context.l10n.transactionActions,
@@ -363,12 +433,14 @@ class _DashboardSummaryCard extends StatelessWidget {
   const _DashboardSummaryCard({
     required this.label,
     required this.amount,
+    required this.currency,
     required this.icon,
     this.onTap,
   });
 
   final String label;
   final int amount;
+  final String currency;
   final IconData icon;
   final VoidCallback? onTap;
 
@@ -407,7 +479,7 @@ class _DashboardSummaryCard extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  formatCny(amount),
+                  formatMoney(amount, currency),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
@@ -455,7 +527,7 @@ Future<void> _confirmDeleteRecord(
     builder: (dialogContext) => AlertDialog(
       title: Text(context.l10n.confirmDeleteTransaction),
       content: Text(
-        '${_titleForRecord(context, record)}  ${formatCny(record.amountMinor)}'
+        '${_titleForRecord(context, record)}  ${formatMoney(record.amountMinor, record.currencyCode)}'
         '\n${context.l10n.deleteRecalculatesBalances}',
       ),
       actions: [
@@ -525,7 +597,7 @@ String _accountDescription(BuildContext context, LedgerRecord record) {
           ? record.accountPostings
                 .map(
                   (leg) =>
-                      '${DefaultLedgerLabels.accountName(locale, leg.accountId, leg.accountName)} ${formatCny(-leg.debitMinor)}',
+                      '${DefaultLedgerLabels.accountName(locale, leg.accountId, leg.accountName)} ${formatMoney(-leg.debitMinor, leg.currencyCode)}',
                 )
                 .join(' + ')
           : source,
@@ -536,14 +608,18 @@ String _accountDescription(BuildContext context, LedgerRecord record) {
   };
 }
 
-String _amountForRecord(LedgerRecord record) => switch (record.type) {
-  LedgerTransactionType.expense =>
-    '${record.isRefund ? '+' : '-'}${formatCny(record.amountMinor)}',
-  LedgerTransactionType.income => '+${formatCny(record.amountMinor)}',
-  LedgerTransactionType.borrowing ||
-  LedgerTransactionType.repayment ||
-  LedgerTransactionType.transfer => formatCny(record.amountMinor),
-};
+String _amountForRecord(LedgerRecord record) {
+  final amount = formatMoney(record.amountMinor, record.currencyCode);
+  final settlement = record.settlement;
+  if (settlement != null) {
+    return '$amount\n→ ${formatMoney(settlement.amountMinor, settlement.currencyCode)}';
+  }
+  return switch (record.type) {
+    LedgerTransactionType.expense => '${record.isRefund ? '+' : '-'}$amount',
+    LedgerTransactionType.income => '+$amount',
+    _ => amount,
+  };
+}
 
 IconData _iconForType(LedgerTransactionType type) => switch (type) {
   LedgerTransactionType.expense => Icons.receipt_long_outlined,

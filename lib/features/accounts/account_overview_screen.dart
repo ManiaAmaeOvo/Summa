@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:summa/app/providers.dart';
+import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
@@ -22,13 +23,21 @@ class AccountOverviewScreen extends ConsumerWidget {
   }
 }
 
-class _AccountOverview extends ConsumerWidget {
+class _AccountOverview extends ConsumerStatefulWidget {
   const _AccountOverview({required this.items});
 
   final List<AccountBalance> items;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AccountOverview> createState() => _AccountOverviewState();
+}
+
+class _AccountOverviewState extends ConsumerState<_AccountOverview> {
+  String? _currency;
+  List<AccountBalance> get items => widget.items;
+
+  @override
+  Widget build(BuildContext context) {
     void editBalance(AccountBalance account) {
       showDialog<void>(
         context: context,
@@ -96,14 +105,35 @@ class _AccountOverview extends ConsumerWidget {
       }
     }
 
-    final personalAssets = _totalFor(AccountGroup.personalAsset);
-    final entrustedFunds = _totalFor(AccountGroup.entrustedFunds);
-    final liabilities = _totalFor(AccountGroup.liability);
+    final currencies = currencyOptions(
+      items.map((account) => account.currencyCode),
+    );
+    final currency = currencies.contains(_currency)
+        ? _currency!
+        : currencies.first;
+    int totalFor(AccountGroup group) => items
+        .where(
+          (account) =>
+              account.currencyCode == currency && account.group == group,
+        )
+        .fold(0, (sum, account) => sum + account.currentBalanceMinor);
+    final personalAssets = totalFor(AccountGroup.personalAsset);
+    final entrustedFunds = totalFor(AccountGroup.entrustedFunds);
+    final liabilities = totalFor(AccountGroup.liability);
     final netAssets = personalAssets - liabilities;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
       children: [
+        if (currencies.length > 1) ...[
+          CurrencySelector(
+            currencies: currencies,
+            value: currency,
+            label: context.l10n.summaryCurrency,
+            onChanged: (code) => setState(() => _currency = code),
+          ),
+          const SizedBox(height: 8),
+        ],
         GridView.count(
           crossAxisCount: 2,
           crossAxisSpacing: 10,
@@ -115,18 +145,22 @@ class _AccountOverview extends ConsumerWidget {
             _SummaryCard(
               label: context.l10n.personalLiquidAssets,
               amountMinor: personalAssets,
+              currency: currency,
             ),
             _SummaryCard(
               label: context.l10n.outstandingLiabilities,
               amountMinor: liabilities,
+              currency: currency,
             ),
             _SummaryCard(
               label: context.l10n.liquidNetWorth,
               amountMinor: netAssets,
+              currency: currency,
             ),
             _SummaryCard(
               label: context.l10n.entrustedFunds,
               amountMinor: entrustedFunds,
+              currency: currency,
             ),
           ],
         ),
@@ -181,10 +215,6 @@ class _AccountOverview extends ConsumerWidget {
     );
   }
 
-  int _totalFor(AccountGroup group) => items
-      .where((account) => account.group == group)
-      .fold(0, (sum, account) => sum + account.currentBalanceMinor);
-
   List<AccountBalance> _itemsFor(AccountGroup group) =>
       items.where((account) => account.group == group).toList(growable: false);
 }
@@ -200,7 +230,8 @@ class AddAccountDialog extends ConsumerStatefulWidget {
 
 class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   final _nameController = TextEditingController();
-  final _amountController = TextEditingController(text: '0.00');
+  final _amountController = TextEditingController(text: '0');
+  String _currency = defaultCurrency;
   late AccountKind _kind;
   String? _nameError;
   String? _amountError;
@@ -263,6 +294,18 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                     },
             ),
             const SizedBox(height: 16),
+            CurrencySelector(
+              currencies: currencyOptions(currencyMinorDigits.keys),
+              value: _currency,
+              label: context.l10n.currencyLabel,
+              onChanged: _saving
+                  ? null
+                  : (code) => setState(() {
+                      _currency = code;
+                      _amountError = null;
+                    }),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(
@@ -272,7 +315,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 labelText: isLiability
                     ? context.l10n.currentAmountOwed
                     : context.l10n.currentBalance,
-                prefixText: '¥ ',
+                suffixText: _currency,
                 helperText: context.l10n.zeroThenCalibrate,
                 errorText: _amountError,
               ),
@@ -302,9 +345,19 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
     });
     if (name.isEmpty) return;
     try {
-      amountMinor = parseCnyMinorUnits(_amountController.text, allowZero: true);
+      amountMinor = parseMoney(
+        _amountController.text,
+        _currency,
+        allowZero: true,
+      );
     } on MoneyInputException catch (error) {
-      setState(() => _amountError = localizedMoneyInputError(context, error));
+      setState(
+        () => _amountError = localizedMoneyInputError(
+          context,
+          error,
+          currency: _currency,
+        ),
+      );
       return;
     }
 
@@ -316,6 +369,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
             name: name,
             kind: _kind,
             currentBalanceMinor: amountMinor,
+            currencyCode: _currency,
           );
       if (mounted) Navigator.pop(context);
     } on StateError {
@@ -360,7 +414,10 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: (widget.account.currentBalanceMinor / 100).toStringAsFixed(2),
+      text: moneyInputText(
+        widget.account.currentBalanceMinor,
+        widget.account.currencyCode,
+      ),
     );
   }
 
@@ -384,9 +441,11 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
         autofocus: true,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         decoration: InputDecoration(
-          prefixText: '¥ ',
+          suffixText: widget.account.currencyCode,
           errorText: _errorText,
-          helperText: context.l10n.nonNegativeTwoDecimals,
+          helperText: widget.account.currencyCode == defaultCurrency
+              ? context.l10n.nonNegativeTwoDecimals
+              : null,
         ),
       ),
       actions: [
@@ -405,9 +464,19 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
   Future<void> _save() async {
     int amountMinor;
     try {
-      amountMinor = parseCnyMinorUnits(_controller.text, allowZero: true);
+      amountMinor = parseMoney(
+        _controller.text,
+        widget.account.currencyCode,
+        allowZero: true,
+      );
     } on MoneyInputException catch (error) {
-      setState(() => _errorText = localizedMoneyInputError(context, error));
+      setState(
+        () => _errorText = localizedMoneyInputError(
+          context,
+          error,
+          currency: widget.account.currencyCode,
+        ),
+      );
       return;
     }
     setState(() => _saving = true);
@@ -430,10 +499,15 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.label, required this.amountMinor});
+  const _SummaryCard({
+    required this.label,
+    required this.amountMinor,
+    required this.currency,
+  });
 
   final String label;
   final int amountMinor;
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -460,7 +534,7 @@ class _SummaryCard extends StatelessWidget {
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
-                formatCny(amountMinor),
+                formatMoney(amountMinor, currency),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
@@ -514,7 +588,10 @@ class _AccountGroup extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        formatCny(items[index].currentBalanceMinor),
+                        formatMoney(
+                          items[index].currentBalanceMinor,
+                          items[index].currencyCode,
+                        ),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       PopupMenuButton<_AccountAction>(

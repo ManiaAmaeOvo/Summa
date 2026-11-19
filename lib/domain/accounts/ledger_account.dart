@@ -1,3 +1,5 @@
+import 'package:summa/core/money/money.dart';
+
 enum AccountKind { cash, bank, wallet, creditLine, entrustedFunds }
 
 enum AccountGroup { personalAsset, entrustedFunds, liability }
@@ -7,11 +9,13 @@ class LedgerAccount {
     required this.id,
     required this.name,
     required this.kind,
+    this.currencyCode = defaultCurrency,
   });
 
   final String id;
   final String name;
   final AccountKind kind;
+  final String currencyCode;
 
   AccountGroup get group => _groupForKind(kind);
 }
@@ -23,6 +27,7 @@ class AccountBalance {
     required this.kind,
     required this.openingBalanceMinor,
     required this.currentBalanceMinor,
+    this.currencyCode = defaultCurrency,
   });
 
   final String id;
@@ -30,6 +35,7 @@ class AccountBalance {
   final AccountKind kind;
   final int openingBalanceMinor;
   final int currentBalanceMinor;
+  final String currencyCode;
 
   AccountGroup get group => _groupForKind(kind);
 }

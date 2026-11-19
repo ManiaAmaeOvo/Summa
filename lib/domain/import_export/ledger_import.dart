@@ -172,14 +172,20 @@ LedgerImportDraft _parseRow(
       ),
     );
   }
-  if (value['payments'] != null ||
+  if (value['settlement_amount'] != null ||
+      value['settlement_amount_minor'] != null ||
+      value['settlement_currency_code'] != null ||
+      value['quoted_exchange_rate'] != null ||
+      (value['currency_code'] != null &&
+          value['currency_code'] != defaultCurrency) ||
+      value['payments'] != null ||
       value['refund_of_id'] != null ||
       (value['status'] != null && value['status'] != 'posted')) {
     throw LedgerImportException(
       _localized(
         languageCode,
-        '第 $number 条包含拆分、退款或待入账信息，请通过完整备份恢复',
-        'Item $number contains split, refund, or pending details. Restore a complete backup.',
+        '第 $number 条包含外币、拆分、退款或待入账信息，请通过完整备份恢复',
+        'Item $number contains foreign-currency, split, refund, or pending details. Restore a complete backup.',
       ),
     );
   }

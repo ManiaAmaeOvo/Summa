@@ -7,7 +7,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 
 void main() {
-  for (final version in [6, 7]) {
+  for (final version in [6, 7, 8]) {
     test('migrates schema $version to persisted postings and reopens safely', () async {
       final directory = await Directory.systemTemp.createTemp(
         'summa-v$version-',
@@ -35,7 +35,9 @@ void main() {
               for (final account in balances)
                 account.id: account.currentBalanceMinor,
             },
-            {'bank': 650, 'cash': 150},
+            version == 8
+                ? {'bank': 800, 'cash': 0}
+                : {'bank': 650, 'cash': 150},
           );
           final entries = await after.select(after.ledgerEntries).get();
           expect(entries, hasLength(2));
@@ -45,7 +47,9 @@ void main() {
           expect(active.targetAccountId, 'cash');
           expect(active.note, 'Transfer');
           expect(active.timezoneOffsetMinutes, 480);
-          expect(active.status, 'posted');
+          expect(active.status, version == 8 ? 'pending' : 'posted');
+          expect(active.settlementAmountMinor, isNull);
+          expect(active.quotedExchangeRate, isNull);
           expect(deleted.id, 'hidden');
           expect(deleted.amountMinor, 50);
           final postings = await after.select(after.ledgerPostings).get();
@@ -65,7 +69,7 @@ void main() {
           final schema = await after
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(schema.read<int>('user_version'), 8);
+          expect(schema.read<int>('user_version'), 9);
         } finally {
           await after.close();
         }
@@ -146,6 +150,23 @@ class _LegacyDatabase extends AppDatabase {
                ('hidden', 'expense', 50, 2000, 480,
                 'expense-child', 'bank', NULL, 'Deleted', 2000, 2001, 1)
       ''');
+      if (schemaVersion == 8) {
+        await migrator.addColumn(ledgerEntries, ledgerEntries.status);
+        await migrator.addColumn(ledgerEntries, ledgerEntries.refundOfId);
+        await migrator.createTable(ledgerPostings);
+        await customStatement(
+          "UPDATE ledger_entries SET status = 'pending' WHERE id = 'bank-to-cash'",
+        );
+        await customStatement('''
+          INSERT INTO ledger_postings (
+            transaction_id, position, account_id, currency_code, debit_minor, role
+          )
+          VALUES ('bank-to-cash', 0, 'bank', 'CNY', -150, 'account'),
+                 ('bank-to-cash', 1, 'cash', 'CNY', 150, 'account'),
+                 ('hidden', 0, 'bank', 'CNY', -50, 'account'),
+                 ('hidden', 1, NULL, 'CNY', 50, 'expense')
+        ''');
+      }
     },
   );
 }

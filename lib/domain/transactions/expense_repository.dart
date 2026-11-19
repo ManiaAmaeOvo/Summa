@@ -1,3 +1,4 @@
+import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
@@ -11,6 +12,8 @@ enum TransactionRuleError {
   refundLimitExceeded,
   linkedRefunds,
   archivedPostingAccount,
+  invalidTransferSettlement,
+  currencyMismatch,
   fixedOtherCategory,
   otherCategoryRequired,
 }
@@ -21,12 +24,14 @@ class TransactionRuleException implements Exception {
     this.accountId,
     this.accountName,
     this.amountMinor,
+    this.currencyCode = defaultCurrency,
   });
 
   final TransactionRuleError error;
   final String? accountId;
   final String? accountName;
   final int? amountMinor;
+  final String currencyCode;
 
   @override
   String toString() => error.name;
@@ -70,6 +75,7 @@ abstract interface class ExpenseRepository {
     String? targetAccountId,
     String? categoryId,
     List<AccountPayment>? payments,
+    TransferSettlement? settlement,
     LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   });
@@ -83,6 +89,7 @@ abstract interface class ExpenseRepository {
     String? targetAccountId,
     String? categoryId,
     List<AccountPayment>? payments,
+    TransferSettlement? settlement,
     required String note,
   });
 
@@ -109,6 +116,7 @@ abstract interface class ExpenseRepository {
     required String name,
     required AccountKind kind,
     required int currentBalanceMinor,
+    String currencyCode = defaultCurrency,
   });
 
   Future<void> archiveAccount(String id);

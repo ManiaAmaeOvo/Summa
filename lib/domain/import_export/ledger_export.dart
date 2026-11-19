@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/defaults/default_ledger_names.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 
@@ -28,6 +29,8 @@ String _json(List<LedgerRecord> records, String languageCode) {
 }
 
 bool _requiresDetails(LedgerRecord record) =>
+    record.currencyCode != defaultCurrency ||
+    record.settlement != null ||
     record.isPending ||
     record.isRefund ||
     (record.type == LedgerTransactionType.expense &&
@@ -41,6 +44,16 @@ Map<String, Object?> _jsonRecord(
   'type': record.isRefund ? 'refund' : record.type.name,
   if (detailed) 'id': record.id,
   if (detailed) 'status': record.status.name,
+  if (detailed) 'currency_code': record.currencyCode,
+  if (record.settlement case final settlement?) ...{
+    'settlement_amount': moneyInputText(
+      settlement.amountMinor,
+      settlement.currencyCode,
+    ),
+    'settlement_currency_code': settlement.currencyCode,
+    if (settlement.quotedRate != null)
+      'quoted_exchange_rate': settlement.quotedRate,
+  },
   if (record.isRefund) 'refund_of_id': record.refundOfId,
   if (record.type == LedgerTransactionType.expense &&
       !record.isRefund &&
@@ -50,10 +63,10 @@ Map<String, Object?> _jsonRecord(
         {
           'account': _postingAccountName(leg, languageCode),
           'account_kind': leg.accountKind,
-          'amount': _amount(-leg.debitMinor),
+          'amount': moneyInputText(-leg.debitMinor, leg.currencyCode),
         },
     ],
-  'amount': _amount(record.amountMinor),
+  'amount': moneyInputText(record.amountMinor, record.currencyCode),
   'occurred_at': record.occurredAt.toIso8601String(),
   if (record.type == LedgerTransactionType.expense ||
       record.type == LedgerTransactionType.income)
@@ -95,13 +108,31 @@ String _csv(List<LedgerRecord> records, String languageCode) {
       ],
       if (detailed)
         ...english
-            ? ['status', 'transaction_id', 'refund_of_id', 'payments']
-            : ['入账状态', '交易 ID', '原消费 ID', '付款明细'],
+            ? [
+                'status',
+                'transaction_id',
+                'refund_of_id',
+                'payments',
+                'currency_code',
+                'settlement_amount',
+                'settlement_currency_code',
+                'quoted_exchange_rate',
+              ]
+            : [
+                '入账状态',
+                '交易 ID',
+                '原消费 ID',
+                '付款明细',
+                '原币',
+                '实际到账金额',
+                '到账币种',
+                '报价汇率',
+              ],
     ],
     for (final record in records)
       [
         _typeName(record, languageCode),
-        _amount(record.amountMinor),
+        moneyInputText(record.amountMinor, record.currencyCode),
         record.occurredAt.toIso8601String(),
         record.type == LedgerTransactionType.expense ||
                 record.type == LedgerTransactionType.income
@@ -117,6 +148,16 @@ String _csv(List<LedgerRecord> records, String languageCode) {
           record.id,
           record.refundOfId ?? '',
           _paymentSummary(record, languageCode) ?? '',
+          record.currencyCode,
+          if (record.settlement case final settlement?) ...[
+            moneyInputText(settlement.amountMinor, settlement.currencyCode),
+            settlement.currencyCode,
+            settlement.quotedRate ?? '',
+          ] else ...[
+            '',
+            '',
+            '',
+          ],
         ],
       ],
   ];
@@ -149,23 +190,24 @@ String _markdown(List<LedgerRecord> records, String languageCode) {
       _typeName(record, languageCode),
       if (record.isPending) _statusName(record, languageCode),
     ].join(' · ');
-    final note = record.isRefund
-        ? [
-            record.note,
-            '${english ? 'Original purchase' : '原消费'} ${record.refundOfId}',
-          ].where((part) => part.isNotEmpty).join(' · ')
-        : record.note;
+    final settlement = record.settlement;
+    final amount = formatMoney(record.amountMinor, record.currencyCode);
+    final note = [
+      record.note,
+      if (record.isRefund)
+        '${english ? 'Original purchase' : '原消费'} ${record.refundOfId}',
+      if (settlement?.quotedRate case final quote?)
+        "${english ? 'Quoted rate' : '报价汇率'} 1 ${record.currencyCode} = $quote ${settlement!.currencyCode}",
+    ].where((part) => part.isNotEmpty).join(' · ');
     buffer.writeln(
-      '| $type | ¥${_amount(record.amountMinor)} | '
+      '| $type | $amount'
+      '${settlement == null ? '' : ' → ${formatMoney(settlement.amountMinor, settlement.currencyCode)}'} | '
       '${record.occurredAt.toIso8601String()} | ${_md(category)} | '
       '${_md(flow)} | ${_md(note)} |',
     );
   }
   return buffer.toString();
 }
-
-String _amount(int minor) =>
-    '${minor ~/ 100}.${(minor % 100).toString().padLeft(2, '0')}';
 
 String _csvCell(String value) =>
     '"${value.replaceAll('"', '""').replaceAll('\r', ' ').replaceAll('\n', ' ')}"';
@@ -216,7 +258,7 @@ String? _paymentSummary(LedgerRecord record, String languageCode) =>
     ? record.accountPostings
           .map(
             (leg) =>
-                '${_postingAccountName(leg, languageCode)} ¥${_amount(-leg.debitMinor)}',
+                '${_postingAccountName(leg, languageCode)} ${formatMoney(-leg.debitMinor, leg.currencyCode)}',
           )
           .join(' + ')
     : null;

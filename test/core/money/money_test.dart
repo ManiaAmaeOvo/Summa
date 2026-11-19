@@ -37,6 +37,38 @@ void main() {
     });
   });
 
+  test('uses native currency precision and validates decimal quotes', () {
+    expect(parseMoney('1575', 'JPY'), 1575);
+    expect(
+      () => parseMoney('1575.1', 'JPY'),
+      throwsA(isA<MoneyInputException>()),
+    );
+    expect(parseMoney('12.345', 'KWD'), 12345);
+    expect(formatMoney(-12345, 'KWD'), '-KWD 12.345');
+    expect(moneyInputText(1575, 'JPY'), '1575');
+    expect(isValidExchangeQuote('0.012345678901234567'), isTrue);
+    expect(isValidExchangeQuote('0.0000'), isFalse);
+    expect(isValidExchangeQuote('2e-3'), isFalse);
+    expect(
+      effectiveExchangeRate(
+        sourceMinor: 1050,
+        sourceCurrency: 'USD',
+        settlementMinor: 1575,
+        settlementCurrency: 'JPY',
+      ),
+      '150',
+    );
+    expect(
+      effectiveExchangeRate(
+        sourceMinor: 3,
+        sourceCurrency: 'JPY',
+        settlementMinor: 1,
+        settlementCurrency: 'KWD',
+      ),
+      '0.0003333333',
+    );
+  });
+
   test('formats minor units without floating point arithmetic', () {
     expect(formatCny(2850), '¥28.50');
     expect(formatCny(-5), '-¥0.05');

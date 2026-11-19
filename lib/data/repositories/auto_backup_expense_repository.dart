@@ -1,3 +1,4 @@
+import 'package:summa/core/money/money.dart';
 import 'package:summa/data/backup/local_backup_store.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
@@ -98,6 +99,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
     String? targetAccountId,
     String? categoryId,
     List<AccountPayment>? payments,
+    TransferSettlement? settlement,
     LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   }) => _mutate(
@@ -109,6 +111,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       targetAccountId: targetAccountId,
       categoryId: categoryId,
       payments: payments,
+      settlement: settlement,
       status: status,
       note: note,
     ),
@@ -124,6 +127,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
     String? targetAccountId,
     String? categoryId,
     List<AccountPayment>? payments,
+    TransferSettlement? settlement,
     required String note,
   }) => _mutate(
     () => _delegate.updateTransaction(
@@ -135,6 +139,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       targetAccountId: targetAccountId,
       categoryId: categoryId,
       payments: payments,
+      settlement: settlement,
       note: note,
     ),
   );
@@ -186,11 +191,13 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
     required String name,
     required AccountKind kind,
     required int currentBalanceMinor,
+    String currencyCode = defaultCurrency,
   }) => _mutate(
     () => _delegate.addAccount(
       name: name,
       kind: kind,
       currentBalanceMinor: currentBalanceMinor,
+      currencyCode: currencyCode,
     ),
   );
 
