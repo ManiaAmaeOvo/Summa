@@ -677,6 +677,12 @@ String _localizedBackupError(BuildContext context, String message) {
   if (message.contains('资金归属') || message.contains('应收款')) {
     return context.l10n.advancedFundingBackupError;
   }
+  if (message.contains('冲销') ||
+      message.contains('财务明细') ||
+      message.contains('原分类') ||
+      message.contains('拆分分类')) {
+    return context.l10n.backupLedgerConflict;
+  }
   if (message.startsWith('备份估值')) {
     return context.l10n.invalidBackupValuation;
   }

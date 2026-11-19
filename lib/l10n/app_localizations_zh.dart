@@ -1302,4 +1302,103 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get advancedFundingBackupError => '备份与资金归属或应收款记录冲突。';
+
+  @override
+  String get transactionDetails => '高级记账选项';
+
+  @override
+  String get foreignPurchase => '商品以外币计价';
+
+  @override
+  String get originalPrice => '商品原币金额';
+
+  @override
+  String get originalCurrency => '商品原币币种';
+
+  @override
+  String get settledPurchaseAmount => '付款账户实扣金额';
+
+  @override
+  String get splitCategories => '添加分类拆分';
+
+  @override
+  String get additionalCategory => '分摊分类';
+
+  @override
+  String get categoryShare => '该分类金额';
+
+  @override
+  String get advanceForOthers => '本单含替他人垫付';
+
+  @override
+  String get advanceShare => '替他人垫付金额';
+
+  @override
+  String get feeAmount => '手续费';
+
+  @override
+  String get interestAmount => '利息';
+
+  @override
+  String get externalDebtPayment => '他人直接替我偿债';
+
+  @override
+  String get externalDebtPaymentHint => '适用于对方承担本金、无需再偿还给对方的情况。';
+
+  @override
+  String get balanceAdjustment => '余额调整';
+
+  @override
+  String get balanceAdjustmentHint => '差额将另存为一条余额调整分录。';
+
+  @override
+  String get reverseTransaction => '冲销分录';
+
+  @override
+  String get confirmReversal => '按今天日期记录相反分录，并保留两条历史记录？';
+
+  @override
+  String get postedReversal => '已记录冲销';
+
+  @override
+  String get reversedPosting => '已冲销';
+
+  @override
+  String get reversalPosting => '冲销';
+
+  @override
+  String get linkedReversal => '原交易及其冲销分录会一起保留在历史中。';
+
+  @override
+  String get invalidTransactionDetails => '请核对这笔交易的账户、金额与分类。';
+
+  @override
+  String get fundingReviewFilter => '仅看待复核';
+
+  @override
+  String get fundingReviewBadge => '待复核';
+
+  @override
+  String get fundingReviewHint => '该历史记录的分录口径待确认。查阅原始账单后，可按核实的信息修正。';
+
+  @override
+  String get financialChargesCategory => '金融费用';
+
+  @override
+  String get refundAdvanceShare => '其中冲减应收款';
+
+  @override
+  String get refundAdvanceHint => '可留空。默认先冲减消费，余款再冲减应收款。';
+
+  @override
+  String get accountKindSavings => '储蓄账户';
+
+  @override
+  String get accountKindPrepaid => '预付余额';
+
+  @override
+  String get prepaidAccounts => '预付账户';
+
+  @override
+  String get prepaidAccountsDescription => '供后续消费的储值余额，单独列示于流动资产之外。';
 }

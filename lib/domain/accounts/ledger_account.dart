@@ -8,11 +8,14 @@ enum AccountKind {
   entrustedFunds,
   receivable,
   thirdPartyPayable,
-  familyDirect;
+  familyDirect,
+  savings,
+  prepaid;
 
   AccountGroup get group => _groupForKind(this);
   bool get isAdvancedFunding =>
       this == receivable || this == thirdPartyPayable || this == familyDirect;
+  bool get isNewAssetKind => this == savings || this == prepaid;
   bool get isLiability => group == AccountGroup.liability;
   bool get isPersonalCash => group == AccountGroup.personalAsset;
 }
@@ -23,6 +26,7 @@ enum AccountGroup {
   liability,
   receivable,
   external,
+  prepaid,
 }
 
 class LedgerAccount {
@@ -64,7 +68,9 @@ class AccountBalance {
 AccountGroup _groupForKind(AccountKind kind) => switch (kind) {
   AccountKind.cash ||
   AccountKind.bank ||
-  AccountKind.wallet => AccountGroup.personalAsset,
+  AccountKind.wallet ||
+  AccountKind.savings => AccountGroup.personalAsset,
+  AccountKind.prepaid => AccountGroup.prepaid,
   AccountKind.entrustedFunds => AccountGroup.entrustedFunds,
   AccountKind.creditLine ||
   AccountKind.thirdPartyPayable => AccountGroup.liability,

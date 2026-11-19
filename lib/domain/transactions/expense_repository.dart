@@ -4,6 +4,7 @@ import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/domain/valuation/net_worth_valuation.dart';
 
 enum TransactionRuleError {
@@ -16,6 +17,8 @@ enum TransactionRuleError {
   invalidTransferSettlement,
   currencyMismatch,
   receivableBalanceExceeded,
+  invalidTransactionDetails,
+  linkedReversal,
   fixedOtherCategory,
   otherCategoryRequired,
 }
@@ -78,6 +81,7 @@ abstract interface class ExpenseRepository {
     String? categoryId,
     List<AccountPayment>? payments,
     TransferSettlement? settlement,
+    TransactionTerms terms = const TransactionTerms(),
     LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   });
@@ -92,10 +96,19 @@ abstract interface class ExpenseRepository {
     String? categoryId,
     List<AccountPayment>? payments,
     TransferSettlement? settlement,
+    TransactionTerms? terms,
     required String note,
   });
 
   Future<void> postTransaction(String id);
+
+  Future<void> reverseTransaction(String id, {required DateTime occurredAt});
+
+  Future<void> recordBalanceAdjustment({
+    required String accountId,
+    required int amountMinor,
+    required String note,
+  });
 
   Future<void> saveFamilyExpense({
     String? id,
@@ -104,6 +117,7 @@ abstract interface class ExpenseRepository {
     required DateTime occurredAt,
     required String categoryId,
     required String note,
+    List<CategoryAmount> categories = const [],
     LedgerPostingStatus status = LedgerPostingStatus.posted,
   });
 
@@ -114,6 +128,7 @@ abstract interface class ExpenseRepository {
     required int amountMinor,
     required DateTime occurredAt,
     required String note,
+    int? advanceCancellationMinor,
     LedgerPostingStatus status = LedgerPostingStatus.posted,
   });
 

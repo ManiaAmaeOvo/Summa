@@ -195,6 +195,14 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
           onEdit: editBalance,
           onDelete: deleteAccount,
         ),
+        if (_itemsFor(AccountGroup.prepaid).isNotEmpty)
+          _AccountGroup(
+            title: context.l10n.prepaidAccounts,
+            description: context.l10n.prepaidAccountsDescription,
+            items: _itemsFor(AccountGroup.prepaid),
+            onEdit: editBalance,
+            onDelete: deleteAccount,
+          ),
         _AccountGroup(
           title: context.l10n.entrustedFunds,
           description: context.l10n.entrustedFundsDescription,
@@ -417,6 +425,8 @@ String _labelForKind(BuildContext context, AccountKind kind) => switch (kind) {
   AccountKind.receivable => context.l10n.accountKindReceivable,
   AccountKind.thirdPartyPayable => context.l10n.accountKindThirdPartyPayable,
   AccountKind.familyDirect => context.l10n.familyDirectFunding,
+  AccountKind.savings => context.l10n.accountKindSavings,
+  AccountKind.prepaid => context.l10n.accountKindPrepaid,
 };
 
 class _BalanceDialog extends ConsumerStatefulWidget {
@@ -433,6 +443,8 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
   String? _errorText;
   var _saving = false;
 
+  final _reasonController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -447,6 +459,7 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
   @override
   void dispose() {
     _controller.dispose();
+    _reasonController.dispose();
     super.dispose();
   }
 
@@ -459,16 +472,30 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
             ? context.l10n.calibrateLiability(accountName)
             : context.l10n.calibrateBalance(accountName),
       ),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: InputDecoration(
-          suffixText: widget.account.currencyCode,
-          errorText: _errorText,
-          helperText: widget.account.currencyCode == defaultCurrency
-              ? context.l10n.nonNegativeTwoDecimals
-              : null,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                suffixText: widget.account.currencyCode,
+                errorText: _errorText,
+                helperText: context.l10n.balanceAdjustmentHint,
+                helperMaxLines: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _reasonController,
+              maxLength: 200,
+              decoration: InputDecoration(labelText: context.l10n.noteOptional),
+            ),
+          ],
         ),
       ),
       actions: [
@@ -506,9 +533,10 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
     try {
       await ref
           .read(expenseRepositoryProvider)
-          .setCurrentBalance(
+          .recordBalanceAdjustment(
             accountId: widget.account.id,
             amountMinor: amountMinor,
+            note: _reasonController.text,
           );
       if (mounted) Navigator.pop(context);
     } catch (_) {

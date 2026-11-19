@@ -1,5 +1,6 @@
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/transactions/transaction_terms.dart';
 
 class DefaultLedgerNames {
   const DefaultLedgerNames._();
@@ -17,6 +18,9 @@ class DefaultLedgerNames {
   };
 
   static const categories = <String, ({String en, String zh})>{
+    financialChargesCategoryId: (en: 'Financial charges', zh: '金融费用'),
+    financialFeeCategoryId: (en: 'Fee', zh: '手续费'),
+    financialInterestCategoryId: (en: 'Interest', zh: '利息'),
     'expense-parent-0': (en: 'Food', zh: '饮食'),
     'expense-parent-0-child-0': (en: 'Breakfast', zh: '早餐'),
     'expense-parent-0-child-1': (en: 'Lunch', zh: '午餐'),

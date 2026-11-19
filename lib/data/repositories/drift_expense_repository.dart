@@ -9,6 +9,7 @@ import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/domain/transactions/ledger_posting.dart';
 import 'package:summa/domain/defaults/default_ledger_names.dart';
@@ -145,15 +146,39 @@ class DriftExpenseRepository implements ExpenseRepository {
             OrderingTerm.asc(postings.position),
           ]);
 
-    return query.watch().map((rows) {
+    return query.watch().asyncMap((rows) async {
       final transactions = <String, List<TypedResult>>{};
       for (final row in rows) {
         (transactions[row.readTable(entry).id] ??= []).add(row);
       }
+      final terms = {
+        for (final group in transactions.entries)
+          if (group.value.first.readTable(entry).termsJson case final json?)
+            group.key: _decodeTerms(json),
+      };
+      final reversedIds = {
+        for (final detail in terms.values) ?detail.reversalOfId,
+      };
+      final allocationIds = {
+        for (final detail in terms.values) ...[
+          for (final part in detail.categories) part.categoryId,
+          if (detail.feeMinor != 0) financialFeeCategoryId,
+          if (detail.interestMinor != 0) financialInterestCategoryId,
+        ],
+      };
+      final labels = allocationIds.isEmpty
+          ? const <
+              String,
+              ({String parentId, String parentName, String name})
+            >{}
+          : await _allocationLabels(allocationIds);
       return [
-        for (final legs in transactions.values)
+        for (final group in transactions.entries)
           _ledgerRecord(
-            legs,
+            group.value,
+            terms[group.key] ?? const TransactionTerms(),
+            reversedIds.contains(group.key),
+            labels,
             entry,
             parent,
             child,
@@ -166,8 +191,28 @@ class DriftExpenseRepository implements ExpenseRepository {
     });
   }
 
+  Future<Map<String, ({String parentId, String parentName, String name})>>
+  _allocationLabels(Set<String> ids) async {
+    final category = _database.ledgerCategories;
+    final parent = _database.alias(category, 'allocation_parent');
+    final query = _database.select(category).join([
+      innerJoin(parent, parent.id.equalsExp(category.parentId)),
+    ])..where(category.id.isIn(ids));
+    return {
+      for (final row in await query.get())
+        row.readTable(category).id: (
+          parentId: row.readTable(parent).id,
+          parentName: row.readTable(parent).name,
+          name: row.readTable(category).name,
+        ),
+    };
+  }
+
   LedgerRecord _ledgerRecord(
     List<TypedResult> legs,
+    TransactionTerms terms,
+    bool hasReversal,
+    Map<String, ({String parentId, String parentName, String name})> labels,
     $LedgerEntriesTable entry,
     $LedgerCategoriesTable parent,
     $LedgerCategoriesTable child,
@@ -202,6 +247,16 @@ class DriftExpenseRepository implements ExpenseRepository {
       amountMinor: item.amountMinor,
       currencyCode: item.currencyCode,
       settlement: _entrySettlement(item),
+      terms: terms,
+      hasReversal: hasReversal,
+      allocationLabels: {
+        for (final category in terms.categories)
+          category.categoryId: ?labels[category.categoryId],
+        if (terms.feeMinor > 0)
+          financialFeeCategoryId: ?labels[financialFeeCategoryId],
+        if (terms.interestMinor > 0)
+          financialInterestCategoryId: ?labels[financialInterestCategoryId],
+      },
       occurredAt: item.occurredAt,
       parentCategoryId: row.readTable(parent).id,
       parentCategoryName: row.readTable(parent).name,
@@ -268,6 +323,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     String? categoryId,
     List<AccountPayment>? payments,
     TransferSettlement? settlement,
+    TransactionTerms terms = const TransactionTerms(),
     LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   }) => _saveTransaction(
@@ -279,6 +335,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     categoryId: categoryId,
     payments: payments,
     settlement: settlement,
+    terms: terms,
     status: status,
     note: note,
   );
@@ -294,6 +351,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     String? categoryId,
     List<AccountPayment>? payments,
     TransferSettlement? settlement,
+    TransactionTerms? terms,
     required String note,
   }) => _saveTransaction(
     id: id,
@@ -305,6 +363,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     categoryId: categoryId,
     payments: payments,
     settlement: settlement,
+    terms: terms,
     status: LedgerPostingStatus.posted,
     note: note,
   );
@@ -320,11 +379,17 @@ class DriftExpenseRepository implements ExpenseRepository {
     required List<AccountPayment>? payments,
     TransferSettlement? settlement,
     String? requiredCurrency,
+    TransactionTerms? terms,
     required LedgerPostingStatus status,
     required String note,
   }) => _database.transaction(() async {
     final previous = id == null ? null : await _activeEntry(id);
+    if (type == LedgerTransactionType.adjustment ||
+        terms?.reversalOfId != null) {
+      throw ArgumentError('Use the balance or reversal command');
+    }
     if (previous != null) {
+      await _requireEditable(previous);
       if (previous.refundOfId != null) {
         throw ArgumentError('Use saveRefund to edit a refund');
       }
@@ -333,6 +398,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     final effectiveStatus = previous == null
         ? status
         : LedgerPostingStatus.values.byName(previous.status);
+    final actualTerms = terms ?? _decodeTerms(previous?.termsJson);
     final savedPayments =
         type == LedgerTransactionType.expense &&
             previous?.transactionType == LedgerTransactionType.expense.name &&
@@ -358,6 +424,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       previous: previous,
       settlement: actualSettlement,
       requiredCurrency: requiredCurrency,
+      terms: actualTerms,
       payments: payments ?? (savedPayments.length > 1 ? savedPayments : null),
     );
     await _writeEntry(
@@ -368,6 +435,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       categoryId: validation.categoryId,
       currencyCode: validation.currencyCode,
       settlement: actualSettlement,
+      terms: actualTerms,
       accountId: accountId,
       targetAccountId: targetAccountId,
       status: effectiveStatus,
@@ -387,6 +455,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     String? targetAccountId,
     String? refundOfId,
     TransferSettlement? settlement,
+    TransactionTerms terms = const TransactionTerms(),
     required LedgerPostingStatus status,
     required String note,
     required List<PostingLeg> postings,
@@ -410,6 +479,7 @@ class DriftExpenseRepository implements ExpenseRepository {
             settlementAmountMinor: Value(settlement?.amountMinor),
             settlementCurrencyCode: Value(settlement?.currencyCode),
             quotedExchangeRate: Value(settlement?.quotedRate),
+            termsJson: Value(terms.isEmpty ? null : jsonEncode(terms.toJson())),
             status: Value(status.name),
             note: Value(note.trim()),
             createdAt: previous?.createdAt ?? now,
@@ -417,15 +487,12 @@ class DriftExpenseRepository implements ExpenseRepository {
           ),
         );
     await _replacePostings(id, postings);
-    if (type.isReceivableFlow || _isReceivableEntry(previous)) {
-      await _checkReceivableBalances(
-        accountIds: {
-          accountId,
-          ?targetAccountId,
-          ?previous?.accountId,
-          ?previous?.targetAccountId,
-        },
-      );
+    final receivableIds = {
+      ..._receivableAccounts(type, accountId, targetAccountId, terms),
+      if (previous != null) ..._entryReceivableAccounts(previous),
+    };
+    if (receivableIds.isNotEmpty) {
+      await _checkReceivableBalances(accountIds: receivableIds);
     }
   }
 
@@ -472,7 +539,7 @@ class DriftExpenseRepository implements ExpenseRepository {
 
   Future<List<AccountPayment>> _expensePayments(String id) async => [
     for (final leg in await _accountPostings(id))
-      AccountPayment(leg.accountId!, -leg.debitMinor),
+      if (leg.debitMinor < 0) AccountPayment(leg.accountId!, -leg.debitMinor),
   ];
 
   Future<void> _requireNoActiveRefunds(String id) async {
@@ -496,6 +563,7 @@ class DriftExpenseRepository implements ExpenseRepository {
   @override
   Future<void> deleteTransaction(String id) => _database.transaction(() async {
     final entry = await _activeEntry(id);
+    await _requireEditable(entry);
     await _requireNoActiveRefunds(id);
     await (_database.update(
       _database.ledgerEntries,
@@ -505,10 +573,9 @@ class DriftExpenseRepository implements ExpenseRepository {
         updatedAt: Value(DateTime.now()),
       ),
     );
-    if (_isReceivableEntry(entry)) {
-      await _checkReceivableBalances(
-        accountIds: {entry.accountId, ?entry.targetAccountId},
-      );
+    final receivableIds = _entryReceivableAccounts(entry);
+    if (receivableIds.isNotEmpty) {
+      await _checkReceivableBalances(accountIds: receivableIds);
     }
   });
 
@@ -528,6 +595,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         targetAccountId: entry.targetAccountId,
         previous: entry,
         settlement: _entrySettlement(entry),
+        terms: _decodeTerms(entry.termsJson),
         status: LedgerPostingStatus.posted,
         payments: type == LedgerTransactionType.expense
             ? await _expensePayments(id)
@@ -551,12 +619,189 @@ class DriftExpenseRepository implements ExpenseRepository {
         updatedAt: Value(DateTime.now()),
       ),
     );
-    if (type.isReceivableFlow) {
-      await _checkReceivableBalances(
-        accountIds: {entry.accountId, ?entry.targetAccountId},
-      );
+    final receivableIds = _entryReceivableAccounts(entry);
+    if (receivableIds.isNotEmpty) {
+      await _checkReceivableBalances(accountIds: receivableIds);
     }
   });
+
+  Future<void> _requireEditable(EntryRow entry) async {
+    if (_decodeTerms(entry.termsJson).reversalOfId != null ||
+        await _hasActiveReversal(entry.id)) {
+      throw const TransactionRuleException(TransactionRuleError.linkedReversal);
+    }
+  }
+
+  Future<String?> _activeReversalId(String id) async {
+    final row = await _database
+        .customSelect(
+          """
+        SELECT id FROM ledger_entries
+        WHERE is_deleted = 0 AND json_extract(terms_json, '\$.reversal_of_id') = ?
+        LIMIT 1
+      """,
+          variables: [Variable.withString(id)],
+        )
+        .getSingleOrNull();
+    return row?.read<String>('id');
+  }
+
+  Future<bool> _hasActiveReversal(String id) async =>
+      await _activeReversalId(id) != null;
+
+  @override
+  Future<void> reverseTransaction(String id, {required DateTime occurredAt}) =>
+      _database.transaction(() async {
+        final original = await _activeEntry(id);
+        final terms = _decodeTerms(original.termsJson);
+        if (await _hasActiveReversal(id)) return;
+        await _requireNoActiveRefunds(id);
+        if (original.status != LedgerPostingStatus.posted.name ||
+            original.refundOfId != null ||
+            terms.reversalOfId != null ||
+            occurredAt.isBefore(original.occurredAt)) {
+          throw const TransactionRuleException(
+            TransactionRuleError.invalidTransactionDetails,
+          );
+        }
+        final legs = await _allPostings(id);
+        if (legs.isEmpty || legs.any((leg) => leg.needsReview)) {
+          throw const TransactionRuleException(
+            TransactionRuleError.invalidTransactionDetails,
+          );
+        }
+        for (final leg in legs) {
+          final accountId = leg.accountId;
+          if (accountId == null || leg.debitMinor == 0) continue;
+          final account = await (_database.select(
+            _database.ledgerAccounts,
+          )..where((row) => row.id.equals(accountId))).getSingle();
+          final kind = AccountKind.values.byName(account.kind);
+          if (kind.isPersonalCash || kind == AccountKind.entrustedFunds) {
+            await _requireAvailableBalance(
+              accountId: accountId,
+              accountName: account.name,
+              currencyCode: account.currencyCode,
+              requiredMinor: leg.debitMinor,
+            );
+          }
+        }
+        await _writeEntry(
+          type: LedgerTransactionType.values.byName(original.transactionType),
+          amountMinor: original.amountMinor,
+          occurredAt: occurredAt,
+          categoryId: original.categoryId,
+          currencyCode: original.currencyCode,
+          accountId: original.accountId,
+          targetAccountId: original.targetAccountId,
+          settlement: _entrySettlement(original),
+          terms: TransactionTerms.fromJson({
+            ...terms.toJson(),
+            'reversal_of_id': id,
+          }),
+          status: LedgerPostingStatus.posted,
+          note: '',
+          postings: [for (final leg in legs) oppositePosting(_postingLeg(leg))],
+        );
+      });
+
+  Future<List<PostingRow>> _allPostings(String id) =>
+      (_database.select(_database.ledgerPostings)
+            ..where((row) => row.transactionId.equals(id))
+            ..orderBy([(row) => OrderingTerm.asc(row.position)]))
+          .get();
+
+  @override
+  Future<void> recordBalanceAdjustment({
+    required String accountId,
+    required int amountMinor,
+    required String note,
+  }) => _database.transaction(() async {
+    if (amountMinor < 0) throw ArgumentError.value(amountMinor, 'amountMinor');
+    final snapshot = await _balanceQuery(accountId: accountId).getSingle();
+    final kind = AccountKind.values.byName(snapshot.read<String>('kind'));
+    if (kind == AccountKind.familyDirect) throw ArgumentError.value(accountId);
+    final currency = snapshot.read<String>('currency_code');
+    final difference =
+        BigInt.from(amountMinor) -
+        BigInt.from(snapshot.read<int>('current_balance'));
+    final debit = kind.isLiability ? -difference : difference;
+    if (debit == BigInt.zero) return;
+    if (debit.abs() > BigInt.from(0x7fffffffffffffff)) {
+      throw const TransactionRuleException(
+        TransactionRuleError.invalidTransactionDetails,
+      );
+    }
+    final adjustment = debit.toInt();
+    await _ensureSystemCategories(adjustment: true);
+    await _writeEntry(
+      type: LedgerTransactionType.adjustment,
+      amountMinor: adjustment,
+      occurredAt: DateTime.now(),
+      categoryId: _adjustmentCategory,
+      currencyCode: currency,
+      accountId: accountId,
+      status: LedgerPostingStatus.posted,
+      note: note,
+      postings: transactionPostings(
+        type: LedgerTransactionType.adjustment,
+        amountMinor: adjustment,
+        currencyCode: currency,
+        accountId: accountId,
+      ),
+    );
+  });
+
+  Future<void> _validateAllocationCategories(TransactionTerms terms) async {
+    if (terms.feeMinor + terms.interestMinor > 0) {
+      await _ensureSystemCategories(adjustment: false);
+    }
+    final ids = terms.categories.map((part) => part.categoryId).toSet();
+    if (ids.isEmpty) return;
+    final found =
+        await (_database.select(_database.ledgerCategories)..where(
+              (row) =>
+                  row.id.isIn(ids) &
+                  row.parentId.isNotNull() &
+                  row.transactionType.equals(
+                    LedgerTransactionType.expense.name,
+                  ),
+            ))
+            .get();
+    if (found.length != ids.length) {
+      throw const TransactionRuleException(
+        TransactionRuleError.invalidTransactionDetails,
+      );
+    }
+  }
+
+  Future<void> _ensureSystemCategories({required bool adjustment}) async {
+    final now = DateTime.now();
+    final categories = adjustment
+        ? [
+            (_adjustmentParent, '余额调整', null),
+            (_adjustmentCategory, '余额调整', _adjustmentParent),
+          ]
+        : [
+            (financialChargesCategoryId, '金融费用', null),
+            (financialFeeCategoryId, '手续费', financialChargesCategoryId),
+            (financialInterestCategoryId, '利息', financialChargesCategoryId),
+          ];
+    await _database.batch((batch) {
+      batch.insertAll(_database.ledgerCategories, [
+        for (final (id, name, parent) in categories)
+          LedgerCategoriesCompanion.insert(
+            id: id,
+            name: name,
+            parentId: Value(parent),
+            transactionType: Value(adjustment ? 'adjustment' : 'expense'),
+            sortOrder: const Value(9000),
+            createdAt: now,
+            updatedAt: now,
+          ),
+      ], mode: InsertMode.insertOrIgnore);
+    });
+  }
 
   @override
   Future<void> saveFamilyExpense({
@@ -566,6 +811,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     required DateTime occurredAt,
     required String categoryId,
     required String note,
+    List<CategoryAmount> categories = const [],
     LedgerPostingStatus status = LedgerPostingStatus.posted,
   }) => _database.transaction(() async {
     if (!currencyMinorDigits.containsKey(currencyCode)) {
@@ -605,6 +851,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       categoryId: categoryId,
       payments: [AccountPayment(accountId, amountMinor)],
       requiredCurrency: currencyCode,
+      terms: TransactionTerms(categories: categories),
       status: status,
       note: note,
     );
@@ -618,18 +865,26 @@ class DriftExpenseRepository implements ExpenseRepository {
     required int amountMinor,
     required DateTime occurredAt,
     required String note,
+    int? advanceCancellationMinor,
     LedgerPostingStatus status = LedgerPostingStatus.posted,
   }) => _database.transaction(() async {
     final previous = id == null ? null : await _activeEntry(id);
     if (previous != null && previous.refundOfId != originalId) {
       throw ArgumentError('A refund must retain its original purchase');
     }
+    if (previous != null) await _requireEditable(previous);
     final original = await _validateRefund(
       originalId: originalId,
       accountId: accountId,
       amountMinor: amountMinor,
       occurredAt: occurredAt,
       excludingId: id,
+    );
+    final terms = await _refundTerms(
+      original,
+      amountMinor,
+      excludingId: id,
+      advanceCancellationMinor: advanceCancellationMinor,
     );
     await _writeEntry(
       previous: previous,
@@ -640,6 +895,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       currencyCode: original.currencyCode,
       accountId: accountId,
       refundOfId: original.id,
+      terms: terms,
       status: previous == null
           ? status
           : LedgerPostingStatus.values.byName(previous.status),
@@ -650,9 +906,102 @@ class DriftExpenseRepository implements ExpenseRepository {
         currencyCode: original.currencyCode,
         accountId: accountId,
         isRefund: true,
+        terms: terms,
       ),
     );
   });
+
+  Future<List<EntryRow>> _refunds(String id, {String? excludingId}) =>
+      (_database.select(_database.ledgerEntries)..where(
+            (row) =>
+                row.refundOfId.equals(id) &
+                row.isDeleted.equals(false) &
+                (excludingId == null
+                    ? const Constant(true)
+                    : row.id.equals(excludingId).not()),
+          ))
+          .get();
+
+  Future<TransactionTerms> _refundTerms(
+    EntryRow original,
+    int amountMinor, {
+    String? excludingId,
+    int? advanceCancellationMinor,
+    TransactionTerms? existing,
+  }) async {
+    final purchase = _decodeTerms(original.termsJson);
+    var outstandingAdvance = purchase.advance?.amountMinor ?? 0;
+    final outstanding = <String, int>{
+      if (purchase.categories.isEmpty)
+        original.categoryId: original.amountMinor - outstandingAdvance
+      else
+        for (final part in purchase.categories)
+          part.categoryId: part.amountMinor,
+    };
+    List<CategoryAmount> portions(TransactionTerms terms, int amount) {
+      if (terms.categories.isNotEmpty) return terms.categories;
+      final spent = amount - (terms.advance?.amountMinor ?? 0);
+      return spent == 0
+          ? const []
+          : [(categoryId: original.categoryId, amountMinor: spent)];
+    }
+
+    for (final refund in await _refunds(
+      original.id,
+      excludingId: excludingId,
+    )) {
+      final prior = _decodeTerms(refund.termsJson);
+      outstandingAdvance -= prior.advance?.amountMinor ?? 0;
+      for (final part in portions(prior, refund.amountMinor)) {
+        outstanding.update(
+          part.categoryId,
+          (value) => value - part.amountMinor,
+          ifAbsent: () => -part.amountMinor,
+        );
+      }
+    }
+    if (existing != null) {
+      final advance = existing.advance;
+      if (outstandingAdvance < (advance?.amountMinor ?? 0) ||
+          (advance != null &&
+              advance.accountId != purchase.advance?.accountId) ||
+          portions(existing, amountMinor).any(
+            (part) => (outstanding[part.categoryId] ?? 0) < part.amountMinor,
+          )) {
+        throw const LedgerBackupException('备份退款超过原分类或垫付账面金额');
+      }
+      return existing;
+    }
+    final outstandingSpending = outstanding.values.fold(
+      0,
+      (sum, value) => sum + value,
+    );
+    final excess = amountMinor - outstandingSpending;
+    final cancelled = advanceCancellationMinor ?? (excess > 0 ? excess : 0);
+    if (cancelled < 0 ||
+        cancelled > amountMinor ||
+        cancelled > outstandingAdvance ||
+        amountMinor - cancelled > outstandingSpending) {
+      throw const TransactionRuleException(
+        TransactionRuleError.invalidTransactionDetails,
+      );
+    }
+    var remaining = amountMinor - cancelled;
+    final parts = <CategoryAmount>[];
+    for (final part in outstanding.entries) {
+      if (remaining == 0) break;
+      if (part.value <= 0) continue;
+      final portion = part.value < remaining ? part.value : remaining;
+      parts.add((categoryId: part.key, amountMinor: portion));
+      remaining -= portion;
+    }
+    return TransactionTerms(
+      categories: purchase.categories.isEmpty ? const [] : parts,
+      advance: cancelled == 0
+          ? null
+          : AccountPayment(purchase.advance!.accountId, cancelled),
+    );
+  }
 
   Future<EntryRow> _validateRefund({
     required String originalId,
@@ -662,7 +1011,9 @@ class DriftExpenseRepository implements ExpenseRepository {
     required String? excludingId,
   }) async {
     final original = await _activeEntry(originalId);
-    if (amountMinor <= 0 ||
+    if (await _hasActiveReversal(originalId) ||
+        _decodeTerms(original.termsJson).reversalOfId != null ||
+        amountMinor <= 0 ||
         original.transactionType != LedgerTransactionType.expense.name ||
         original.status != LedgerPostingStatus.posted.name ||
         original.refundOfId != null ||
@@ -829,6 +1180,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     List<AccountPayment>? payments,
     TransferSettlement? settlement,
     String? requiredCurrency,
+    TransactionTerms terms = const TransactionTerms(),
   }) async {
     if (amountMinor <= 0) {
       throw ArgumentError.value(amountMinor, 'amountMinor', 'must be positive');
@@ -884,6 +1236,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       accountId,
       ?targetAccountId,
       for (final payment in allocations) payment.accountId,
+      ?terms.advance?.accountId,
     };
     final accounts = {
       for (final row in await (_database.select(
@@ -938,15 +1291,34 @@ class DriftExpenseRepository implements ExpenseRepository {
     final targetKind = target == null
         ? null
         : AccountKind.values.byName(target.kind);
-    if (!_validAccountFlow(type, accountKind, targetKind) ||
+    if (!_validAccountFlow(type, accountKind, targetKind, terms) ||
         !_validFundingAccounts(
           allocations.map(
             (payment) =>
                 AccountKind.values.byName(accounts[payment.accountId]!.kind),
           ),
         )) {
-      throw ArgumentError('The accounts do not match the transaction type');
+      if (terms.isEmpty) {
+        throw ArgumentError('The accounts do not match the transaction type');
+      }
+      throw const TransactionRuleException(
+        TransactionRuleError.invalidTransactionDetails,
+      );
     }
+    if (!_validTerms(
+      type,
+      amountMinor,
+      account.currencyCode,
+      resolvedCategoryId,
+      allocations,
+      accounts,
+      terms,
+    )) {
+      throw const TransactionRuleException(
+        TransactionRuleError.invalidTransactionDetails,
+      );
+    }
+    await _validateAllocationCategories(terms);
     Future<void> requireFunds(AccountRow source, int amount) =>
         _requireAvailableBalance(
           accountId: source.id,
@@ -979,14 +1351,23 @@ class DriftExpenseRepository implements ExpenseRepository {
       case LedgerTransactionType.borrowing:
         break;
       case LedgerTransactionType.transfer:
+        if (posting) await requireFunds(account, amountMinor + terms.feeMinor);
       case LedgerTransactionType.lending:
       case LedgerTransactionType.advance:
         if (posting) await requireFunds(account, amountMinor);
       case LedgerTransactionType.repayment:
         if (posting) {
-          await requireFunds(account, amountMinor);
-          await requireDebt(target!);
+          if (terms.externalDebtPayment) {
+            await requireDebt(account);
+          } else {
+            await requireFunds(
+              account,
+              amountMinor + terms.feeMinor + terms.interestMinor,
+            );
+            await requireDebt(target!);
+          }
         }
+      case LedgerTransactionType.adjustment:
       case LedgerTransactionType.collection:
       case LedgerTransactionType.reimbursement:
         // The completed ledger is checked chronologically after the write.
@@ -1005,6 +1386,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         settlement: settlement,
         isCreditIncome:
             type == LedgerTransactionType.income && accountKind.isLiability,
+        terms: terms,
       ),
     );
   }
@@ -1636,7 +2018,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 5,
+      'backup_version': 6,
       'valuation': {
         'base_currency': valuation.baseCurrency,
         'rates': [
@@ -1701,6 +2083,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         final opening = _requiredInt(raw, 'opening_balance_minor');
         final archived = _requiredBool(raw, 'is_archived');
         if ((payload.version < 5 && kind.isAdvancedFunding) ||
+            (payload.version < 6 && kind.isNewAssetKind) ||
             (kind == AccountKind.familyDirect &&
                 (id != _familyAccountId(code) ||
                     !currencyMinorDigits.containsKey(code) ||
@@ -1715,7 +2098,9 @@ class DriftExpenseRepository implements ExpenseRepository {
           if (old != null &&
               old.kind != kind.name &&
               (kind.isAdvancedFunding ||
-                  AccountKind.values.byName(old.kind).isAdvancedFunding)) {
+                  kind.isNewAssetKind ||
+                  AccountKind.values.byName(old.kind).isAdvancedFunding ||
+                  AccountKind.values.byName(old.kind).isNewAssetKind)) {
             throw const LedgerBackupException('备份与已有资金归属账户冲突');
           }
         }
@@ -1788,8 +2173,14 @@ class DriftExpenseRepository implements ExpenseRepository {
         );
       final legacyReviews = <String, List<PostingLeg>>{};
       for (final entry in ordered) {
-        if (payload.version < 5 && mode == BackupRestoreMode.merge) {
+        if (payload.version < 6 && mode == BackupRestoreMode.merge) {
           await _guardLegacyMerge(entry.id, payload.version);
+        }
+        if (_decodeTerms(entry.termsJson).reversalOfId case final originalId?) {
+          final priorId = await _activeReversalId(originalId);
+          if (priorId != null && priorId != entry.id) {
+            throw const LedgerBackupException('备份含重复冲销记录');
+          }
         }
         await _database
             .into(_database.ledgerEntries)
@@ -1842,6 +2233,13 @@ class DriftExpenseRepository implements ExpenseRepository {
       entries,
     )..where((table) => table.id.equals(id))).getSingleOrNull();
     if (current != null &&
+        (current.termsJson != null ||
+            current.transactionType == LedgerTransactionType.adjustment.name ||
+            await _hasActiveReversal(id))) {
+      throw const LedgerBackupException('旧备份与已有财务明细或冲销记录冲突');
+    }
+    if (version < 5 &&
+        current != null &&
         (_isReceivableEntry(current) ||
             await _hasAdvancedFundingPostings(id))) {
       throw const LedgerBackupException('旧备份与已有资金归属或应收款交易冲突');
@@ -1887,8 +2285,64 @@ class DriftExpenseRepository implements ExpenseRepository {
     if (mismatch != null) {
       throw const LedgerBackupException('备份与已有账户分录币种冲突');
     }
+    final entries = _database.ledgerEntries;
+    final detailed =
+        await (_database.select(entries)..where(
+              (row) =>
+                  row.termsJson.isNotNull() |
+                  row.transactionType.equals('adjustment'),
+            ))
+            .get();
+    for (final entry in detailed) {
+      final terms = _decodeTerms(entry.termsJson);
+      try {
+        await _validateAllocationCategories(terms);
+      } on TransactionRuleException {
+        throw const LedgerBackupException('备份消费拆分分类无效');
+      }
+      if (terms.reversalOfId case final originalId?) {
+        final original = await (_database.select(
+          entries,
+        )..where((row) => row.id.equals(originalId))).getSingleOrNull();
+        if (original == null ||
+            original.isDeleted ||
+            entry.isDeleted ||
+            original.refundOfId != null ||
+            entry.refundOfId != null ||
+            original.status != 'posted' ||
+            entry.status != 'posted' ||
+            entry.occurredAt.isBefore(original.occurredAt) ||
+            original.transactionType != entry.transactionType ||
+            original.amountMinor != entry.amountMinor ||
+            original.currencyCode != entry.currencyCode ||
+            original.categoryId != entry.categoryId ||
+            original.accountId != entry.accountId ||
+            original.targetAccountId != entry.targetAccountId ||
+            original.settlementAmountMinor != entry.settlementAmountMinor ||
+            original.settlementCurrencyCode != entry.settlementCurrencyCode ||
+            original.quotedExchangeRate != entry.quotedExchangeRate ||
+            _decodeTerms(original.termsJson).reversalOfId != null ||
+            jsonEncode({
+                  ..._decodeTerms(original.termsJson).toJson(),
+                  'reversal_of_id': originalId,
+                }) !=
+                jsonEncode(terms.toJson())) {
+          throw const LedgerBackupException('备份冲销记录与原交易不一致');
+        }
+        final originalLegs = await _allPostings(originalId);
+        final reversals = await _allPostings(entry.id);
+        if (originalLegs.length != reversals.length ||
+            originalLegs.indexed.any(
+              (leg) =>
+                  oppositePosting(_postingLeg(leg.$2)) !=
+                  _postingLeg(reversals[leg.$1]),
+            )) {
+          throw const LedgerBackupException('备份冲销分录与原交易不一致');
+        }
+      }
+    }
     final refunds =
-        await (_database.select(_database.ledgerEntries)..where(
+        await (_database.select(entries)..where(
               (table) =>
                   table.refundOfId.isNotNull() & table.isDeleted.equals(false),
             ))
@@ -1901,6 +2355,12 @@ class DriftExpenseRepository implements ExpenseRepository {
           amountMinor: refund.amountMinor,
           occurredAt: refund.occurredAt,
           excludingId: refund.id,
+        );
+        await _refundTerms(
+          original,
+          refund.amountMinor,
+          excludingId: refund.id,
+          existing: _decodeTerms(refund.termsJson),
         );
         if (refund.currencyCode != original.currencyCode ||
             refund.categoryId != original.categoryId) {
@@ -1927,6 +2387,112 @@ bool _isReceivableEntry(EntryRow? entry) =>
     entry != null &&
     LedgerTransactionType.values.byName(entry.transactionType).isReceivableFlow;
 
+const _adjustmentParent = 'adjustment-root';
+const _adjustmentCategory = 'adjustment-balance';
+
+TransactionTerms _decodeTerms(String? json) => json == null
+    ? const TransactionTerms()
+    : TransactionTerms.fromJson(jsonDecode(json) as Map<String, dynamic>);
+
+Set<String> _receivableAccounts(
+  LedgerTransactionType type,
+  String accountId,
+  String? targetAccountId,
+  TransactionTerms terms,
+) => {
+  if (type.isReceivableFlow || type == LedgerTransactionType.adjustment)
+    accountId,
+  if (type.isReceivableFlow && targetAccountId != null) targetAccountId,
+  ?terms.advance?.accountId,
+};
+
+Set<String> _entryReceivableAccounts(EntryRow entry) => _receivableAccounts(
+  LedgerTransactionType.values.byName(entry.transactionType),
+  entry.accountId,
+  entry.targetAccountId,
+  _decodeTerms(entry.termsJson),
+);
+
+bool _validTerms(
+  LedgerTransactionType type,
+  int amount,
+  String currency,
+  String categoryId,
+  List<AccountPayment> payments,
+  Map<String, AccountRow> accounts,
+  TransactionTerms terms, {
+  bool isRefund = false,
+}) {
+  if (type == LedgerTransactionType.adjustment) {
+    return amount != 0 &&
+        amount != -0x7fffffffffffffff - 1 &&
+        (terms.isEmpty ||
+            terms.toJson().length == 1 && terms.reversalOfId != null);
+  }
+  if (amount <= 0) return false;
+  final price = terms.originalPrice;
+  final advance = terms.advance;
+  if (price != null &&
+      (type != LedgerTransactionType.expense ||
+          isRefund ||
+          price.amountMinor <= 0 ||
+          price.currencyCode == currency ||
+          !currencyMinorDigits.containsKey(currency) ||
+          !currencyMinorDigits.containsKey(price.currencyCode) ||
+          (price.quotedRate != null &&
+              !isValidExchangeQuote(price.quotedRate!)))) {
+    return false;
+  }
+  if (advance != null &&
+      (type != LedgerTransactionType.expense ||
+          advance.amountMinor <= 0 ||
+          (isRefund
+              ? advance.amountMinor > amount
+              : advance.amountMinor >= amount) ||
+          accounts[advance.accountId]?.kind != AccountKind.receivable.name ||
+          accounts[advance.accountId]?.currencyCode != currency ||
+          payments.any(
+            (payment) => !AccountKind.values
+                .byName(accounts[payment.accountId]!.kind)
+                .isPersonalCash,
+          ))) {
+    return false;
+  }
+  if (terms.categories.isNotEmpty) {
+    if (type != LedgerTransactionType.expense ||
+        (!isRefund && terms.categories.first.categoryId != categoryId)) {
+      return false;
+    }
+    final ids = <String>{};
+    var remaining = amount - (advance?.amountMinor ?? 0);
+    for (final part in terms.categories) {
+      if (!ids.add(part.categoryId) ||
+          part.amountMinor <= 0 ||
+          part.amountMinor > remaining) {
+        return false;
+      }
+      remaining -= part.amountMinor;
+    }
+    if (remaining != 0) return false;
+  }
+  if (terms.externalDebtPayment && type != LedgerTransactionType.repayment) {
+    return false;
+  }
+  final fee = terms.feeMinor;
+  final interest = terms.interestMinor;
+  if (fee < 0 ||
+      interest < 0 ||
+      (fee > 0 &&
+          type != LedgerTransactionType.transfer &&
+          type != LedgerTransactionType.repayment) ||
+      (interest > 0 && type != LedgerTransactionType.repayment) ||
+      (terms.externalDebtPayment && (fee != 0 || interest != 0))) {
+    return false;
+  }
+  return BigInt.from(amount) + BigInt.from(fee) + BigInt.from(interest) <=
+      BigInt.from(0x7fffffffffffffff);
+}
+
 bool _validFundingAccounts(Iterable<AccountKind> allocations) =>
     allocations.every((kind) => kind != AccountKind.receivable) &&
     (!allocations.contains(AccountKind.familyDirect) ||
@@ -1935,8 +2501,9 @@ bool _validFundingAccounts(Iterable<AccountKind> allocations) =>
 bool _validAccountFlow(
   LedgerTransactionType type,
   AccountKind source,
-  AccountKind? target,
-) {
+  AccountKind? target, [
+  TransactionTerms terms = const TransactionTerms(),
+]) {
   bool isTransferAccount(AccountKind? kind) =>
       kind?.isPersonalCash == true || kind == AccountKind.entrustedFunds;
   return switch (type) {
@@ -1950,9 +2517,14 @@ bool _validAccountFlow(
     LedgerTransactionType.borrowing =>
       source.isLiability && target?.isPersonalCash == true,
     LedgerTransactionType.repayment =>
-      isTransferAccount(source) && target?.isLiability == true,
+      terms.externalDebtPayment
+          ? source.isLiability && target == null
+          : isTransferAccount(source) && target?.isLiability == true,
+    LedgerTransactionType.adjustment =>
+      source != AccountKind.familyDirect && target == null,
     LedgerTransactionType.transfer =>
-      isTransferAccount(source) && isTransferAccount(target),
+      (isTransferAccount(source) || source == AccountKind.prepaid) &&
+          (isTransferAccount(target) || target == AccountKind.prepaid),
     LedgerTransactionType.lending || LedgerTransactionType.advance =>
       source.isPersonalCash && target == AccountKind.receivable,
     LedgerTransactionType.collection || LedgerTransactionType.reimbursement =>
@@ -2033,6 +2605,7 @@ Map<String, Object?> _backupEntry(EntryRow item, List<PostingRow> postings) => {
     'settlement_currency_code': item.settlementCurrencyCode,
   if (item.quotedExchangeRate != null)
     'quoted_exchange_rate': item.quotedExchangeRate,
+  if (item.termsJson case final terms?) 'financial_details': jsonDecode(terms),
   'postings': [for (final posting in postings) _backupPosting(posting)],
 };
 
@@ -2051,6 +2624,27 @@ EntryRow _restoreEntry(Map<String, dynamic> raw, int version) {
   if (original != null &&
       (id == original || type != LedgerTransactionType.expense.name)) {
     throw const LedgerBackupException('备份退款关联无效');
+  }
+  final detail = raw['financial_details'];
+  String? termsJson;
+  if (type == LedgerTransactionType.adjustment.name &&
+      (raw['status'] != LedgerPostingStatus.posted.name ||
+          raw['category_id'] != _adjustmentCategory)) {
+    throw const LedgerBackupException('备份财务明细中的余额调整无效');
+  }
+  if (detail != null || type == LedgerTransactionType.adjustment.name) {
+    if (version < 6) throw const LedgerBackupException('旧备份不能包含财务明细');
+    if (detail != null) {
+      try {
+        final terms = TransactionTerms.fromJson(detail as Map<String, dynamic>);
+        if (terms.isEmpty) {
+          throw const FormatException('Empty financial details');
+        }
+        termsJson = jsonEncode(terms.toJson());
+      } on Object {
+        throw const LedgerBackupException('备份财务明细无效');
+      }
+    }
   }
   final amount = raw['settlement_amount_minor'];
   final currency = _nullableString(raw, 'settlement_currency_code');
@@ -2090,6 +2684,7 @@ EntryRow _restoreEntry(Map<String, dynamic> raw, int version) {
     settlementAmountMinor: amount as int?,
     settlementCurrencyCode: currency,
     quotedExchangeRate: quote,
+    termsJson: termsJson,
   );
 }
 
@@ -2141,10 +2736,13 @@ List<PostingLeg> _restorePostings(
 
   final type = LedgerTransactionType.values.byName(entry.transactionType);
   final isRefund = entry.refundOfId != null;
+  final terms = _decodeTerms(entry.termsJson);
   final settlement = _entrySettlement(entry);
   // Older rows may have unknown settlement semantics. Preserve their exact
   // per-currency account effects when restoring a full backup.
   if (!isRefund &&
+      type != LedgerTransactionType.adjustment &&
+      terms.isEmpty &&
       settlement == null &&
       entry.status == LedgerPostingStatus.posted.name &&
       postings.every((leg) => leg.needsReview)) {
@@ -2154,12 +2752,18 @@ List<PostingLeg> _restorePostings(
   final payments = type == LedgerTransactionType.expense && !isRefund
       ? [
           for (final leg in accountLegs)
-            AccountPayment(leg.accountId!, -leg.debitMinor),
+            if (leg.accountId != terms.advance?.accountId)
+              AccountPayment(
+                leg.accountId!,
+                terms.reversalOfId == null ? -leg.debitMinor : leg.debitMinor,
+              ),
         ]
       : const <AccountPayment>[];
   final hasTarget =
       type != LedgerTransactionType.expense &&
-      type != LedgerTransactionType.income;
+      type != LedgerTransactionType.income &&
+      type != LedgerTransactionType.adjustment &&
+      !terms.externalDebtPayment;
   final source = accounts[entry.accountId]!;
   final target = accounts[entry.targetAccountId];
   final sourceKind = AccountKind.values.byName(source.kind);
@@ -2167,14 +2771,23 @@ List<PostingLeg> _restorePostings(
       ? null
       : AccountKind.values.byName(target.kind);
   final validAccounts =
-      _validAccountFlow(type, sourceKind, targetKind) &&
+      _validAccountFlow(type, sourceKind, targetKind, terms) &&
       _validFundingAccounts(
         payments.map(
           (payment) =>
               AccountKind.values.byName(accounts[payment.accountId]!.kind),
         ),
       );
-  if (entry.amountMinor <= 0 ||
+  if (!_validTerms(
+        type,
+        entry.amountMinor,
+        entry.currencyCode,
+        entry.categoryId,
+        payments,
+        accounts,
+        terms,
+        isRefund: isRefund,
+      ) ||
       !validAccounts ||
       source.currencyCode != entry.currencyCode ||
       !_validTransferSettlement(
@@ -2199,6 +2812,7 @@ List<PostingLeg> _restorePostings(
     settlement: settlement,
     isCreditIncome:
         type == LedgerTransactionType.income && sourceKind.isLiability,
+    terms: terms,
   );
   if (postings.length != expected.length ||
       postings.indexed.any((item) => item.$2 != expected[item.$1])) {
@@ -2244,7 +2858,7 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 5) ||
+      !(format == _backupFormat && (version >= 1 && version <= 6) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
@@ -2459,7 +3073,8 @@ Map<String, int> _requiredImportOpeningBalances(
       case LedgerTransactionType.advance:
       case LedgerTransactionType.collection:
       case LedgerTransactionType.reimbursement:
-        throw const LedgerImportException('应收款交易请通过完整备份恢复');
+      case LedgerTransactionType.adjustment:
+        throw const LedgerImportException('财务分录请通过完整备份恢复');
     }
   }
   return {

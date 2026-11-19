@@ -29,6 +29,9 @@ String localizedTransactionRule(
       context.l10n.refundLimitExceeded(
         formatMoney(exception.amountMinor ?? 0, exception.currencyCode),
       ),
+    TransactionRuleError.invalidTransactionDetails =>
+      context.l10n.invalidTransactionDetails,
+    TransactionRuleError.linkedReversal => context.l10n.linkedReversal,
     TransactionRuleError.linkedRefunds => context.l10n.linkedRefunds,
     TransactionRuleError.archivedPostingAccount =>
       context.l10n.archivedPostingAccount,

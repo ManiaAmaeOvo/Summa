@@ -153,10 +153,15 @@ class _TransactionList extends ConsumerStatefulWidget {
 
 class _TransactionListState extends ConsumerState<_TransactionList> {
   String? _currency;
+  bool _reviewOnly = false;
 
   @override
   Widget build(BuildContext context) {
     final items = widget.items;
+    final reviewCount = items.where((record) => record.needsReview).length;
+    final visibleItems = _reviewOnly
+        ? items.where((record) => record.needsReview).toList()
+        : items;
     final balances = widget.balances;
     final currencies = currencyOptions([
       ...balances.map((account) => account.currencyCode),
@@ -171,14 +176,12 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
     final weekStart = dayStart.subtract(Duration(days: now.weekday - 1));
     final expenses = items
         .where(
-          (item) =>
-              item.currencyCode == currency &&
-              item.type == LedgerTransactionType.expense,
+          (item) => item.currencyCode == currency && item.spendingMinor != 0,
         )
         .toList(growable: false);
     final total = expenses.fold<int>(
       0,
-      (sum, item) => sum + item.actualExpenseMinor,
+      (sum, item) => sum + item.spendingMinor,
     );
     final monthTotal = _sumSince(expenses, monthStart);
     final weekTotal = _sumSince(expenses, weekStart);
@@ -213,7 +216,7 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
     }) {
       final remaining = {
         for (final leg in original.accountPostings)
-          leg.accountId: -leg.debitMinor,
+          if (leg.debitMinor < 0) leg.accountId: -leg.debitMinor,
       };
       for (final refund
           in refundsByOriginal[original.id] ?? const <LedgerRecord>[]) {
@@ -297,7 +300,15 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
             ),
           ),
         ),
-        if (items.isEmpty)
+        if (reviewCount > 0 || _reviewOnly)
+          SliverToBoxAdapter(
+            child: SwitchListTile(
+              value: _reviewOnly,
+              title: Text('${context.l10n.fundingReviewFilter} ($reviewCount)'),
+              onChanged: (value) => setState(() => _reviewOnly = value),
+            ),
+          ),
+        if (visibleItems.isEmpty)
           const SliverToBoxAdapter(
             child: SizedBox(height: 240, child: _EmptyState()),
           )
@@ -305,11 +316,19 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             sliver: SliverList.separated(
-              itemCount: items.length,
+              itemCount: visibleItems.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
-                final item = items[index];
+                final item = visibleItems[index];
                 final settlement = item.settlement;
+                final price = item.terms.originalPrice;
+                final readOnly =
+                    item.isReversal ||
+                    item.hasReversal ||
+                    item.type == LedgerTransactionType.adjustment;
+                final canReverse =
+                    item.canReverse &&
+                    (refundsByOriginal[item.id]?.isEmpty ?? true);
                 return Card(
                   child: ListTile(
                     leading: CircleAvatar(
@@ -328,6 +347,9 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
                           Localizations.localeOf(context).toLanguageTag(),
                         ).add_Hm().format(item.occurredAt),
                         if (item.isPending) context.l10n.pendingPosting,
+                        if (item.needsReview) context.l10n.fundingReviewBadge,
+                        if (item.hasReversal) context.l10n.reversedPosting,
+                        if (item.isReversal) context.l10n.reversalPosting,
                         _accountDescription(context, item),
                         if (settlement != null) ...[
                           context.l10n.effectiveExchangeRateLabel(
@@ -347,9 +369,17 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
                               settlement.currencyCode,
                             ),
                         ],
+                        if (price != null)
+                          '${context.l10n.originalPrice} ${formatMoney(price.amountMinor, price.currencyCode)}',
+                        if (item.terms.feeMinor > 0)
+                          '${context.l10n.feeAmount} ${formatMoney(item.terms.feeMinor, item.currencyCode)}',
+                        if (item.terms.interestMinor > 0)
+                          '${context.l10n.interestAmount} ${formatMoney(item.terms.interestMinor, item.currencyCode)}',
                         if (item.note.isNotEmpty) item.note,
                       ].join(' · '),
-                      maxLines: settlement == null ? 2 : 4,
+                      maxLines: settlement == null && item.terms.isEmpty
+                          ? 2
+                          : 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                     trailing: Row(
@@ -373,46 +403,64 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
                                 ),
                           ),
                         ),
-                        PopupMenuButton<_RecordAction>(
-                          tooltip: context.l10n.transactionActions,
-                          onSelected: (action) {
-                            switch (action) {
-                              case _RecordAction.edit:
-                                openEditor(record: item);
-                              case _RecordAction.delete:
-                                _confirmDeleteRecord(context, ref, item);
-                              case _RecordAction.refund:
-                                openEditor(refundFor: item);
-                              case _RecordAction.post:
-                                _postRecord(context, ref, item);
-                            }
-                          },
-                          itemBuilder: (_) => [
-                            PopupMenuItem(
-                              value: _RecordAction.edit,
-                              child: Text(context.l10n.edit),
-                            ),
-                            if (item.isPending)
-                              PopupMenuItem(
-                                value: _RecordAction.post,
-                                child: Text(context.l10n.postTransactionAction),
-                              ),
-                            if (item.canRefund &&
-                                refundableAmounts(item).values
-                                    .any((amount) => amount > 0))
-                              PopupMenuItem(
-                                value: _RecordAction.refund,
-                                child: Text(context.l10n.recordRefund),
-                              ),
-                            PopupMenuItem(
-                              value: _RecordAction.delete,
-                              child: Text(context.l10n.delete),
-                            ),
-                          ],
-                        ),
+                        if (!readOnly || canReverse)
+                          PopupMenuButton<_RecordAction>(
+                            tooltip: context.l10n.transactionActions,
+                            onSelected: (action) {
+                              switch (action) {
+                                case _RecordAction.edit:
+                                  openEditor(record: item);
+                                case _RecordAction.delete:
+                                  _confirmDeleteRecord(context, ref, item);
+                                case _RecordAction.refund:
+                                  openEditor(refundFor: item);
+                                case _RecordAction.post:
+                                  _postRecord(context, ref, item);
+                                case _RecordAction.reverse:
+                                  _confirmReversal(context, ref, item);
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              if (!readOnly)
+                                PopupMenuItem(
+                                  value: _RecordAction.edit,
+                                  child: Text(context.l10n.edit),
+                                ),
+                              if (item.isPending)
+                                PopupMenuItem(
+                                  value: _RecordAction.post,
+                                  child: Text(
+                                    context.l10n.postTransactionAction,
+                                  ),
+                                ),
+                              if (item.canRefund &&
+                                  refundableAmounts(item).values
+                                      .any((amount) => amount > 0))
+                                PopupMenuItem(
+                                  value: _RecordAction.refund,
+                                  child: Text(context.l10n.recordRefund),
+                                ),
+                              if (canReverse)
+                                PopupMenuItem(
+                                  value: _RecordAction.reverse,
+                                  child: Text(context.l10n.reverseTransaction),
+                                ),
+                              if (!readOnly)
+                                PopupMenuItem(
+                                  value: _RecordAction.delete,
+                                  child: Text(context.l10n.delete),
+                                ),
+                            ],
+                          ),
                       ],
                     ),
-                    onTap: () => openEditor(record: item),
+                    onTap: readOnly
+                        ? () => _showPostingDetails(
+                            context,
+                            item,
+                            recordsById[item.terms.reversalOfId],
+                          )
+                        : () => openEditor(record: item),
                   ),
                 );
               },
@@ -423,11 +471,11 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
   }
 }
 
-enum _RecordAction { edit, post, refund, delete }
+enum _RecordAction { edit, post, refund, reverse, delete }
 
 int _sumSince(List<LedgerRecord> items, DateTime start) => items
     .where((item) => !item.occurredAt.isBefore(start))
-    .fold<int>(0, (sum, item) => sum + item.actualExpenseMinor);
+    .fold<int>(0, (sum, item) => sum + item.spendingMinor);
 
 class _DashboardSummaryCard extends StatelessWidget {
   const _DashboardSummaryCard({
@@ -488,6 +536,76 @@ class _DashboardSummaryCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+Future<void> _showPostingDetails(
+  BuildContext context,
+  LedgerRecord record,
+  LedgerRecord? original,
+) => showDialog<void>(
+  context: context,
+  builder: (context) => AlertDialog(
+    title: Text(_titleForRecord(context, record)),
+    content: Text(
+      [
+        _accountDescription(context, record),
+        _amountForRecord(record),
+        if (record.note.isNotEmpty) record.note,
+        if (original != null)
+          '${context.l10n.reversalPosting} · ${DateFormat.yMMMd().format(original.occurredAt)}',
+      ].join('\n'),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: Text(context.l10n.close),
+      ),
+    ],
+  ),
+);
+
+Future<void> _confirmReversal(
+  BuildContext context,
+  WidgetRef ref,
+  LedgerRecord record,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(context.l10n.reverseTransaction),
+      content: Text(context.l10n.confirmReversal),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(context.l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(context.l10n.reverseTransaction),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+  final now = DateTime.now();
+  try {
+    await ref
+        .read(expenseRepositoryProvider)
+        .reverseTransaction(
+          record.id,
+          occurredAt: now.isBefore(record.occurredAt) ? record.occurredAt : now,
+        );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(context.l10n.postedReversal)));
+    }
+  } on TransactionRuleException catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizedTransactionRule(context, error))),
+      );
+    }
   }
 }
 
@@ -579,6 +697,7 @@ String _titleForRecord(
   LedgerTransactionType.advance => context.l10n.advance,
   LedgerTransactionType.collection => context.l10n.collection,
   LedgerTransactionType.reimbursement => context.l10n.reimbursement,
+  LedgerTransactionType.adjustment => context.l10n.balanceAdjustment,
 };
 
 String _accountDescription(BuildContext context, LedgerRecord record) {
@@ -603,13 +722,21 @@ String _accountDescription(BuildContext context, LedgerRecord record) {
           record.targetAccountId!,
           record.targetAccountName!,
         );
+  if (record.terms.externalDebtPayment) {
+    return '${context.l10n.externalDebtPayment} · $source';
+  }
   return switch (record.type) {
+    LedgerTransactionType.adjustment => source,
     LedgerTransactionType.expense =>
-      record.accountPostings.length > 1
+      record.accountPostings
+                  .where((leg) => leg.kind != AccountKind.receivable)
+                  .length >
+              1
           ? record.accountPostings
+                .where((leg) => leg.kind != AccountKind.receivable)
                 .map(
                   (leg) =>
-                      '${DefaultLedgerLabels.accountName(locale, leg.accountId, leg.accountName)} ${formatMoney(-leg.debitMinor, leg.currencyCode)}',
+                      '${DefaultLedgerLabels.accountName(locale, leg.accountId, leg.accountName)} ${formatMoney(leg.debitMinor.abs(), leg.currencyCode)}',
                 )
                 .join(' + ')
           : sourceDescription,
@@ -619,14 +746,21 @@ String _accountDescription(BuildContext context, LedgerRecord record) {
 }
 
 String _amountForRecord(LedgerRecord record) {
-  final amount = formatMoney(record.amountMinor, record.currencyCode);
+  final amount = formatMoney(record.amountMinor.abs(), record.currencyCode);
+  if (record.type == LedgerTransactionType.adjustment) {
+    final kind = record.accountPostings.firstOrNull?.kind;
+    final change =
+        record.signedAmountMinor * (kind?.isLiability == true ? -1 : 1);
+    return '${change > 0 ? '+' : '-'}$amount';
+  }
   final settlement = record.settlement;
   if (settlement != null) {
     return '$amount\n→ ${formatMoney(settlement.amountMinor, settlement.currencyCode)}';
   }
   return switch (record.type) {
-    LedgerTransactionType.expense => '${record.isRefund ? '+' : '-'}$amount',
-    LedgerTransactionType.income => '+$amount',
+    LedgerTransactionType.expense =>
+      '${record.isRefund || record.isReversal ? '+' : '-'}$amount',
+    LedgerTransactionType.income => '${record.isReversal ? '-' : '+'}$amount',
     _ => amount,
   };
 }
@@ -636,6 +770,7 @@ IconData _iconForType(LedgerTransactionType type) => switch (type) {
   LedgerTransactionType.income => Icons.south_west,
   LedgerTransactionType.borrowing => Icons.call_received,
   LedgerTransactionType.repayment => Icons.call_made,
+  LedgerTransactionType.adjustment => Icons.tune,
   LedgerTransactionType.transfer => Icons.swap_horiz,
   LedgerTransactionType.lending ||
   LedgerTransactionType.advance => Icons.call_made,
@@ -648,6 +783,7 @@ Color _colorForType(BuildContext context, LedgerTransactionType type) =>
       LedgerTransactionType.expense => Theme.of(context).colorScheme.error,
       LedgerTransactionType.income => Theme.of(context).colorScheme.primary,
       LedgerTransactionType.borrowing ||
+      LedgerTransactionType.adjustment ||
       LedgerTransactionType.repayment ||
       LedgerTransactionType.lending ||
       LedgerTransactionType.advance ||

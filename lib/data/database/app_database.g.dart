@@ -1303,6 +1303,17 @@ class $LedgerEntriesTable extends LedgerEntries
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _termsJsonMeta = const VerificationMeta(
+    'termsJson',
+  );
+  @override
+  late final GeneratedColumn<String> termsJson = GeneratedColumn<String>(
+    'terms_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1323,6 +1334,7 @@ class $LedgerEntriesTable extends LedgerEntries
     settlementAmountMinor,
     settlementCurrencyCode,
     quotedExchangeRate,
+    termsJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1486,6 +1498,12 @@ class $LedgerEntriesTable extends LedgerEntries
         ),
       );
     }
+    if (data.containsKey('terms_json')) {
+      context.handle(
+        _termsJsonMeta,
+        termsJson.isAcceptableOrUnknown(data['terms_json']!, _termsJsonMeta),
+      );
+    }
     return context;
   }
 
@@ -1567,6 +1585,10 @@ class $LedgerEntriesTable extends LedgerEntries
         DriftSqlType.string,
         data['${effectivePrefix}quoted_exchange_rate'],
       ),
+      termsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}terms_json'],
+      ),
     );
   }
 
@@ -1595,6 +1617,7 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
   final int? settlementAmountMinor;
   final String? settlementCurrencyCode;
   final String? quotedExchangeRate;
+  final String? termsJson;
   const EntryRow({
     required this.id,
     required this.transactionType,
@@ -1614,6 +1637,7 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     this.settlementAmountMinor,
     this.settlementCurrencyCode,
     this.quotedExchangeRate,
+    this.termsJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1648,6 +1672,9 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     if (!nullToAbsent || quotedExchangeRate != null) {
       map['quoted_exchange_rate'] = Variable<String>(quotedExchangeRate);
     }
+    if (!nullToAbsent || termsJson != null) {
+      map['terms_json'] = Variable<String>(termsJson);
+    }
     return map;
   }
 
@@ -1681,6 +1708,9 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       quotedExchangeRate: quotedExchangeRate == null && nullToAbsent
           ? const Value.absent()
           : Value(quotedExchangeRate),
+      termsJson: termsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(termsJson),
     );
   }
 
@@ -1716,6 +1746,7 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       quotedExchangeRate: serializer.fromJson<String?>(
         json['quotedExchangeRate'],
       ),
+      termsJson: serializer.fromJson<String?>(json['termsJson']),
     );
   }
   @override
@@ -1742,6 +1773,7 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
         settlementCurrencyCode,
       ),
       'quotedExchangeRate': serializer.toJson<String?>(quotedExchangeRate),
+      'termsJson': serializer.toJson<String?>(termsJson),
     };
   }
 
@@ -1764,6 +1796,7 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     Value<int?> settlementAmountMinor = const Value.absent(),
     Value<String?> settlementCurrencyCode = const Value.absent(),
     Value<String?> quotedExchangeRate = const Value.absent(),
+    Value<String?> termsJson = const Value.absent(),
   }) => EntryRow(
     id: id ?? this.id,
     transactionType: transactionType ?? this.transactionType,
@@ -1791,6 +1824,7 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     quotedExchangeRate: quotedExchangeRate.present
         ? quotedExchangeRate.value
         : this.quotedExchangeRate,
+    termsJson: termsJson.present ? termsJson.value : this.termsJson,
   );
   EntryRow copyWithCompanion(LedgerEntriesCompanion data) {
     return EntryRow(
@@ -1834,6 +1868,7 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       quotedExchangeRate: data.quotedExchangeRate.present
           ? data.quotedExchangeRate.value
           : this.quotedExchangeRate,
+      termsJson: data.termsJson.present ? data.termsJson.value : this.termsJson,
     );
   }
 
@@ -1857,7 +1892,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
           ..write('refundOfId: $refundOfId, ')
           ..write('settlementAmountMinor: $settlementAmountMinor, ')
           ..write('settlementCurrencyCode: $settlementCurrencyCode, ')
-          ..write('quotedExchangeRate: $quotedExchangeRate')
+          ..write('quotedExchangeRate: $quotedExchangeRate, ')
+          ..write('termsJson: $termsJson')
           ..write(')'))
         .toString();
   }
@@ -1882,6 +1918,7 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     settlementAmountMinor,
     settlementCurrencyCode,
     quotedExchangeRate,
+    termsJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -1904,7 +1941,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
           other.refundOfId == this.refundOfId &&
           other.settlementAmountMinor == this.settlementAmountMinor &&
           other.settlementCurrencyCode == this.settlementCurrencyCode &&
-          other.quotedExchangeRate == this.quotedExchangeRate);
+          other.quotedExchangeRate == this.quotedExchangeRate &&
+          other.termsJson == this.termsJson);
 }
 
 class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
@@ -1926,6 +1964,7 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
   final Value<int?> settlementAmountMinor;
   final Value<String?> settlementCurrencyCode;
   final Value<String?> quotedExchangeRate;
+  final Value<String?> termsJson;
   final Value<int> rowid;
   const LedgerEntriesCompanion({
     this.id = const Value.absent(),
@@ -1946,6 +1985,7 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     this.settlementAmountMinor = const Value.absent(),
     this.settlementCurrencyCode = const Value.absent(),
     this.quotedExchangeRate = const Value.absent(),
+    this.termsJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LedgerEntriesCompanion.insert({
@@ -1967,6 +2007,7 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     this.settlementAmountMinor = const Value.absent(),
     this.settlementCurrencyCode = const Value.absent(),
     this.quotedExchangeRate = const Value.absent(),
+    this.termsJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        transactionType = Value(transactionType),
@@ -1996,6 +2037,7 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     Expression<int>? settlementAmountMinor,
     Expression<String>? settlementCurrencyCode,
     Expression<String>? quotedExchangeRate,
+    Expression<String>? termsJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2021,6 +2063,7 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
         'settlement_currency_code': settlementCurrencyCode,
       if (quotedExchangeRate != null)
         'quoted_exchange_rate': quotedExchangeRate,
+      if (termsJson != null) 'terms_json': termsJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2044,6 +2087,7 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     Value<int?>? settlementAmountMinor,
     Value<String?>? settlementCurrencyCode,
     Value<String?>? quotedExchangeRate,
+    Value<String?>? termsJson,
     Value<int>? rowid,
   }) {
     return LedgerEntriesCompanion(
@@ -2068,6 +2112,7 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
       settlementCurrencyCode:
           settlementCurrencyCode ?? this.settlementCurrencyCode,
       quotedExchangeRate: quotedExchangeRate ?? this.quotedExchangeRate,
+      termsJson: termsJson ?? this.termsJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2135,6 +2180,9 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
     if (quotedExchangeRate.present) {
       map['quoted_exchange_rate'] = Variable<String>(quotedExchangeRate.value);
     }
+    if (termsJson.present) {
+      map['terms_json'] = Variable<String>(termsJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2162,6 +2210,7 @@ class LedgerEntriesCompanion extends UpdateCompanion<EntryRow> {
           ..write('settlementAmountMinor: $settlementAmountMinor, ')
           ..write('settlementCurrencyCode: $settlementCurrencyCode, ')
           ..write('quotedExchangeRate: $quotedExchangeRate, ')
+          ..write('termsJson: $termsJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4316,6 +4365,7 @@ typedef $$LedgerEntriesTableCreateCompanionBuilder =
       Value<int?> settlementAmountMinor,
       Value<String?> settlementCurrencyCode,
       Value<String?> quotedExchangeRate,
+      Value<String?> termsJson,
       Value<int> rowid,
     });
 typedef $$LedgerEntriesTableUpdateCompanionBuilder =
@@ -4338,6 +4388,7 @@ typedef $$LedgerEntriesTableUpdateCompanionBuilder =
       Value<int?> settlementAmountMinor,
       Value<String?> settlementCurrencyCode,
       Value<String?> quotedExchangeRate,
+      Value<String?> termsJson,
       Value<int> rowid,
     });
 
@@ -4516,6 +4567,11 @@ class $$LedgerEntriesTableFilterComposer
 
   ColumnFilters<String> get quotedExchangeRate => $composableBuilder(
     column: $table.quotedExchangeRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get termsJson => $composableBuilder(
+    column: $table.termsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4716,6 +4772,11 @@ class $$LedgerEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get termsJson => $composableBuilder(
+    column: $table.termsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LedgerCategoriesTableOrderingComposer get categoryId {
     final $$LedgerCategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4875,6 +4936,9 @@ class $$LedgerEntriesTableAnnotationComposer
     column: $table.quotedExchangeRate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get termsJson =>
+      $composableBuilder(column: $table.termsJson, builder: (column) => column);
 
   $$LedgerCategoriesTableAnnotationComposer get categoryId {
     final $$LedgerCategoriesTableAnnotationComposer composer = $composerBuilder(
@@ -5046,6 +5110,7 @@ class $$LedgerEntriesTableTableManager
                 Value<int?> settlementAmountMinor = const Value.absent(),
                 Value<String?> settlementCurrencyCode = const Value.absent(),
                 Value<String?> quotedExchangeRate = const Value.absent(),
+                Value<String?> termsJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LedgerEntriesCompanion(
                 id: id,
@@ -5066,6 +5131,7 @@ class $$LedgerEntriesTableTableManager
                 settlementAmountMinor: settlementAmountMinor,
                 settlementCurrencyCode: settlementCurrencyCode,
                 quotedExchangeRate: quotedExchangeRate,
+                termsJson: termsJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5088,6 +5154,7 @@ class $$LedgerEntriesTableTableManager
                 Value<int?> settlementAmountMinor = const Value.absent(),
                 Value<String?> settlementCurrencyCode = const Value.absent(),
                 Value<String?> quotedExchangeRate = const Value.absent(),
+                Value<String?> termsJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LedgerEntriesCompanion.insert(
                 id: id,
@@ -5108,6 +5175,7 @@ class $$LedgerEntriesTableTableManager
                 settlementAmountMinor: settlementAmountMinor,
                 settlementCurrencyCode: settlementCurrencyCode,
                 quotedExchangeRate: quotedExchangeRate,
+                termsJson: termsJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

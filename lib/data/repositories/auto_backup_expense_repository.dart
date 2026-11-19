@@ -5,6 +5,7 @@ import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/domain/valuation/net_worth_valuation.dart';
 
@@ -101,6 +102,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
     String? categoryId,
     List<AccountPayment>? payments,
     TransferSettlement? settlement,
+    TransactionTerms terms = const TransactionTerms(),
     LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   }) => _mutate(
@@ -113,6 +115,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       categoryId: categoryId,
       payments: payments,
       settlement: settlement,
+      terms: terms,
       status: status,
       note: note,
     ),
@@ -129,6 +132,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
     String? categoryId,
     List<AccountPayment>? payments,
     TransferSettlement? settlement,
+    TransactionTerms? terms,
     required String note,
   }) => _mutate(
     () => _delegate.updateTransaction(
@@ -141,6 +145,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       categoryId: categoryId,
       payments: payments,
       settlement: settlement,
+      terms: terms,
       note: note,
     ),
   );
@@ -150,6 +155,23 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       _mutate(() => _delegate.postTransaction(id));
 
   @override
+  Future<void> reverseTransaction(String id, {required DateTime occurredAt}) =>
+      _mutate(() => _delegate.reverseTransaction(id, occurredAt: occurredAt));
+
+  @override
+  Future<void> recordBalanceAdjustment({
+    required String accountId,
+    required int amountMinor,
+    required String note,
+  }) => _mutate(
+    () => _delegate.recordBalanceAdjustment(
+      accountId: accountId,
+      amountMinor: amountMinor,
+      note: note,
+    ),
+  );
+
+  @override
   Future<void> saveFamilyExpense({
     String? id,
     required int amountMinor,
@@ -157,6 +179,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
     required DateTime occurredAt,
     required String categoryId,
     required String note,
+    List<CategoryAmount> categories = const [],
     LedgerPostingStatus status = LedgerPostingStatus.posted,
   }) => _mutate(
     () => _delegate.saveFamilyExpense(
@@ -166,6 +189,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       occurredAt: occurredAt,
       categoryId: categoryId,
       note: note,
+      categories: categories,
       status: status,
     ),
   );
@@ -178,6 +202,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
     required int amountMinor,
     required DateTime occurredAt,
     required String note,
+    int? advanceCancellationMinor,
     LedgerPostingStatus status = LedgerPostingStatus.posted,
   }) => _mutate(
     () => _delegate.saveRefund(
@@ -187,6 +212,7 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       amountMinor: amountMinor,
       occurredAt: occurredAt,
       note: note,
+      advanceCancellationMinor: advanceCancellationMinor,
       status: status,
     ),
   );

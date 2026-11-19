@@ -68,6 +68,7 @@ class LedgerEntries extends Table {
   IntColumn get settlementAmountMinor => integer().nullable()();
   TextColumn get settlementCurrencyCode => text().nullable()();
   TextColumn get quotedExchangeRate => text().nullable()();
+  TextColumn get termsJson => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -125,13 +126,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => transaction(() async {
       await migrator.createAll();
       await _createPostingIndexes();
+      await _createReversalIndex();
       await _seedDefaults();
       await customStatement('PRAGMA user_version = $schemaVersion');
     }),
@@ -186,6 +188,10 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(valuationPreferences);
           await migrator.createTable(valuationRates);
         }
+        if (from < 12) {
+          await migrator.addColumn(ledgerEntries, ledgerEntries.termsJson);
+          await _createReversalIndex();
+        }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
         await customStatement('PRAGMA user_version = $to');
@@ -206,6 +212,12 @@ class AppDatabase extends _$AppDatabase {
       WHERE refund_of_id IS NOT NULL
     ''');
   }
+
+  Future<void> _createReversalIndex() => customStatement("""
+    CREATE UNIQUE INDEX ledger_entries_active_reversal
+    ON ledger_entries (json_extract(terms_json, '\$.reversal_of_id'))
+    WHERE is_deleted = 0 AND json_extract(terms_json, '\$.reversal_of_id') IS NOT NULL
+  """);
 
   Future<void> backfillLegacyPostings() =>
       customInsert(insertLegacyPostings, updates: {ledgerPostings});

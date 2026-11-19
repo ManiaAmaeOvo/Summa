@@ -85,7 +85,7 @@ void main() {
   );
 
   test(
-    'v5 and legacy v4 restore valuation, and v1–v3 retain local valuation',
+    'v6 and legacy v4 restore valuation, and v1–v3 retain local valuation',
     () async {
       await repository.setValuationBaseCurrency('JPY');
       await setRate('CNY', 'JPY', '20.50000');
@@ -93,8 +93,8 @@ void main() {
       final original = await settings();
       final backup = await repository.createFullBackup();
       final payload = jsonDecode(backup) as Map<String, dynamic>;
-      expect(payload['backup_version'], 5);
-      expect(payload['schema_version'], 11);
+      expect(payload['backup_version'], 6);
+      expect(payload['schema_version'], 12);
 
       await repository.resetToFactoryDefaults();
       expect((await settings()).rates, isEmpty);

@@ -7,7 +7,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 
 void main() {
-  for (final version in [6, 7, 8, 9, 10]) {
+  for (final version in [6, 7, 8, 9, 10, 11]) {
     test('migrates schema $version to persisted postings and reopens safely', () async {
       final directory = await Directory.systemTemp.createTemp(
         'summa-v$version-',
@@ -71,7 +71,7 @@ void main() {
           final schema = await after
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(schema.read<int>('user_version'), 11);
+          expect(schema.read<int>('user_version'), 12);
           final valuation = await upgraded.watchValuationSettings().first;
           expect(valuation.baseCurrency, version >= 10 ? 'EUR' : 'CNY');
           expect(

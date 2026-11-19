@@ -32,9 +32,13 @@ bool _requiresDetails(LedgerRecord record) =>
     record.currencyCode != defaultCurrency ||
     record.settlement != null ||
     record.isPending ||
+    record.type == LedgerTransactionType.adjustment ||
+    !record.terms.isEmpty ||
     record.type.isReceivableFlow ||
     record.accountPostings.any(
-      (posting) => posting.kind?.isAdvancedFunding == true,
+      (posting) =>
+          posting.kind?.isAdvancedFunding == true ||
+          posting.kind?.isNewAssetKind == true,
     ) ||
     record.isRefund ||
     (record.type == LedgerTransactionType.expense &&
@@ -59,16 +63,18 @@ Map<String, Object?> _jsonRecord(
       'quoted_exchange_rate': settlement.quotedRate,
   },
   if (record.isRefund) 'refund_of_id': record.refundOfId,
+  if (!record.terms.isEmpty) 'financial_details': record.terms.toJson(),
   if (record.type == LedgerTransactionType.expense &&
       !record.isRefund &&
       record.accountPostings.length > 1)
     'payments': [
       for (final leg in record.accountPostings)
-        {
-          'account': _postingAccountName(leg, languageCode),
-          'account_kind': leg.accountKind,
-          'amount': moneyInputText(-leg.debitMinor, leg.currencyCode),
-        },
+        if (leg.accountId != record.terms.advance?.accountId)
+          {
+            'account': _postingAccountName(leg, languageCode),
+            'account_kind': leg.accountKind,
+            'amount': moneyInputText(leg.debitMinor.abs(), leg.currencyCode),
+          },
     ],
   'amount': moneyInputText(record.amountMinor, record.currencyCode),
   'occurred_at': record.occurredAt.toIso8601String(),
@@ -121,6 +127,7 @@ String _csv(List<LedgerRecord> records, String languageCode) {
                 'settlement_amount',
                 'settlement_currency_code',
                 'quoted_exchange_rate',
+                'financial_details',
               ]
             : [
                 '入账状态',
@@ -131,6 +138,7 @@ String _csv(List<LedgerRecord> records, String languageCode) {
                 '实际到账金额',
                 '到账币种',
                 '报价汇率',
+                '财务明细',
               ],
     ],
     for (final record in records)
@@ -162,6 +170,7 @@ String _csv(List<LedgerRecord> records, String languageCode) {
             '',
             '',
           ],
+          if (record.terms.isEmpty) '' else jsonEncode(record.terms.toJson()),
         ],
       ],
   ];
@@ -200,6 +209,7 @@ String _markdown(List<LedgerRecord> records, String languageCode) {
       record.note,
       if (record.isRefund)
         '${english ? 'Original purchase' : '原消费'} ${record.refundOfId}',
+      if (!record.terms.isEmpty) jsonEncode(record.terms.toJson()),
       if (settlement?.quotedRate case final quote?)
         "${english ? 'Quoted rate' : '报价汇率'} 1 ${record.currencyCode} = $quote ${settlement!.currencyCode}",
     ].where((part) => part.isNotEmpty).join(' · ');
@@ -241,6 +251,7 @@ String? _targetAccountName(LedgerRecord record, String languageCode) =>
 
 String _typeName(LedgerRecord record, String languageCode) {
   if (record.isRefund) return languageCode == 'zh' ? '退款' : 'refund';
+  if (record.isReversal) return languageCode == 'zh' ? '冲销' : 'reversal';
   if (languageCode != 'zh') return record.type.name;
   return switch (record.type) {
     LedgerTransactionType.expense => '支出',
@@ -252,6 +263,7 @@ String _typeName(LedgerRecord record, String languageCode) {
     LedgerTransactionType.advance => '垫付',
     LedgerTransactionType.collection => '收回本金',
     LedgerTransactionType.reimbursement => '报销到账',
+    LedgerTransactionType.adjustment => '余额调整',
   };
 }
 
@@ -260,16 +272,21 @@ String _statusName(LedgerRecord record, String languageCode) =>
     ? (record.isPending ? '待入账' : '已入账')
     : record.status.name;
 
-String? _paymentSummary(LedgerRecord record, String languageCode) =>
-    record.type == LedgerTransactionType.expense &&
-        record.accountPostings.length > 1
-    ? record.accountPostings
-          .map(
-            (leg) =>
-                '${_postingAccountName(leg, languageCode)} ${formatMoney(-leg.debitMinor, leg.currencyCode)}',
-          )
-          .join(' + ')
-    : null;
+String? _paymentSummary(LedgerRecord record, String languageCode) {
+  if (record.type != LedgerTransactionType.expense || record.isRefund) {
+    return null;
+  }
+  final payments = record.accountPostings.where(
+    (leg) => leg.accountId != record.terms.advance?.accountId,
+  );
+  if (payments.length < 2) return null;
+  return payments
+      .map(
+        (leg) =>
+            '${_postingAccountName(leg, languageCode)} ${formatMoney(leg.debitMinor.abs(), leg.currencyCode)}',
+      )
+      .join(' + ');
+}
 
 String _postingAccountName(AccountPosting posting, String languageCode) =>
     DefaultLedgerNames.accountName(

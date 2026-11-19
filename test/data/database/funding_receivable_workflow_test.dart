@@ -279,7 +279,11 @@ void main() {
       categoryId: category,
       note: 'Family purchase',
     );
-    final backup = await repository.createFullBackup();
+    final v5 =
+        jsonDecode(await repository.createFullBackup()) as Map<String, dynamic>;
+    v5['backup_version'] = 5;
+    v5['schema_version'] = 11;
+    final backup = jsonEncode(v5);
     final before = (await repository.watchTransactions().first)
         .map((row) => row.id)
         .toList();

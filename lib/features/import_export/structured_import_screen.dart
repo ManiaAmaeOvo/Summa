@@ -611,6 +611,7 @@ String _typeLabel(BuildContext context, LedgerTransactionType type) =>
       LedgerTransactionType.advance => context.l10n.advance,
       LedgerTransactionType.collection => context.l10n.collection,
       LedgerTransactionType.reimbursement => context.l10n.reimbursement,
+      LedgerTransactionType.adjustment => context.l10n.balanceAdjustment,
     };
 
 String _accountKindLabel(BuildContext context, AccountKind kind) =>
@@ -621,6 +622,8 @@ String _accountKindLabel(BuildContext context, AccountKind kind) =>
       AccountKind.creditLine => context.l10n.liability,
       AccountKind.entrustedFunds => context.l10n.accountKindEntrustedShort,
       AccountKind.receivable => context.l10n.accountKindReceivable,
+      AccountKind.savings => context.l10n.accountKindSavings,
+      AccountKind.prepaid => context.l10n.accountKindPrepaid,
       AccountKind.familyDirect => context.l10n.familyDirectFunding,
       AccountKind.thirdPartyPayable =>
         context.l10n.accountKindThirdPartyPayable,

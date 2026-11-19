@@ -16,6 +16,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/domain/valuation/net_worth_valuation.dart';
 import 'package:summa/features/transaction_editor/add_expense_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -805,6 +806,7 @@ class _RejectingExpenseRepository extends DriftExpenseRepository {
     String? categoryId,
     List<AccountPayment>? payments,
     TransferSettlement? settlement,
+    TransactionTerms terms = const TransactionTerms(),
     LedgerPostingStatus status = LedgerPostingStatus.posted,
     required String note,
   }) {

@@ -9,6 +9,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/features/accounts/account_overview_screen.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/input_error_labels.dart';
@@ -39,6 +40,17 @@ class _TransactionEditorSheetState
   final _settlementController = TextEditingController();
   final _quoteController = TextEditingController();
   final _noteController = TextEditingController();
+  final _originalAmount = TextEditingController();
+  final _purchaseQuote = TextEditingController();
+  final _advanceAmount = TextEditingController();
+  final _feeAmount = TextEditingController();
+  final _interestAmount = TextEditingController();
+  final _categoryShares = <_SplitCategoryInput>[];
+  String? _originalCurrency;
+  String? _advanceAccountId;
+  bool _foreignPurchase = false;
+  bool _includeAdvance = false;
+  bool _externalDebtPayment = false;
   late LedgerTransactionType _type;
   DateTime _occurredAt = DateTime.now();
   String? _parentCategoryId;
@@ -108,10 +120,57 @@ class _TransactionEditorSheetState
     _categoryId = record.categoryId;
     _accountId = record.accountId;
     _targetAccountId = record.targetAccountId;
+    if (_isRefund && record.terms.advance != null) {
+      _advanceAmount.text = moneyInputText(
+        record.terms.advance!.amountMinor,
+        record.currencyCode,
+      );
+    }
+    if (!_isRefund) {
+      final terms = record.terms;
+      if (terms.originalPrice case final price?) {
+        _foreignPurchase = true;
+        _originalCurrency = price.currencyCode;
+        _originalAmount.text = moneyInputText(
+          price.amountMinor,
+          price.currencyCode,
+        );
+        _purchaseQuote.text = price.quotedRate ?? '';
+      }
+      if (terms.advance case final advance?) {
+        _includeAdvance = true;
+        _advanceAccountId = advance.accountId;
+        _advanceAmount.text = moneyInputText(
+          advance.amountMinor,
+          record.currencyCode,
+        );
+      }
+      for (final part in terms.categories.skip(1)) {
+        _categoryShares.add(
+          _SplitCategoryInput(
+            part.categoryId,
+            moneyInputText(part.amountMinor, record.currencyCode),
+          ),
+        );
+      }
+      if (terms.feeMinor > 0) {
+        _feeAmount.text = moneyInputText(terms.feeMinor, record.currencyCode);
+      }
+      if (terms.interestMinor > 0) {
+        _interestAmount.text = moneyInputText(
+          terms.interestMinor,
+          record.currencyCode,
+        );
+      }
+      _externalDebtPayment = terms.externalDebtPayment;
+    }
     if (!_isRefund &&
         !_familyFunded &&
         _type == LedgerTransactionType.expense) {
-      for (final leg in record.accountPostings.skip(1)) {
+      for (final leg
+          in record.accountPostings
+              .skip(1)
+              .where((leg) => leg.debitMinor < 0)) {
         _extraPayments.add(
           _SplitPaymentInput(leg.accountId, -leg.debitMinor, leg.currencyCode),
         );
@@ -125,6 +184,14 @@ class _TransactionEditorSheetState
     _settlementController.dispose();
     _quoteController.dispose();
     _noteController.dispose();
+    _originalAmount.dispose();
+    _purchaseQuote.dispose();
+    _advanceAmount.dispose();
+    _feeAmount.dispose();
+    _interestAmount.dispose();
+    for (final share in _categoryShares) {
+      share.amount.dispose();
+    }
     for (final payment in _extraPayments) {
       payment.amount.dispose();
     }
@@ -256,7 +323,9 @@ class _TransactionEditorSheetState
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 ],
                 decoration: InputDecoration(
-                  labelText: context.l10n.amount,
+                  labelText: !_isRefund && _foreignPurchase
+                      ? context.l10n.settledPurchaseAmount
+                      : context.l10n.amount,
                   suffixText: sourceCurrency,
                   hintText: moneyInputText(0, sourceCurrency),
                 ),
@@ -265,6 +334,11 @@ class _TransactionEditorSheetState
                     : (_) => setState(() {}),
                 validator: (value) => _validateAmount(value, sourceCurrency),
               ),
+              if (widget.record?.needsReview == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(context.l10n.fundingReviewHint),
+                ),
               if (categories != null) ...[
                 const SizedBox(height: 16),
                 categories.when(
@@ -285,6 +359,29 @@ class _TransactionEditorSheetState
                   onChanged: _isSaving ? null : _setFamilyFunding,
                 ),
               accountFields,
+              if (widget.refundFor?.terms.advance != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: TextFormField(
+                    controller: _advanceAmount,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.refundAdvanceShare,
+                      helperText: context.l10n.refundAdvanceHint,
+                      helperMaxLines: 2,
+                      suffixText: sourceCurrency,
+                    ),
+                  ),
+                ),
+              if (!_isRefund && _type == LedgerTransactionType.expense)
+                _purchaseDetails(categories?.asData?.value ?? const []),
+              if (!_isRefund &&
+                  (_type == LedgerTransactionType.transfer ||
+                      _type == LedgerTransactionType.repayment) &&
+                  !_externalDebtPayment)
+                _chargeFields(),
               if (settlementCurrency != null)
                 _exchangeFields(settlementCurrency),
               const SizedBox(height: 16),
@@ -389,6 +486,10 @@ class _TransactionEditorSheetState
     final currency = _sourceCurrency;
     setState(() {
       _familyFunded = selected;
+      if (selected) {
+        _includeAdvance = false;
+        _foreignPurchase = false;
+      }
       _familyCurrency = currency;
       _accountId = null;
       _targetAccountId = null;
@@ -411,6 +512,21 @@ class _TransactionEditorSheetState
       _extraPayments.clear();
       _settlementController.clear();
       _quoteController.clear();
+      final oldShares = List.of(_categoryShares);
+      _categoryShares.clear();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final share in oldShares) {
+          share.amount.dispose();
+        }
+      });
+      _originalAmount.clear();
+      _purchaseQuote.clear();
+      _advanceAmount.clear();
+      _feeAmount.clear();
+      _interestAmount.clear();
+      _foreignPurchase = false;
+      _includeAdvance = false;
+      _externalDebtPayment = false;
       _type = value;
       _familyFunded = false;
       _parentCategoryId = null;
@@ -499,6 +615,7 @@ class _TransactionEditorSheetState
             .toList(),
         label: context.l10n.incomeDestinationAccount,
       ),
+      LedgerTransactionType.adjustment => const SizedBox.shrink(),
       LedgerTransactionType.borrowing => _borrowingFields(selectable),
       LedgerTransactionType.repayment => _repaymentFields(selectable),
       LedgerTransactionType.transfer => _transferFields(selectable),
@@ -662,6 +779,225 @@ class _TransactionEditorSheetState
     );
   }
 
+  Widget _purchaseDetails(List<LedgerCategory> categories) {
+    final labels = context.l10n;
+    final currency = _sourceCurrency;
+    final children = {
+      for (final category in categories)
+        if (!category.isParent && category.id != _categoryId)
+          category.id: DefaultLedgerLabels.category(context, category),
+      for (final share in _categoryShares)
+        if (!categories.any((category) => category.id == share.categoryId))
+          share.categoryId:
+              widget.record?.allocationLabels[share.categoryId]?.name ??
+              share.categoryId,
+    };
+    final receivables = _formAccounts
+        .where(
+          (account) =>
+              account.kind == AccountKind.receivable &&
+              account.currencyCode == currency,
+        )
+        .toList();
+    final originalCurrencies = currencyOptions(currencyMinorDigits.keys)
+        .where((code) => code != currency)
+        .toList();
+    if (_foreignPurchase && !originalCurrencies.contains(_originalCurrency)) {
+      _originalCurrency = originalCurrencies.firstOrNull;
+    }
+    if (_includeAdvance &&
+        !receivables.any((account) => account.id == _advanceAccountId)) {
+      _advanceAccountId = receivables.firstOrNull?.id;
+    }
+    return ExpansionTile(
+      key: const ValueKey('purchase-details'),
+      initiallyExpanded:
+          _foreignPurchase || _includeAdvance || _categoryShares.isNotEmpty,
+      maintainState: true,
+      tilePadding: EdgeInsets.zero,
+      expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+      title: Text(labels.transactionDetails),
+      children: [
+        if (!_familyFunded) ...[
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(labels.foreignPurchase),
+            value: _foreignPurchase,
+            onChanged: (value) => setState(() => _foreignPurchase = value),
+          ),
+          if (_foreignPurchase && _originalCurrency != null) ...[
+            CurrencySelector(
+              currencies: originalCurrencies,
+              value: _originalCurrency!,
+              label: labels.originalCurrency,
+              onChanged: (currency) =>
+                  setState(() => _originalCurrency = currency),
+            ),
+            _detailAmount(
+              _originalAmount,
+              labels.originalPrice,
+              _originalCurrency!,
+            ),
+            TextFormField(
+              controller: _purchaseQuote,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: labels.quotedExchangeRate,
+                helperText: labels.exchangeRateDirection(
+                  currency,
+                  _originalCurrency!,
+                ),
+              ),
+              validator: (value) {
+                final quote = value?.trim() ?? '';
+                return quote.isEmpty || isValidExchangeQuote(quote)
+                    ? null
+                    : labels.invalidQuotedExchangeRate;
+              },
+            ),
+          ],
+          if (_accountIsPersonalCash)
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(labels.advanceForOthers),
+              value: _includeAdvance,
+              onChanged: (value) => setState(() => _includeAdvance = value),
+            ),
+          if (_includeAdvance) ...[
+            _accountDropdown(
+              key: ValueKey('bill-receivable-$currency'),
+              accounts: receivables,
+              value: _advanceAccountId,
+              label: labels.receivableAccount,
+              onChanged: (id) => setState(() => _advanceAccountId = id),
+            ),
+            if (receivables.isEmpty)
+              TextButton(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => AddAccountDialog(
+                    initialKind: AccountKind.receivable,
+                    initialCurrency: currency,
+                  ),
+                ),
+                child: Text(labels.quickAddReceivable),
+              ),
+            _detailAmount(_advanceAmount, labels.advanceShare, currency),
+          ],
+        ],
+        for (final share in _categoryShares)
+          Padding(
+            key: ObjectKey(share),
+            padding: const EdgeInsets.only(top: 12),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        initialValue: children.containsKey(share.categoryId)
+                            ? share.categoryId
+                            : null,
+                        decoration: InputDecoration(
+                          labelText: labels.additionalCategory,
+                        ),
+                        items: [
+                          for (final item in children.entries)
+                            DropdownMenuItem(
+                              value: item.key,
+                              child: Text(
+                                item.value,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
+                        onChanged: (id) => setState(() {
+                          if (id != null) share.categoryId = id;
+                        }),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: labels.delete,
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () {
+                        setState(() => _categoryShares.remove(share));
+                        WidgetsBinding.instance.addPostFrameCallback(
+                          (_) => share.amount.dispose(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                _detailAmount(share.amount, labels.categoryShare, currency),
+              ],
+            ),
+          ),
+        if (children.keys
+                .where(
+                  (id) =>
+                      !_categoryShares.any((share) => share.categoryId == id),
+                )
+                .firstOrNull
+            case final available?)
+          TextButton.icon(
+            onPressed: () => setState(
+              () => _categoryShares.add(_SplitCategoryInput(available, '')),
+            ),
+            icon: const Icon(Icons.add),
+            label: Text(labels.splitCategories),
+          ),
+      ],
+    );
+  }
+
+  bool get _accountIsPersonalCash => _formAccounts.any(
+    (account) => account.id == _accountId && account.kind.isPersonalCash,
+  );
+
+  Widget _chargeFields() => ExpansionTile(
+    key: ValueKey('charges-${_type.name}'),
+    initiallyExpanded:
+        _feeAmount.text.isNotEmpty || _interestAmount.text.isNotEmpty,
+    maintainState: true,
+    tilePadding: EdgeInsets.zero,
+    title: Text(context.l10n.transactionDetails),
+    children: [
+      _detailAmount(
+        _feeAmount,
+        context.l10n.feeAmount,
+        _sourceCurrency,
+        optional: true,
+      ),
+      if (_type == LedgerTransactionType.repayment)
+        _detailAmount(
+          _interestAmount,
+          context.l10n.interestAmount,
+          _sourceCurrency,
+          optional: true,
+        ),
+    ],
+  );
+
+  Widget _detailAmount(
+    TextEditingController controller,
+    String label,
+    String currency, {
+    bool optional = false,
+  }) => Padding(
+    padding: const EdgeInsets.only(top: 8, bottom: 4),
+    child: TextFormField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(labelText: label, suffixText: currency),
+      validator: (value) => optional && (value?.trim().isEmpty ?? true)
+          ? null
+          : _validateAmount(value, currency),
+    ),
+  );
+
   Widget _refundAccountFields() {
     final accounts = [
       for (final leg in widget.refundFor!.accountPostings)
@@ -772,6 +1108,32 @@ class _TransactionEditorSheetState
   }
 
   Widget _repaymentFields(List<LedgerAccount> accounts) {
+    final thirdPartyOption = SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(context.l10n.externalDebtPayment),
+      subtitle: _externalDebtPayment
+          ? Text(context.l10n.externalDebtPaymentHint)
+          : null,
+      value: _externalDebtPayment,
+      onChanged: _isSaving
+          ? null
+          : (value) => setState(() {
+              _externalDebtPayment = value;
+              _accountId = value ? _targetAccountId : null;
+              _targetAccountId = null;
+            }),
+    );
+    if (_externalDebtPayment) {
+      return Column(
+        children: [
+          thirdPartyOption,
+          _singleAccountField(
+            accounts.where((item) => item.kind.isLiability).toList(),
+            label: context.l10n.repaymentLiabilityAccount,
+          ),
+        ],
+      );
+    }
     final assets = accounts
         .where(
           (item) =>
@@ -794,6 +1156,7 @@ class _TransactionEditorSheetState
         : liabilities.firstOrNull?.id;
     return Column(
       children: [
+        thirdPartyOption,
         _accountDropdown(
           key: const ValueKey('repayment-source'),
           accounts: assets,
@@ -883,7 +1246,8 @@ class _TransactionEditorSheetState
         .where(
           (item) =>
               item.kind.isPersonalCash ||
-              item.kind == AccountKind.entrustedFunds,
+              item.kind == AccountKind.entrustedFunds ||
+              item.kind == AccountKind.prepaid,
         )
         .toList();
     _accountId = assets.any((item) => item.id == _accountId)
@@ -1021,6 +1385,8 @@ class _TransactionEditorSheetState
     final name = DefaultLedgerLabels.account(context, account);
     final withKind = switch (account.kind) {
       AccountKind.familyDirect => context.l10n.familyDirectFunding,
+      AccountKind.savings => context.l10n.accountKindSavings,
+      AccountKind.prepaid => context.l10n.accountKindPrepaid,
       AccountKind.creditLine => context.l10n.liabilityName(name),
       AccountKind.thirdPartyPayable =>
         '$name · ${context.l10n.accountKindThirdPartyPayable}',
@@ -1058,13 +1424,82 @@ class _TransactionEditorSheetState
     });
   }
 
+  TransactionTerms _buildTerms(int amount) {
+    final currency = _sourceCurrency;
+    int optional(TextEditingController controller) =>
+        controller.text.trim().isEmpty
+        ? 0
+        : parseMoney(controller.text, currency);
+    if (_type == LedgerTransactionType.transfer ||
+        _type == LedgerTransactionType.repayment) {
+      return _externalDebtPayment
+          ? const TransactionTerms(externalDebtPayment: true)
+          : TransactionTerms(
+              feeMinor: optional(_feeAmount),
+              interestMinor: _type == LedgerTransactionType.repayment
+                  ? optional(_interestAmount)
+                  : 0,
+            );
+    }
+    if (_type != LedgerTransactionType.expense) return const TransactionTerms();
+    final AccountPayment? advance;
+    if (_includeAdvance) {
+      if (_advanceAccountId == null || !_accountIsPersonalCash) {
+        throw const TransactionRuleException(
+          TransactionRuleError.invalidTransactionDetails,
+        );
+      }
+      advance = AccountPayment(
+        _advanceAccountId!,
+        parseMoney(_advanceAmount.text, currency),
+      );
+    } else {
+      advance = null;
+    }
+    final shares = [
+      for (final part in _categoryShares)
+        (
+          categoryId: part.categoryId,
+          amountMinor: parseMoney(part.amount.text, currency),
+        ),
+    ];
+    var primary = amount - (advance?.amountMinor ?? 0);
+    for (final share in shares) {
+      if (primary <= share.amountMinor) {
+        throw const TransactionRuleException(
+          TransactionRuleError.invalidTransactionDetails,
+        );
+      }
+      primary -= share.amountMinor;
+    }
+    return TransactionTerms(
+      originalPrice: _foreignPurchase
+          ? TransferSettlement(
+              amountMinor: parseMoney(_originalAmount.text, _originalCurrency!),
+              currencyCode: _originalCurrency!,
+              quotedRate: _purchaseQuote.text.trim().isEmpty
+                  ? null
+                  : _purchaseQuote.text.trim(),
+            )
+          : null,
+      advance: advance,
+      categories: shares.isEmpty
+          ? const []
+          : [(categoryId: _categoryId!, amountMinor: primary), ...shares],
+    );
+  }
+
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _submissionError = context.l10n.invalidTransactionDetails);
+      return;
+    }
     final accountId = _accountId;
     if ((!_familyFunded && accountId == null) ||
         ((_type == LedgerTransactionType.borrowing ||
                 _type == LedgerTransactionType.transfer ||
-                _type == LedgerTransactionType.repayment ||
+                (_type == LedgerTransactionType.repayment &&
+                    !_externalDebtPayment) ||
                 _type.isReceivableFlow) &&
             _targetAccountId == null) ||
         (!_isRefund &&
@@ -1100,6 +1535,7 @@ class _TransactionEditorSheetState
       final status = _pending
           ? LedgerPostingStatus.pending
           : LedgerPostingStatus.posted;
+      final terms = _isRefund ? const TransactionTerms() : _buildTerms(amount);
       List<AccountPayment>? payments;
       if (!_isRefund &&
           !_familyFunded &&
@@ -1129,6 +1565,13 @@ class _TransactionEditorSheetState
           originalId: widget.refundFor!.id,
           accountId: accountId!,
           amountMinor: amount,
+          advanceCancellationMinor: _advanceAmount.text.trim().isEmpty
+              ? null
+              : parseMoney(
+                  _advanceAmount.text,
+                  _sourceCurrency,
+                  allowZero: true,
+                ),
           occurredAt: _occurredAt,
           note: _noteController.text,
           status: status,
@@ -1138,6 +1581,7 @@ class _TransactionEditorSheetState
           id: record?.id,
           amountMinor: amount,
           currencyCode: _familyCurrency,
+          categories: terms.categories,
           occurredAt: _occurredAt,
           categoryId: _categoryId!,
           note: _noteController.text,
@@ -1153,6 +1597,7 @@ class _TransactionEditorSheetState
           targetAccountId: _targetAccountId,
           payments: payments,
           settlement: settlement,
+          terms: terms,
           status: status,
           note: _noteController.text,
         );
@@ -1167,6 +1612,7 @@ class _TransactionEditorSheetState
           targetAccountId: _targetAccountId,
           payments: payments,
           settlement: settlement,
+          terms: terms,
           note: _noteController.text,
         );
       }
@@ -1207,5 +1653,13 @@ class _SplitPaymentInput {
       );
 
   String accountId;
+  final TextEditingController amount;
+}
+
+class _SplitCategoryInput {
+  _SplitCategoryInput(this.categoryId, String amount)
+    : amount = TextEditingController(text: amount);
+
+  String categoryId;
   final TextEditingController amount;
 }

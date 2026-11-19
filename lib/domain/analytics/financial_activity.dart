@@ -27,10 +27,25 @@ FinancialActivity summarizeFinancialActivity(
   var outflow = BigInt.zero;
 
   for (final record in records) {
-    if (record.isPending) continue;
+    if (record.isPending || record.type == LedgerTransactionType.adjustment) {
+      continue;
+    }
+    if (record.currencyCode == currency && record.chargesMinor > 0) {
+      final amount = BigInt.from(record.direction * record.chargesMinor);
+      gross += amount;
+      if (record.accountKind == AccountKind.entrustedFunds.name) {
+        entrusted += amount;
+      } else {
+        personal += amount;
+      }
+    }
     if (record.type == LedgerTransactionType.expense &&
         record.currencyCode == currency) {
       gross += BigInt.from(record.actualExpenseMinor);
+      personal -= BigInt.from(
+        (record.isRefund ? -1 : record.direction) *
+            (record.terms.advance?.amountMinor ?? 0),
+      );
       for (final posting in record.accountPostings) {
         if (posting.currencyCode != currency || posting.needsReview) continue;
         final amount = -BigInt.from(posting.debitMinor);
@@ -38,6 +53,8 @@ FinancialActivity summarizeFinancialActivity(
           case AccountKind.cash:
           case AccountKind.bank:
           case AccountKind.wallet:
+          case AccountKind.savings:
+          case AccountKind.prepaid:
           case AccountKind.creditLine:
             personal += amount;
           case AccountKind.thirdPartyPayable:
@@ -60,22 +77,31 @@ FinancialActivity summarizeFinancialActivity(
         record.accountPostings.every(
           (posting) => posting.kind?.isPersonalCash == true,
         );
-    if (isInternalTransfer) continue;
+    if (isInternalTransfer) {
+      if (record.currencyCode == currency) {
+        outflow += BigInt.from(record.direction * record.chargesMinor);
+      }
+      continue;
+    }
     for (final posting in record.accountPostings) {
       if (posting.currencyCode != currency ||
           posting.kind?.isPersonalCash != true) {
         continue;
       }
       final amount = BigInt.from(posting.debitMinor);
-      if (amount.isNegative) {
+      // Reversals offset the original cash-flow side. Refunds are real inflows.
+      final wasOutflow = record.isReversal
+          ? amount > BigInt.zero
+          : amount.isNegative;
+      if (wasOutflow) {
         outflow -= amount;
       } else {
         inflow += amount;
-        // The built-in family support category has a stable ID across locales.
-        if (record.type == LedgerTransactionType.income &&
-            record.parentCategoryId == 'income-parent-1') {
-          familySupportReceived += amount;
-        }
+      }
+      // The built-in family support category has a stable ID across locales.
+      if (record.type == LedgerTransactionType.income &&
+          record.parentCategoryId == 'income-parent-1') {
+        familySupportReceived += amount;
       }
     }
   }

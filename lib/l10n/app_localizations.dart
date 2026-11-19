@@ -2473,6 +2473,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The backup conflicts with funding or receivable records.'**
   String get advancedFundingBackupError;
+
+  /// No description provided for @transactionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction details'**
+  String get transactionDetails;
+
+  /// No description provided for @foreignPurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase priced in another currency'**
+  String get foreignPurchase;
+
+  /// No description provided for @originalPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Original purchase amount'**
+  String get originalPrice;
+
+  /// No description provided for @originalCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Original currency'**
+  String get originalCurrency;
+
+  /// No description provided for @settledPurchaseAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount charged to payment account'**
+  String get settledPurchaseAmount;
+
+  /// No description provided for @splitCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Add category split'**
+  String get splitCategories;
+
+  /// No description provided for @additionalCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional category'**
+  String get additionalCategory;
+
+  /// No description provided for @categoryShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Category amount'**
+  String get categoryShare;
+
+  /// No description provided for @advanceForOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of this bill is owed by someone else'**
+  String get advanceForOthers;
+
+  /// No description provided for @advanceShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount advanced for someone else'**
+  String get advanceShare;
+
+  /// No description provided for @feeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get feeAmount;
+
+  /// No description provided for @interestAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest'**
+  String get interestAmount;
+
+  /// No description provided for @externalDebtPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone else paid this debt directly'**
+  String get externalDebtPayment;
+
+  /// No description provided for @externalDebtPaymentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use for principal you do not owe back to the payer.'**
+  String get externalDebtPaymentHint;
+
+  /// No description provided for @balanceAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance adjustment'**
+  String get balanceAdjustment;
+
+  /// No description provided for @balanceAdjustmentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The difference will be saved as a balance adjustment.'**
+  String get balanceAdjustmentHint;
+
+  /// No description provided for @reverseTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse posting'**
+  String get reverseTransaction;
+
+  /// No description provided for @confirmReversal.
+  ///
+  /// In en, this message translates to:
+  /// **'Save an opposite entry dated today and keep both entries in history?'**
+  String get confirmReversal;
+
+  /// No description provided for @postedReversal.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversal saved'**
+  String get postedReversal;
+
+  /// No description provided for @reversedPosting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversed'**
+  String get reversedPosting;
+
+  /// No description provided for @reversalPosting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversal'**
+  String get reversalPosting;
+
+  /// No description provided for @linkedReversal.
+  ///
+  /// In en, this message translates to:
+  /// **'This entry belongs to a reversal and its original. Both are kept in history.'**
+  String get linkedReversal;
+
+  /// No description provided for @invalidTransactionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the accounts, amounts, and categories for this entry.'**
+  String get invalidTransactionDetails;
+
+  /// No description provided for @fundingReviewFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Only entries needing review'**
+  String get fundingReviewFilter;
+
+  /// No description provided for @fundingReviewBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs review'**
+  String get fundingReviewBadge;
+
+  /// No description provided for @fundingReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This historical entry has ambiguous accounting details. Review the original receipt and save a correction when the details are known.'**
+  String get fundingReviewHint;
+
+  /// No description provided for @financialChargesCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial charges'**
+  String get financialChargesCategory;
+
+  /// No description provided for @refundAdvanceShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce receivable by'**
+  String get refundAdvanceShare;
+
+  /// No description provided for @refundAdvanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. If blank, the refund reduces spending first, then outstanding receivables.'**
+  String get refundAdvanceHint;
+
+  /// No description provided for @accountKindSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Savings account'**
+  String get accountKindSavings;
+
+  /// No description provided for @accountKindPrepaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepaid balance'**
+  String get accountKindPrepaid;
+
+  /// No description provided for @prepaidAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepaid accounts'**
+  String get prepaidAccounts;
+
+  /// No description provided for @prepaidAccountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored value available for future purchases. Excluded from liquid assets.'**
+  String get prepaidAccountsDescription;
 }
 
 class _AppLocalizationsDelegate

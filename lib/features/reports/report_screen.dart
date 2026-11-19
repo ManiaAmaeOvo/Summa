@@ -337,9 +337,7 @@ class _TrendCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final buckets = <DateTime, int>{};
-    for (final record in records.where(
-      (item) => item.type == LedgerTransactionType.expense,
-    )) {
+    for (final record in records.where((item) => item.spendingMinor != 0)) {
       final key = period == _ReportPeriod.year
           ? DateTime(record.occurredAt.year, record.occurredAt.month)
           : DateTime(
@@ -347,7 +345,7 @@ class _TrendCard extends StatelessWidget {
               record.occurredAt.month,
               record.occurredAt.day,
             );
-      buckets[key] = (buckets[key] ?? 0) + record.actualExpenseMinor;
+      buckets[key] = (buckets[key] ?? 0) + record.spendingMinor;
     }
     final points = buckets.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
@@ -580,13 +578,26 @@ class _CategoryPieCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final totals = <String, int>{};
     final storedNames = <String, String>{};
-    for (final item in records.where((item) => item.type == type)) {
-      totals[item.parentCategoryId] =
-          (totals[item.parentCategoryId] ?? 0) +
-          (type == LedgerTransactionType.expense
-              ? item.actualExpenseMinor
-              : item.amountMinor);
-      storedNames[item.parentCategoryId] = item.parentCategoryName;
+    for (final item in records) {
+      if (type == LedgerTransactionType.expense) {
+        for (final part in item.spendingCategories) {
+          final label = item.allocationLabels[part.categoryId];
+          final parent = label?.parentId ?? item.parentCategoryId;
+          totals.update(
+            parent,
+            (value) => value + part.amountMinor,
+            ifAbsent: () => part.amountMinor,
+          );
+          storedNames[parent] = label?.parentName ?? item.parentCategoryName;
+        }
+      } else if (item.type == type) {
+        totals.update(
+          item.parentCategoryId,
+          (value) => value + item.signedAmountMinor,
+          ifAbsent: () => item.signedAmountMinor,
+        );
+        storedNames[item.parentCategoryId] = item.parentCategoryName;
+      }
     }
     final rows = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -964,8 +975,8 @@ int _sum(List<LedgerRecord> records, LedgerTransactionType type) => records
       (sum, item) =>
           sum +
           (type == LedgerTransactionType.expense
-              ? item.actualExpenseMinor
-              : item.amountMinor),
+              ? item.spendingMinor
+              : item.signedAmountMinor),
     );
 
 class _DateRange {

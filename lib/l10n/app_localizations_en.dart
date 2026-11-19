@@ -1393,4 +1393,111 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get advancedFundingBackupError =>
       'The backup conflicts with funding or receivable records.';
+
+  @override
+  String get transactionDetails => 'Transaction details';
+
+  @override
+  String get foreignPurchase => 'Purchase priced in another currency';
+
+  @override
+  String get originalPrice => 'Original purchase amount';
+
+  @override
+  String get originalCurrency => 'Original currency';
+
+  @override
+  String get settledPurchaseAmount => 'Amount charged to payment account';
+
+  @override
+  String get splitCategories => 'Add category split';
+
+  @override
+  String get additionalCategory => 'Additional category';
+
+  @override
+  String get categoryShare => 'Category amount';
+
+  @override
+  String get advanceForOthers => 'Part of this bill is owed by someone else';
+
+  @override
+  String get advanceShare => 'Amount advanced for someone else';
+
+  @override
+  String get feeAmount => 'Fee';
+
+  @override
+  String get interestAmount => 'Interest';
+
+  @override
+  String get externalDebtPayment => 'Someone else paid this debt directly';
+
+  @override
+  String get externalDebtPaymentHint =>
+      'Use for principal you do not owe back to the payer.';
+
+  @override
+  String get balanceAdjustment => 'Balance adjustment';
+
+  @override
+  String get balanceAdjustmentHint =>
+      'The difference will be saved as a balance adjustment.';
+
+  @override
+  String get reverseTransaction => 'Reverse posting';
+
+  @override
+  String get confirmReversal =>
+      'Save an opposite entry dated today and keep both entries in history?';
+
+  @override
+  String get postedReversal => 'Reversal saved';
+
+  @override
+  String get reversedPosting => 'Reversed';
+
+  @override
+  String get reversalPosting => 'Reversal';
+
+  @override
+  String get linkedReversal =>
+      'This entry belongs to a reversal and its original. Both are kept in history.';
+
+  @override
+  String get invalidTransactionDetails =>
+      'Check the accounts, amounts, and categories for this entry.';
+
+  @override
+  String get fundingReviewFilter => 'Only entries needing review';
+
+  @override
+  String get fundingReviewBadge => 'Needs review';
+
+  @override
+  String get fundingReviewHint =>
+      'This historical entry has ambiguous accounting details. Review the original receipt and save a correction when the details are known.';
+
+  @override
+  String get financialChargesCategory => 'Financial charges';
+
+  @override
+  String get refundAdvanceShare => 'Reduce receivable by';
+
+  @override
+  String get refundAdvanceHint =>
+      'Optional. If blank, the refund reduces spending first, then outstanding receivables.';
+
+  @override
+  String get accountKindSavings => 'Savings account';
+
+  @override
+  String get accountKindPrepaid => 'Prepaid balance';
+
+  @override
+  String get prepaidAccounts => 'Prepaid accounts';
+
+  @override
+  String get prepaidAccountsDescription =>
+      'Stored value available for future purchases. Excluded from liquid assets.';
 }
