@@ -2660,6 +2660,542 @@ class LedgerPostingsCompanion extends UpdateCompanion<PostingRow> {
   }
 }
 
+class $ValuationPreferencesTable extends ValuationPreferences
+    with TableInfo<$ValuationPreferencesTable, ValuationBaseRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ValuationPreferencesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    check: () => const CustomExpression<bool>('id = 1'),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _baseCurrencyMeta = const VerificationMeta(
+    'baseCurrency',
+  );
+  @override
+  late final GeneratedColumn<String> baseCurrency = GeneratedColumn<String>(
+    'base_currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, baseCurrency];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'valuation_preferences';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ValuationBaseRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('base_currency')) {
+      context.handle(
+        _baseCurrencyMeta,
+        baseCurrency.isAcceptableOrUnknown(
+          data['base_currency']!,
+          _baseCurrencyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_baseCurrencyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ValuationBaseRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ValuationBaseRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      baseCurrency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base_currency'],
+      )!,
+    );
+  }
+
+  @override
+  $ValuationPreferencesTable createAlias(String alias) {
+    return $ValuationPreferencesTable(attachedDatabase, alias);
+  }
+}
+
+class ValuationBaseRow extends DataClass
+    implements Insertable<ValuationBaseRow> {
+  final int id;
+  final String baseCurrency;
+  const ValuationBaseRow({required this.id, required this.baseCurrency});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['base_currency'] = Variable<String>(baseCurrency);
+    return map;
+  }
+
+  ValuationPreferencesCompanion toCompanion(bool nullToAbsent) {
+    return ValuationPreferencesCompanion(
+      id: Value(id),
+      baseCurrency: Value(baseCurrency),
+    );
+  }
+
+  factory ValuationBaseRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ValuationBaseRow(
+      id: serializer.fromJson<int>(json['id']),
+      baseCurrency: serializer.fromJson<String>(json['baseCurrency']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'baseCurrency': serializer.toJson<String>(baseCurrency),
+    };
+  }
+
+  ValuationBaseRow copyWith({int? id, String? baseCurrency}) =>
+      ValuationBaseRow(
+        id: id ?? this.id,
+        baseCurrency: baseCurrency ?? this.baseCurrency,
+      );
+  ValuationBaseRow copyWithCompanion(ValuationPreferencesCompanion data) {
+    return ValuationBaseRow(
+      id: data.id.present ? data.id.value : this.id,
+      baseCurrency: data.baseCurrency.present
+          ? data.baseCurrency.value
+          : this.baseCurrency,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ValuationBaseRow(')
+          ..write('id: $id, ')
+          ..write('baseCurrency: $baseCurrency')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, baseCurrency);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ValuationBaseRow &&
+          other.id == this.id &&
+          other.baseCurrency == this.baseCurrency);
+}
+
+class ValuationPreferencesCompanion extends UpdateCompanion<ValuationBaseRow> {
+  final Value<int> id;
+  final Value<String> baseCurrency;
+  const ValuationPreferencesCompanion({
+    this.id = const Value.absent(),
+    this.baseCurrency = const Value.absent(),
+  });
+  ValuationPreferencesCompanion.insert({
+    this.id = const Value.absent(),
+    required String baseCurrency,
+  }) : baseCurrency = Value(baseCurrency);
+  static Insertable<ValuationBaseRow> custom({
+    Expression<int>? id,
+    Expression<String>? baseCurrency,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (baseCurrency != null) 'base_currency': baseCurrency,
+    });
+  }
+
+  ValuationPreferencesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? baseCurrency,
+  }) {
+    return ValuationPreferencesCompanion(
+      id: id ?? this.id,
+      baseCurrency: baseCurrency ?? this.baseCurrency,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (baseCurrency.present) {
+      map['base_currency'] = Variable<String>(baseCurrency.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ValuationPreferencesCompanion(')
+          ..write('id: $id, ')
+          ..write('baseCurrency: $baseCurrency')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ValuationRatesTable extends ValuationRates
+    with TableInfo<$ValuationRatesTable, ValuationRateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ValuationRatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _baseCurrencyMeta = const VerificationMeta(
+    'baseCurrency',
+  );
+  @override
+  late final GeneratedColumn<String> baseCurrency = GeneratedColumn<String>(
+    'base_currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceCurrencyMeta = const VerificationMeta(
+    'sourceCurrency',
+  );
+  @override
+  late final GeneratedColumn<String> sourceCurrency = GeneratedColumn<String>(
+    'source_currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rateMeta = const VerificationMeta('rate');
+  @override
+  late final GeneratedColumn<String> rate = GeneratedColumn<String>(
+    'rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    baseCurrency,
+    sourceCurrency,
+    rate,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'valuation_rates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ValuationRateRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('base_currency')) {
+      context.handle(
+        _baseCurrencyMeta,
+        baseCurrency.isAcceptableOrUnknown(
+          data['base_currency']!,
+          _baseCurrencyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_baseCurrencyMeta);
+    }
+    if (data.containsKey('source_currency')) {
+      context.handle(
+        _sourceCurrencyMeta,
+        sourceCurrency.isAcceptableOrUnknown(
+          data['source_currency']!,
+          _sourceCurrencyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceCurrencyMeta);
+    }
+    if (data.containsKey('rate')) {
+      context.handle(
+        _rateMeta,
+        rate.isAcceptableOrUnknown(data['rate']!, _rateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rateMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {baseCurrency, sourceCurrency};
+  @override
+  ValuationRateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ValuationRateRow(
+      baseCurrency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base_currency'],
+      )!,
+      sourceCurrency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_currency'],
+      )!,
+      rate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rate'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ValuationRatesTable createAlias(String alias) {
+    return $ValuationRatesTable(attachedDatabase, alias);
+  }
+}
+
+class ValuationRateRow extends DataClass
+    implements Insertable<ValuationRateRow> {
+  final String baseCurrency;
+  final String sourceCurrency;
+  final String rate;
+  final DateTime updatedAt;
+  const ValuationRateRow({
+    required this.baseCurrency,
+    required this.sourceCurrency,
+    required this.rate,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['base_currency'] = Variable<String>(baseCurrency);
+    map['source_currency'] = Variable<String>(sourceCurrency);
+    map['rate'] = Variable<String>(rate);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ValuationRatesCompanion toCompanion(bool nullToAbsent) {
+    return ValuationRatesCompanion(
+      baseCurrency: Value(baseCurrency),
+      sourceCurrency: Value(sourceCurrency),
+      rate: Value(rate),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ValuationRateRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ValuationRateRow(
+      baseCurrency: serializer.fromJson<String>(json['baseCurrency']),
+      sourceCurrency: serializer.fromJson<String>(json['sourceCurrency']),
+      rate: serializer.fromJson<String>(json['rate']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'baseCurrency': serializer.toJson<String>(baseCurrency),
+      'sourceCurrency': serializer.toJson<String>(sourceCurrency),
+      'rate': serializer.toJson<String>(rate),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ValuationRateRow copyWith({
+    String? baseCurrency,
+    String? sourceCurrency,
+    String? rate,
+    DateTime? updatedAt,
+  }) => ValuationRateRow(
+    baseCurrency: baseCurrency ?? this.baseCurrency,
+    sourceCurrency: sourceCurrency ?? this.sourceCurrency,
+    rate: rate ?? this.rate,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ValuationRateRow copyWithCompanion(ValuationRatesCompanion data) {
+    return ValuationRateRow(
+      baseCurrency: data.baseCurrency.present
+          ? data.baseCurrency.value
+          : this.baseCurrency,
+      sourceCurrency: data.sourceCurrency.present
+          ? data.sourceCurrency.value
+          : this.sourceCurrency,
+      rate: data.rate.present ? data.rate.value : this.rate,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ValuationRateRow(')
+          ..write('baseCurrency: $baseCurrency, ')
+          ..write('sourceCurrency: $sourceCurrency, ')
+          ..write('rate: $rate, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(baseCurrency, sourceCurrency, rate, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ValuationRateRow &&
+          other.baseCurrency == this.baseCurrency &&
+          other.sourceCurrency == this.sourceCurrency &&
+          other.rate == this.rate &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ValuationRatesCompanion extends UpdateCompanion<ValuationRateRow> {
+  final Value<String> baseCurrency;
+  final Value<String> sourceCurrency;
+  final Value<String> rate;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ValuationRatesCompanion({
+    this.baseCurrency = const Value.absent(),
+    this.sourceCurrency = const Value.absent(),
+    this.rate = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ValuationRatesCompanion.insert({
+    required String baseCurrency,
+    required String sourceCurrency,
+    required String rate,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : baseCurrency = Value(baseCurrency),
+       sourceCurrency = Value(sourceCurrency),
+       rate = Value(rate),
+       updatedAt = Value(updatedAt);
+  static Insertable<ValuationRateRow> custom({
+    Expression<String>? baseCurrency,
+    Expression<String>? sourceCurrency,
+    Expression<String>? rate,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (baseCurrency != null) 'base_currency': baseCurrency,
+      if (sourceCurrency != null) 'source_currency': sourceCurrency,
+      if (rate != null) 'rate': rate,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ValuationRatesCompanion copyWith({
+    Value<String>? baseCurrency,
+    Value<String>? sourceCurrency,
+    Value<String>? rate,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ValuationRatesCompanion(
+      baseCurrency: baseCurrency ?? this.baseCurrency,
+      sourceCurrency: sourceCurrency ?? this.sourceCurrency,
+      rate: rate ?? this.rate,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (baseCurrency.present) {
+      map['base_currency'] = Variable<String>(baseCurrency.value);
+    }
+    if (sourceCurrency.present) {
+      map['source_currency'] = Variable<String>(sourceCurrency.value);
+    }
+    if (rate.present) {
+      map['rate'] = Variable<String>(rate.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ValuationRatesCompanion(')
+          ..write('baseCurrency: $baseCurrency, ')
+          ..write('sourceCurrency: $sourceCurrency, ')
+          ..write('rate: $rate, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2669,6 +3205,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $LedgerEntriesTable ledgerEntries = $LedgerEntriesTable(this);
   late final $LedgerPostingsTable ledgerPostings = $LedgerPostingsTable(this);
+  late final $ValuationPreferencesTable valuationPreferences =
+      $ValuationPreferencesTable(this);
+  late final $ValuationRatesTable valuationRates = $ValuationRatesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2678,6 +3217,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ledgerCategories,
     ledgerEntries,
     ledgerPostings,
+    valuationPreferences,
+    valuationRates,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5155,6 +5696,372 @@ typedef $$LedgerPostingsTableProcessedTableManager =
       PostingRow,
       PrefetchHooks Function({bool transactionId, bool accountId})
     >;
+typedef $$ValuationPreferencesTableCreateCompanionBuilder =
+    ValuationPreferencesCompanion Function({
+      Value<int> id,
+      required String baseCurrency,
+    });
+typedef $$ValuationPreferencesTableUpdateCompanionBuilder =
+    ValuationPreferencesCompanion Function({
+      Value<int> id,
+      Value<String> baseCurrency,
+    });
+
+class $$ValuationPreferencesTableFilterComposer
+    extends Composer<_$AppDatabase, $ValuationPreferencesTable> {
+  $$ValuationPreferencesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get baseCurrency => $composableBuilder(
+    column: $table.baseCurrency,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ValuationPreferencesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ValuationPreferencesTable> {
+  $$ValuationPreferencesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get baseCurrency => $composableBuilder(
+    column: $table.baseCurrency,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ValuationPreferencesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ValuationPreferencesTable> {
+  $$ValuationPreferencesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get baseCurrency => $composableBuilder(
+    column: $table.baseCurrency,
+    builder: (column) => column,
+  );
+}
+
+class $$ValuationPreferencesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ValuationPreferencesTable,
+          ValuationBaseRow,
+          $$ValuationPreferencesTableFilterComposer,
+          $$ValuationPreferencesTableOrderingComposer,
+          $$ValuationPreferencesTableAnnotationComposer,
+          $$ValuationPreferencesTableCreateCompanionBuilder,
+          $$ValuationPreferencesTableUpdateCompanionBuilder,
+          (
+            ValuationBaseRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ValuationPreferencesTable,
+              ValuationBaseRow
+            >,
+          ),
+          ValuationBaseRow,
+          PrefetchHooks Function()
+        > {
+  $$ValuationPreferencesTableTableManager(
+    _$AppDatabase db,
+    $ValuationPreferencesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ValuationPreferencesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ValuationPreferencesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ValuationPreferencesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> baseCurrency = const Value.absent(),
+              }) => ValuationPreferencesCompanion(
+                id: id,
+                baseCurrency: baseCurrency,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String baseCurrency,
+              }) => ValuationPreferencesCompanion.insert(
+                id: id,
+                baseCurrency: baseCurrency,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ValuationPreferencesTable, ValuationBaseRow>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ValuationPreferencesTable,
+                    ValuationBaseRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ValuationPreferencesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ValuationPreferencesTable,
+      ValuationBaseRow,
+      $$ValuationPreferencesTableFilterComposer,
+      $$ValuationPreferencesTableOrderingComposer,
+      $$ValuationPreferencesTableAnnotationComposer,
+      $$ValuationPreferencesTableCreateCompanionBuilder,
+      $$ValuationPreferencesTableUpdateCompanionBuilder,
+      (
+        ValuationBaseRow,
+        BaseReferences<
+          _$AppDatabase,
+          $ValuationPreferencesTable,
+          ValuationBaseRow
+        >,
+      ),
+      ValuationBaseRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ValuationRatesTableCreateCompanionBuilder =
+    ValuationRatesCompanion Function({
+      required String baseCurrency,
+      required String sourceCurrency,
+      required String rate,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ValuationRatesTableUpdateCompanionBuilder =
+    ValuationRatesCompanion Function({
+      Value<String> baseCurrency,
+      Value<String> sourceCurrency,
+      Value<String> rate,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$ValuationRatesTableFilterComposer
+    extends Composer<_$AppDatabase, $ValuationRatesTable> {
+  $$ValuationRatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get baseCurrency => $composableBuilder(
+    column: $table.baseCurrency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceCurrency => $composableBuilder(
+    column: $table.sourceCurrency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rate => $composableBuilder(
+    column: $table.rate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ValuationRatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ValuationRatesTable> {
+  $$ValuationRatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get baseCurrency => $composableBuilder(
+    column: $table.baseCurrency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceCurrency => $composableBuilder(
+    column: $table.sourceCurrency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rate => $composableBuilder(
+    column: $table.rate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ValuationRatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ValuationRatesTable> {
+  $$ValuationRatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get baseCurrency => $composableBuilder(
+    column: $table.baseCurrency,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceCurrency => $composableBuilder(
+    column: $table.sourceCurrency,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rate =>
+      $composableBuilder(column: $table.rate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ValuationRatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ValuationRatesTable,
+          ValuationRateRow,
+          $$ValuationRatesTableFilterComposer,
+          $$ValuationRatesTableOrderingComposer,
+          $$ValuationRatesTableAnnotationComposer,
+          $$ValuationRatesTableCreateCompanionBuilder,
+          $$ValuationRatesTableUpdateCompanionBuilder,
+          (
+            ValuationRateRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ValuationRatesTable,
+              ValuationRateRow
+            >,
+          ),
+          ValuationRateRow,
+          PrefetchHooks Function()
+        > {
+  $$ValuationRatesTableTableManager(
+    _$AppDatabase db,
+    $ValuationRatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ValuationRatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ValuationRatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ValuationRatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> baseCurrency = const Value.absent(),
+                Value<String> sourceCurrency = const Value.absent(),
+                Value<String> rate = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ValuationRatesCompanion(
+                baseCurrency: baseCurrency,
+                sourceCurrency: sourceCurrency,
+                rate: rate,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String baseCurrency,
+                required String sourceCurrency,
+                required String rate,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ValuationRatesCompanion.insert(
+                baseCurrency: baseCurrency,
+                sourceCurrency: sourceCurrency,
+                rate: rate,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ValuationRatesTable, ValuationRateRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ValuationRatesTable,
+                    ValuationRateRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ValuationRatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ValuationRatesTable,
+      ValuationRateRow,
+      $$ValuationRatesTableFilterComposer,
+      $$ValuationRatesTableOrderingComposer,
+      $$ValuationRatesTableAnnotationComposer,
+      $$ValuationRatesTableCreateCompanionBuilder,
+      $$ValuationRatesTableUpdateCompanionBuilder,
+      (
+        ValuationRateRow,
+        BaseReferences<_$AppDatabase, $ValuationRatesTable, ValuationRateRow>,
+      ),
+      ValuationRateRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5167,4 +6074,8 @@ class $AppDatabaseManager {
       $$LedgerEntriesTableTableManager(_db, _db.ledgerEntries);
   $$LedgerPostingsTableTableManager get ledgerPostings =>
       $$LedgerPostingsTableTableManager(_db, _db.ledgerPostings);
+  $$ValuationPreferencesTableTableManager get valuationPreferences =>
+      $$ValuationPreferencesTableTableManager(_db, _db.valuationPreferences);
+  $$ValuationRatesTableTableManager get valuationRates =>
+      $$ValuationRatesTableTableManager(_db, _db.valuationRates);
 }

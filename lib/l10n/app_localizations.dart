@@ -2221,6 +2221,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The old backup would overwrite an existing cross-currency transfer.'**
   String get legacyTransferConflict;
+
+  /// No description provided for @estimatedNetWorth.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated net worth'**
+  String get estimatedNetWorth;
+
+  /// No description provided for @valuationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Valuation settings'**
+  String get valuationSettings;
+
+  /// No description provided for @valuationBaseCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Base currency for valuation'**
+  String get valuationBaseCurrency;
+
+  /// No description provided for @valuationBaseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Valued in {currency}'**
+  String valuationBaseDescription(String currency);
+
+  /// No description provided for @missingValuationRates.
+  ///
+  /// In en, this message translates to:
+  /// **'Add rates to value: {currencies}'**
+  String missingValuationRates(String currencies);
+
+  /// No description provided for @unsupportedValuationCurrencies.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency precision unavailable: {currencies}'**
+  String unsupportedValuationCurrencies(String currencies);
+
+  /// No description provided for @valuationReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load valuation settings.'**
+  String get valuationReadFailed;
+
+  /// No description provided for @valuationSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These rates value today’s account balances. Each transfer shows its historical settlement rate in the transaction details.'**
+  String get valuationSettingsHint;
+
+  /// No description provided for @valuationRatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual valuation rates'**
+  String get valuationRatesTitle;
+
+  /// No description provided for @noValuationCurrencies.
+  ///
+  /// In en, this message translates to:
+  /// **'The current accounts use the selected base currency.'**
+  String get noValuationCurrencies;
+
+  /// No description provided for @valuationRateMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate required'**
+  String get valuationRateMissing;
+
+  /// No description provided for @valuationRateAsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {date}'**
+  String valuationRateAsOf(String date);
+
+  /// No description provided for @valuationRatePair.
+  ///
+  /// In en, this message translates to:
+  /// **'{source} → {base}'**
+  String valuationRatePair(String source, String base);
+
+  /// No description provided for @editValuationRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit valuation rate'**
+  String get editValuationRate;
+
+  /// No description provided for @valuationRateField.
+  ///
+  /// In en, this message translates to:
+  /// **'Valuation rate'**
+  String get valuationRateField;
+
+  /// No description provided for @invalidValuationRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive decimal rate with up to 18 decimal places.'**
+  String get invalidValuationRate;
+
+  /// No description provided for @removeValuationRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove rate'**
+  String get removeValuationRate;
+
+  /// No description provided for @invalidBackupValuation.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup contains invalid or duplicate valuation settings.'**
+  String get invalidBackupValuation;
 }
 
 class _AppLocalizationsDelegate

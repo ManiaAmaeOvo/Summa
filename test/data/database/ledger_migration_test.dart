@@ -7,7 +7,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 
 void main() {
-  for (final version in [6, 7, 8]) {
+  for (final version in [6, 7, 8, 9]) {
     test('migrates schema $version to persisted postings and reopens safely', () async {
       final directory = await Directory.systemTemp.createTemp(
         'summa-v$version-',
@@ -35,7 +35,7 @@ void main() {
               for (final account in balances)
                 account.id: account.currentBalanceMinor,
             },
-            version == 8
+            version >= 8
                 ? {'bank': 800, 'cash': 0}
                 : {'bank': 650, 'cash': 150},
           );
@@ -47,18 +47,20 @@ void main() {
           expect(active.targetAccountId, 'cash');
           expect(active.note, 'Transfer');
           expect(active.timezoneOffsetMinutes, 480);
-          expect(active.status, version == 8 ? 'pending' : 'posted');
-          expect(active.settlementAmountMinor, isNull);
-          expect(active.quotedExchangeRate, isNull);
+          expect(active.status, version >= 8 ? 'pending' : 'posted');
+          expect(active.settlementAmountMinor, version == 9 ? 2000 : null);
+          expect(active.quotedExchangeRate, version == 9 ? '13.33' : null);
           expect(deleted.id, 'hidden');
           expect(deleted.amountMinor, 50);
           final postings = await after.select(after.ledgerPostings).get();
-          expect(postings, hasLength(4));
+          expect(postings, hasLength(version == 9 ? 6 : 4));
           expect(
             postings
                 .where((leg) => leg.transactionId == active.id)
                 .map((leg) => leg.debitMinor),
-            unorderedEquals([-150, 150]),
+            unorderedEquals(
+              version == 9 ? [-150, 2000, 150, -2000] : [-150, 150],
+            ),
           );
           final table = await after
               .customSelect(
@@ -69,7 +71,10 @@ void main() {
           final schema = await after
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(schema.read<int>('user_version'), 9);
+          expect(schema.read<int>('user_version'), 10);
+          final valuation = await upgraded.watchValuationSettings().first;
+          expect(valuation.baseCurrency, 'CNY');
+          expect(valuation.rates, isEmpty);
         } finally {
           await after.close();
         }
@@ -150,7 +155,7 @@ class _LegacyDatabase extends AppDatabase {
                ('hidden', 'expense', 50, 2000, 480,
                 'expense-child', 'bank', NULL, 'Deleted', 2000, 2001, 1)
       ''');
-      if (schemaVersion == 8) {
+      if (schemaVersion >= 8) {
         await migrator.addColumn(ledgerEntries, ledgerEntries.status);
         await migrator.addColumn(ledgerEntries, ledgerEntries.refundOfId);
         await migrator.createTable(ledgerPostings);
@@ -165,6 +170,38 @@ class _LegacyDatabase extends AppDatabase {
                  ('bank-to-cash', 1, 'cash', 'CNY', 150, 'account'),
                  ('hidden', 0, 'bank', 'CNY', -50, 'account'),
                  ('hidden', 1, NULL, 'CNY', 50, 'expense')
+        ''');
+      }
+      if (schemaVersion == 9) {
+        await migrator.addColumn(
+          ledgerEntries,
+          ledgerEntries.settlementAmountMinor,
+        );
+        await migrator.addColumn(
+          ledgerEntries,
+          ledgerEntries.settlementCurrencyCode,
+        );
+        await migrator.addColumn(
+          ledgerEntries,
+          ledgerEntries.quotedExchangeRate,
+        );
+        await customStatement(
+          "UPDATE ledger_accounts SET currency_code = 'JPY' WHERE id = 'cash'",
+        );
+        await customStatement('''
+          UPDATE ledger_entries
+          SET settlement_amount_minor = 2000, settlement_currency_code = 'JPY',
+              quoted_exchange_rate = '13.33'
+          WHERE id = 'bank-to-cash'
+        ''');
+        await customStatement('''
+          UPDATE ledger_postings SET currency_code = 'JPY', debit_minor = 2000
+          WHERE transaction_id = 'bank-to-cash' AND position = 1
+        ''');
+        await customStatement('''
+          INSERT INTO ledger_postings (transaction_id, position, currency_code, debit_minor, role)
+          VALUES ('bank-to-cash', 2, 'CNY', 150, 'exchange'),
+                 ('bank-to-cash', 3, 'JPY', -2000, 'exchange')
         ''');
       }
     },

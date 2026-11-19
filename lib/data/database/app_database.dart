@@ -89,8 +89,35 @@ class LedgerPostings extends Table {
   Set<Column<Object>> get primaryKey => {transactionId, position};
 }
 
+@DataClassName('ValuationBaseRow')
+class ValuationPreferences extends Table {
+  IntColumn get id => integer().check(const CustomExpression<bool>('id = 1'))();
+  TextColumn get baseCurrency => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DataClassName('ValuationRateRow')
+class ValuationRates extends Table {
+  TextColumn get baseCurrency => text()();
+  TextColumn get sourceCurrency => text()();
+  TextColumn get rate => text()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {baseCurrency, sourceCurrency};
+}
+
 @DriftDatabase(
-  tables: [LedgerAccounts, LedgerCategories, LedgerEntries, LedgerPostings],
+  tables: [
+    LedgerAccounts,
+    LedgerCategories,
+    LedgerEntries,
+    LedgerPostings,
+    ValuationPreferences,
+    ValuationRates,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -98,7 +125,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -154,6 +181,10 @@ class AppDatabase extends _$AppDatabase {
             ledgerEntries,
             ledgerEntries.quotedExchangeRate,
           );
+        }
+        if (from < 10) {
+          await migrator.createTable(valuationPreferences);
+          await migrator.createTable(valuationRates);
         }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
@@ -248,6 +279,8 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> resetToFactoryDefaults() async {
     await transaction(() async {
+      await delete(valuationPreferences).go();
+      await delete(valuationRates).go();
       await delete(ledgerEntries).go();
       await delete(ledgerCategories).go();
       await delete(ledgerAccounts).go();

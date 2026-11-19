@@ -6,6 +6,7 @@ import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/domain/valuation/net_worth_valuation.dart';
 
 class AutoBackupExpenseRepository implements ExpenseRepository {
   AutoBackupExpenseRepository(this._delegate, this._backupStore);
@@ -233,6 +234,38 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
   @override
   Future<void> restoreDefaultCategories() =>
       _mutate(_delegate.restoreDefaultCategories);
+
+  @override
+  Stream<ValuationSettings> watchValuationSettings() =>
+      _delegate.watchValuationSettings();
+
+  @override
+  Future<void> setValuationBaseCurrency(String baseCurrency) =>
+      _mutate(() => _delegate.setValuationBaseCurrency(baseCurrency));
+
+  @override
+  Future<void> saveValuationRate({
+    required String sourceCurrency,
+    required String baseCurrency,
+    required String rate,
+  }) => _mutate(
+    () => _delegate.saveValuationRate(
+      sourceCurrency: sourceCurrency,
+      baseCurrency: baseCurrency,
+      rate: rate,
+    ),
+  );
+
+  @override
+  Future<void> removeValuationRate({
+    required String sourceCurrency,
+    required String baseCurrency,
+  }) => _mutate(
+    () => _delegate.removeValuationRate(
+      sourceCurrency: sourceCurrency,
+      baseCurrency: baseCurrency,
+    ),
+  );
 
   @override
   Future<String> createFullBackup() => _delegate.createFullBackup();

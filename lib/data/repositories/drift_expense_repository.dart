@@ -12,15 +12,20 @@ import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/domain/transactions/ledger_posting.dart';
 import 'package:summa/domain/defaults/default_ledger_names.dart';
+import 'package:summa/domain/valuation/net_worth_valuation.dart';
 import 'package:uuid/uuid.dart';
+
+import 'drift_valuation_store.dart';
 
 const _backupFormat = 'summa_full_backup';
 const _legacyBackupFormat = 'ledgerpro_full_backup';
 
 class DriftExpenseRepository implements ExpenseRepository {
-  DriftExpenseRepository(this._database);
+  DriftExpenseRepository(this._database)
+    : _valuation = DriftValuationStore(_database);
 
   final AppDatabase _database;
+  final DriftValuationStore _valuation;
   final Uuid _uuid = const Uuid();
 
   @override
@@ -1455,6 +1460,34 @@ class DriftExpenseRepository implements ExpenseRepository {
   }
 
   @override
+  Stream<ValuationSettings> watchValuationSettings() =>
+      _valuation.watchSettings();
+
+  @override
+  Future<void> setValuationBaseCurrency(String baseCurrency) =>
+      _valuation.setBaseCurrency(baseCurrency);
+
+  @override
+  Future<void> saveValuationRate({
+    required String sourceCurrency,
+    required String baseCurrency,
+    required String rate,
+  }) => _valuation.saveRate(
+    sourceCurrency: sourceCurrency,
+    baseCurrency: baseCurrency,
+    rate: rate,
+  );
+
+  @override
+  Future<void> removeValuationRate({
+    required String sourceCurrency,
+    required String baseCurrency,
+  }) => _valuation.removeRate(
+    sourceCurrency: sourceCurrency,
+    baseCurrency: baseCurrency,
+  );
+
+  @override
   Future<String> createFullBackup() => _database.transaction(() async {
     final accounts = await _database.select(_database.ledgerAccounts).get();
     final categories = await _database.select(_database.ledgerCategories).get();
@@ -1466,9 +1499,22 @@ class DriftExpenseRepository implements ExpenseRepository {
     for (final posting in orderedPostings) {
       (postings[posting.transactionId] ??= []).add(posting);
     }
+    final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 3,
+      'backup_version': 4,
+      'valuation': {
+        'base_currency': valuation.baseCurrency,
+        'rates': [
+          for (final item in valuation.rates)
+            {
+              'base_currency': item.baseCurrency,
+              'source_currency': item.sourceCurrency,
+              'rate': item.rate,
+              'updated_at': item.updatedAt.toUtc().toIso8601String(),
+            },
+        ],
+      },
       'schema_version': _database.schemaVersion,
       'created_at': DateTime.now().toIso8601String(),
       'accounts': [for (final item in accounts) _backupAccount(item)],
@@ -1618,6 +1664,12 @@ class DriftExpenseRepository implements ExpenseRepository {
         }
       }
       await _validateRestoredLedger();
+      if (payload.valuation case final valuation?) {
+        await _valuation.restore(
+          valuation,
+          replace: mode == BackupRestoreMode.replace,
+        );
+      }
     });
   }
 
@@ -1777,7 +1829,7 @@ EntryRow _restoreEntry(Map<String, dynamic> raw, int version) {
   final currency = _nullableString(raw, 'settlement_currency_code');
   final quote = _nullableString(raw, 'quoted_exchange_rate');
   if (amount != null || currency != null || quote != null) {
-    if (version != 3 ||
+    if (version < 3 ||
         type != LedgerTransactionType.transfer.name ||
         amount is! int ||
         amount <= 0 ||
@@ -1948,6 +2000,7 @@ Map<String, Object?> _backupPosting(PostingRow posting) => {
 ({
   DateTime createdAt,
   int version,
+  ValuationSettings? valuation,
   List<Map<String, dynamic>> accounts,
   List<Map<String, dynamic>> categories,
   List<Map<String, dynamic>> entries,
@@ -1965,7 +2018,7 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 3) ||
+      !(format == _backupFormat && (version >= 1 && version <= 4) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
@@ -1974,10 +2027,45 @@ _parseBackup(String source) {
   return (
     createdAt: createdAt,
     version: version,
+    valuation: version >= 4 ? _restoreValuation(decoded['valuation']) : null,
     accounts: _requiredObjectList(decoded, 'accounts'),
     categories: _requiredObjectList(decoded, 'categories'),
     entries: _requiredObjectList(decoded, 'entries'),
   );
+}
+
+ValuationSettings _restoreValuation(Object? data) {
+  if (data is! Map<String, dynamic>) {
+    throw const LedgerBackupException('备份估值设置无效');
+  }
+  final base = _requiredString(data, 'base_currency');
+  if (!isValuationCurrency(base)) {
+    throw const LedgerBackupException('备份估值基准币种不受支持');
+  }
+  final pairs = <(String, String)>{};
+  final rates = <ValuationRate>[];
+  for (final raw in _requiredObjectList(data, 'rates')) {
+    final sourceCurrency = _requiredString(raw, 'source_currency');
+    final baseCurrency = _requiredString(raw, 'base_currency');
+    final value = _requiredString(raw, 'rate');
+    if (!isValidValuationRate(
+          sourceCurrency: sourceCurrency,
+          baseCurrency: baseCurrency,
+          rate: value,
+        ) ||
+        !pairs.add((baseCurrency, sourceCurrency))) {
+      throw const LedgerBackupException('备份估值汇率无效或重复');
+    }
+    rates.add(
+      ValuationRate(
+        sourceCurrency: sourceCurrency,
+        baseCurrency: baseCurrency,
+        rate: value,
+        updatedAt: _requiredDate(raw, 'updated_at'),
+      ),
+    );
+  }
+  return ValuationSettings(baseCurrency: base, rates: rates);
 }
 
 List<Map<String, dynamic>> _requiredObjectList(

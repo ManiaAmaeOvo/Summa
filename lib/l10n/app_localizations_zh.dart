@@ -1166,4 +1166,68 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get legacyTransferConflict => '旧备份会覆盖已有的跨币种转账。';
+
+  @override
+  String get estimatedNetWorth => '折算净资产';
+
+  @override
+  String get valuationSettings => '估值设置';
+
+  @override
+  String get valuationBaseCurrency => '估值基准币种';
+
+  @override
+  String valuationBaseDescription(String currency) {
+    return '折算为 $currency';
+  }
+
+  @override
+  String missingValuationRates(String currencies) {
+    return '缺少估值汇率：$currencies';
+  }
+
+  @override
+  String unsupportedValuationCurrencies(String currencies) {
+    return '缺少币种精度：$currencies';
+  }
+
+  @override
+  String get valuationReadFailed => '无法读取估值设置。';
+
+  @override
+  String get valuationSettingsHint => '这里的汇率用于折算当前账户余额。每笔转账的历史结算汇率在交易详情中查看。';
+
+  @override
+  String get valuationRatesTitle => '手动估值汇率';
+
+  @override
+  String get noValuationCurrencies => '当前账户均使用所选基准币种。';
+
+  @override
+  String get valuationRateMissing => '待录入估值汇率';
+
+  @override
+  String valuationRateAsOf(String date) {
+    return '更新于 $date';
+  }
+
+  @override
+  String valuationRatePair(String source, String base) {
+    return '$source → $base';
+  }
+
+  @override
+  String get editValuationRate => '编辑估值汇率';
+
+  @override
+  String get valuationRateField => '估值汇率';
+
+  @override
+  String get invalidValuationRate => '请输入正数汇率，最多保留 18 位小数。';
+
+  @override
+  String get removeValuationRate => '移除汇率';
+
+  @override
+  String get invalidBackupValuation => '备份包含无效或重复的估值设置。';
 }

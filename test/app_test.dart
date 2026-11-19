@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:summa/app/app.dart';
 import 'package:summa/app/locale_controller.dart';
 import 'package:summa/app/providers.dart';
@@ -13,6 +16,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/domain/valuation/net_worth_valuation.dart';
 import 'package:summa/features/transaction_editor/add_expense_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -39,7 +43,7 @@ void main() {
 
   testWidgets('shows the Summa foundation screen', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value(<LedgerRecord>[]),
@@ -48,7 +52,6 @@ void main() {
             (ref) => Stream.value(<AccountBalance>[]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pump();
@@ -65,7 +68,7 @@ void main() {
   testWidgets('switches the complete shell to English', (tester) async {
     LocaleController.instance.value = AppLanguage.english;
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value(<LedgerRecord>[]),
@@ -74,7 +77,6 @@ void main() {
             (ref) => Stream.value(<AccountBalance>[]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -89,7 +91,7 @@ void main() {
 
   testWidgets('opens Accounts from the liquid net worth card', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value(<LedgerRecord>[]),
@@ -98,7 +100,6 @@ void main() {
             (ref) => Stream.value(<AccountBalance>[]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -134,7 +135,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value([expense('CNY', 200), expense('USD', 400)]),
@@ -159,7 +160,6 @@ void main() {
             ]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -218,7 +218,7 @@ void main() {
         note: '',
       );
       await tester.pumpWidget(
-        ProviderScope(
+        _testApp(
           overrides: [
             transactionsProvider.overrideWith(
               (ref) => Stream.value([transfer]),
@@ -242,7 +242,6 @@ void main() {
               ]),
             ),
           ],
-          child: const SummaApp(),
         ),
       );
       await tester.pumpAndSettle();
@@ -258,9 +257,87 @@ void main() {
     },
   );
 
+  testWidgets(
+    'shows missing valuation currency and updates the estimate after a rate arrives',
+    (tester) async {
+      tester.view.physicalSize = const Size(500, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final valuation = StreamController<ValuationSettings>();
+      addTearDown(valuation.close);
+      valuation.add(const ValuationSettings());
+      await tester.pumpWidget(
+        _testApp(
+          valuation: valuation.stream,
+          overrides: [
+            transactionsProvider.overrideWith(
+              (ref) => Stream.value(<LedgerRecord>[]),
+            ),
+            accountBalancesProvider.overrideWith(
+              (ref) => Stream.value([
+                const AccountBalance(
+                  id: 'cash',
+                  name: 'Cash',
+                  kind: AccountKind.cash,
+                  openingBalanceMinor: 1000,
+                  currentBalanceMinor: 1000,
+                ),
+                const AccountBalance(
+                  id: 'usd',
+                  name: 'USD wallet',
+                  kind: AccountKind.wallet,
+                  currencyCode: 'USD',
+                  openingBalanceMinor: 100,
+                  currentBalanceMinor: 100,
+                ),
+              ]),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('账户'));
+      await tester.pumpAndSettle();
+
+      final amount = find.byKey(const ValueKey('estimated-net-worth-amount'));
+      expect(find.text('缺少估值汇率：USD'), findsOneWidget);
+      expect(amount, findsNothing);
+      await tester.tap(find.text('估值设置'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('valuation-rate-USD')));
+      await tester.pumpAndSettle();
+      expect(find.text('1 USD 兑换的 CNY 金额'), findsOneWidget);
+      await tester.tap(find.text('取消'));
+      await tester.pumpAndSettle();
+      final navigator = tester.state<NavigatorState>(
+        find.byType(Navigator).first,
+      );
+      navigator.pop();
+      await tester.pumpAndSettle();
+
+      valuation.add(
+        ValuationSettings(
+          rates: [
+            ValuationRate(
+              sourceCurrency: 'USD',
+              baseCurrency: 'CNY',
+              rate: '7.2',
+              updatedAt: DateTime.now(),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('缺少估值汇率：USD'), findsNothing);
+      expect(tester.widget<Text>(amount).data, '¥17.20');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('changes and persists language from Settings', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value(<LedgerRecord>[]),
@@ -269,7 +346,6 @@ void main() {
             (ref) => Stream.value(<AccountBalance>[]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -290,7 +366,7 @@ void main() {
 
   testWidgets('changes and persists the app font size', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value(<LedgerRecord>[]),
@@ -299,7 +375,6 @@ void main() {
             (ref) => Stream.value(<AccountBalance>[]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -326,7 +401,7 @@ void main() {
 
   testWidgets('balance dialog closes without lifecycle errors', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value(<LedgerRecord>[]),
@@ -335,7 +410,6 @@ void main() {
             (ref) => Stream.value([cashBalance]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pump();
@@ -359,7 +433,7 @@ void main() {
 
   testWidgets('opens settings and category management', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value(<LedgerRecord>[]),
@@ -377,7 +451,6 @@ void main() {
             (ref) => Stream.value(<LedgerCategory>[]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -425,7 +498,7 @@ void main() {
       note: '',
     );
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith((ref) => Stream.value([expense])),
           accountBalancesProvider.overrideWith(
@@ -441,7 +514,6 @@ void main() {
             ]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -459,7 +531,7 @@ void main() {
 
   testWidgets('account dialog closes without lifecycle errors', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value(<LedgerRecord>[]),
@@ -468,7 +540,6 @@ void main() {
             (ref) => Stream.value([cashBalance]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pump();
@@ -506,7 +577,7 @@ void main() {
       note: '工作日午餐',
     );
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith((ref) => Stream.value([expense])),
           accountBalancesProvider.overrideWith(
@@ -528,7 +599,6 @@ void main() {
             ]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -555,7 +625,7 @@ void main() {
     const food = LedgerCategory(id: 'food', name: '饮食');
     const lunch = LedgerCategory(id: 'lunch', name: '午餐', parentId: 'food');
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           transactionsProvider.overrideWith(
             (ref) => Stream.value(<LedgerRecord>[]),
@@ -601,7 +671,6 @@ void main() {
             ]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -657,7 +726,7 @@ void main() {
     });
     final repository = _RejectingExpenseRepository(database);
     await tester.pumpWidget(
-      ProviderScope(
+      _testApp(
         overrides: [
           expenseRepositoryProvider.overrideWithValue(repository),
           transactionsProvider.overrideWith(
@@ -690,7 +759,6 @@ void main() {
             ]),
           ),
         ],
-        child: const SummaApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -710,6 +778,19 @@ void main() {
     expect(find.byType(TransactionEditorSheet), findsOneWidget);
   });
 }
+
+Widget _testApp({
+  required List<Override> overrides,
+  Stream<ValuationSettings>? valuation,
+}) => ProviderScope(
+  overrides: [
+    valuationSettingsProvider.overrideWith(
+      (ref) => valuation ?? Stream.value(const ValuationSettings()),
+    ),
+    ...overrides,
+  ],
+  child: const SummaApp(),
+);
 
 class _RejectingExpenseRepository extends DriftExpenseRepository {
   _RejectingExpenseRepository(super.database);

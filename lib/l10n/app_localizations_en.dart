@@ -1249,4 +1249,72 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get legacyTransferConflict =>
       'The old backup would overwrite an existing cross-currency transfer.';
+
+  @override
+  String get estimatedNetWorth => 'Estimated net worth';
+
+  @override
+  String get valuationSettings => 'Valuation settings';
+
+  @override
+  String get valuationBaseCurrency => 'Base currency for valuation';
+
+  @override
+  String valuationBaseDescription(String currency) {
+    return 'Valued in $currency';
+  }
+
+  @override
+  String missingValuationRates(String currencies) {
+    return 'Add rates to value: $currencies';
+  }
+
+  @override
+  String unsupportedValuationCurrencies(String currencies) {
+    return 'Currency precision unavailable: $currencies';
+  }
+
+  @override
+  String get valuationReadFailed => 'Could not load valuation settings.';
+
+  @override
+  String get valuationSettingsHint =>
+      'These rates value today’s account balances. Each transfer shows its historical settlement rate in the transaction details.';
+
+  @override
+  String get valuationRatesTitle => 'Manual valuation rates';
+
+  @override
+  String get noValuationCurrencies =>
+      'The current accounts use the selected base currency.';
+
+  @override
+  String get valuationRateMissing => 'Rate required';
+
+  @override
+  String valuationRateAsOf(String date) {
+    return 'Updated $date';
+  }
+
+  @override
+  String valuationRatePair(String source, String base) {
+    return '$source → $base';
+  }
+
+  @override
+  String get editValuationRate => 'Edit valuation rate';
+
+  @override
+  String get valuationRateField => 'Valuation rate';
+
+  @override
+  String get invalidValuationRate =>
+      'Enter a positive decimal rate with up to 18 decimal places.';
+
+  @override
+  String get removeValuationRate => 'Remove rate';
+
+  @override
+  String get invalidBackupValuation =>
+      'The backup contains invalid or duplicate valuation settings.';
 }

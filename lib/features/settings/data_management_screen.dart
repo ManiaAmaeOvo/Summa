@@ -674,6 +674,9 @@ String _localizedBackupError(BuildContext context, String message) {
     return context.l10n.backupUnsupported;
   }
   if (message == '备份时间无效') return context.l10n.backupInvalidTime;
+  if (message.startsWith('备份估值')) {
+    return context.l10n.invalidBackupValuation;
+  }
   if (message == '旧备份与已有跨币种转账冲突') return context.l10n.legacyTransferConflict;
   if (message == '旧备份与已有拆分、待入账或退款交易冲突') {
     return context.l10n.backupLedgerConflict;

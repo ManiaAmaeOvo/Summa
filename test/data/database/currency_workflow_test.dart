@@ -225,7 +225,7 @@ void main() {
   );
 
   test(
-    'v3 backup round-trips FX exactly and damaged settlement rolls back',
+    'v3 and v4 backups round-trip FX exactly and reject damaged settlement',
     () async {
       final jpy = await addAccount('JPY');
       await repository.setCurrentBalance(accountId: _cash, amountMinor: 50000);
@@ -245,10 +245,15 @@ void main() {
       final backup = await repository.createFullBackup();
       final before = (await repository.watchTransactions().first).single;
       await repository.resetToFactoryDefaults();
+      final old = jsonDecode(backup) as Map<String, dynamic>;
+      old['backup_version'] = 3;
+      old['schema_version'] = 9;
+      old.remove('valuation');
       await repository.restoreFullBackup(
-        backup,
+        jsonEncode(old),
         mode: BackupRestoreMode.replace,
       );
+      await repository.restoreFullBackup(backup, mode: BackupRestoreMode.merge);
       final after = (await repository.watchTransactions().first).single;
       expect(after.id, before.id);
       expect(after.settlement?.quotedRate, '20.12500001');

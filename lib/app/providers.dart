@@ -7,6 +7,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/domain/valuation/net_worth_valuation.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
@@ -43,4 +44,8 @@ final expenseCategoriesProvider = StreamProvider<List<LedgerCategory>>((ref) {
 
 final incomeCategoriesProvider = StreamProvider<List<LedgerCategory>>((ref) {
   return ref.watch(expenseRepositoryProvider).watchIncomeCategories();
+});
+
+final valuationSettingsProvider = StreamProvider<ValuationSettings>((ref) {
+  return ref.watch(expenseRepositoryProvider).watchValuationSettings();
 });

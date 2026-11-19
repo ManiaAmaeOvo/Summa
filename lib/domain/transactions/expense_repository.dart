@@ -4,6 +4,7 @@ import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/valuation/net_worth_valuation.dart';
 
 enum TransactionRuleError {
   insufficientBalance,
@@ -136,6 +137,21 @@ abstract interface class ExpenseRepository {
   Future<void> moveCategory(String id, {required bool moveUp});
 
   Future<void> restoreDefaultCategories();
+
+  Stream<ValuationSettings> watchValuationSettings();
+
+  Future<void> setValuationBaseCurrency(String baseCurrency);
+
+  Future<void> saveValuationRate({
+    required String sourceCurrency,
+    required String baseCurrency,
+    required String rate,
+  });
+
+  Future<void> removeValuationRate({
+    required String sourceCurrency,
+    required String baseCurrency,
+  });
 
   Future<String> createFullBackup();
 

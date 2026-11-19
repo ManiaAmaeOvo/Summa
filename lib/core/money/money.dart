@@ -78,8 +78,10 @@ String moneyInputText(int minorUnits, String currency) {
   return _decimal(BigInt.from(minorUnits), _currencyDigits(currency));
 }
 
-String formatMoney(int minorUnits, String currency) {
-  final value = BigInt.from(minorUnits);
+String formatMoney(int minorUnits, String currency) =>
+    formatMoneyTotal(BigInt.from(minorUnits), currency);
+
+String formatMoneyTotal(BigInt value, String currency) {
   final sign = value.isNegative ? '-' : '';
   final prefix = currency == defaultCurrency ? '¥' : '$currency ';
   return '$sign$prefix${_decimal(value.abs(), _currencyDigits(currency))}';
