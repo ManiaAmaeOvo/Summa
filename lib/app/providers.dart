@@ -9,6 +9,7 @@ import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/planning/debt_contract.dart';
 import 'package:summa/domain/planning/recurring_plan.dart';
+import 'package:summa/domain/planning/savings_goal.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -88,3 +89,8 @@ final recurringPlansProvider = StreamProvider.autoDispose<List<RecurringPlan>>(
 final debtContractsProvider = StreamProvider.autoDispose<List<DebtContract>>(
   (ref) => ref.watch(expenseRepositoryProvider).watchDebtContracts(),
 );
+
+final savingsAllocationsProvider =
+    StreamProvider.autoDispose<List<SavingsAccountAllocation>>(
+      (ref) => ref.watch(expenseRepositoryProvider).watchSavingsAllocations(),
+    );

@@ -1021,7 +1021,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetTransactionsAccountsMessage =>
-      'All transactions, recurring plans, debt and receivable contracts, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.';
+      'All transactions, recurring plans, debt and receivable contracts, savings goals, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.';
 
   @override
   String get confirmReset => 'Confirm reset';
@@ -2283,5 +2283,99 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String backupDebtContractCount(int count) {
     return 'Debt & receivable contracts $count';
+  }
+
+  @override
+  String get savingsGoals => 'Savings goals';
+
+  @override
+  String get savingsAddGoal => 'Add savings goal';
+
+  @override
+  String get savingsEditGoal => 'Edit savings goal';
+
+  @override
+  String get savingsEmpty => 'Create a goal for money you want to set aside.';
+
+  @override
+  String get savingsLoadFailed => 'Could not load savings goals.';
+
+  @override
+  String get savingsNoAccounts =>
+      'A personal cash, bank, wallet, or savings account is required.';
+
+  @override
+  String get savingsTarget => 'Target amount';
+
+  @override
+  String get savingsTargetOn => 'Target date';
+
+  @override
+  String get savingsNoDate => 'No target date';
+
+  @override
+  String get savingsClearDate => 'Clear target date';
+
+  @override
+  String get savingsPriority => 'Priority';
+
+  @override
+  String get savingsPriorityHigh => 'High';
+
+  @override
+  String get savingsPriorityNormal => 'Normal';
+
+  @override
+  String get savingsPriorityLow => 'Low';
+
+  @override
+  String get savingsAllocated => 'Allocated to goal';
+
+  @override
+  String get savingsReserved => 'Reserved funds';
+
+  @override
+  String get savingsUnallocated => 'Unallocated funds';
+
+  @override
+  String get savingsShortfall => 'Allocation shortfall';
+
+  @override
+  String get savingsReached => 'Allocation target reached';
+
+  @override
+  String get savingsReserve => 'Reserve funds';
+
+  @override
+  String get savingsRelease => 'Release funds';
+
+  @override
+  String get savingsHistory => 'Allocation history';
+
+  @override
+  String get savingsNoHistory => 'No funds have been reserved or released.';
+
+  @override
+  String get savingsAccountArchived =>
+      'Archived account. Reserved funds can still be released.';
+
+  @override
+  String get savingsInvalid => 'Check the goal, account and amount.';
+
+  @override
+  String get savingsNotEnoughUnallocated =>
+      'This amount exceeds the account’s unallocated funds.';
+
+  @override
+  String get savingsNotEnoughReserved =>
+      'This amount exceeds the funds reserved for this goal.';
+
+  @override
+  String get savingsBackupConflict =>
+      'The backup has invalid or conflicting savings goals or allocations.';
+
+  @override
+  String backupSavingsGoalCount(int count) {
+    return 'Savings goals $count';
   }
 }

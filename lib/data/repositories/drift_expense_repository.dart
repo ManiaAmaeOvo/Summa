@@ -12,6 +12,7 @@ import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/planning/debt_contract.dart';
 import 'package:summa/domain/planning/recurring_plan.dart';
+import 'package:summa/domain/planning/savings_goal.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -27,11 +28,14 @@ import 'drift_debt_contract_store.dart';
 import 'drift_import_rule_store.dart';
 import 'drift_reconciliation_store.dart';
 import 'drift_recurring_plan_store.dart';
+import 'drift_savings_goal_store.dart';
 import 'drift_spending_plan_store.dart';
 import 'drift_valuation_store.dart';
 
 const _backupFormat = 'summa_full_backup';
 const _legacyBackupFormat = 'ledgerpro_full_backup';
+
+enum _BalanceScope { active, contracts, savings }
 
 class DriftExpenseRepository implements ExpenseRepository {
   DriftExpenseRepository(this._database)
@@ -41,7 +45,8 @@ class DriftExpenseRepository implements ExpenseRepository {
       _importRules = DriftImportRuleStore(_database),
       _spendingPlans = DriftSpendingPlanStore(_database),
       _recurringPlans = DriftRecurringPlanStore(_database),
-      _debtContracts = DriftDebtContractStore(_database);
+      _debtContracts = DriftDebtContractStore(_database),
+      _savings = DriftSavingsGoalStore(_database);
 
   final AppDatabase _database;
   final DriftValuationStore _valuation;
@@ -51,6 +56,7 @@ class DriftExpenseRepository implements ExpenseRepository {
   final DriftSpendingPlanStore _spendingPlans;
   final DriftRecurringPlanStore _recurringPlans;
   final DriftDebtContractStore _debtContracts;
+  final DriftSavingsGoalStore _savings;
   final Uuid _uuid = const Uuid();
 
   @override
@@ -1259,7 +1265,7 @@ class DriftExpenseRepository implements ExpenseRepository {
 
   @override
   Stream<List<DebtContract>> watchDebtContracts() =>
-      _debtContracts.watch(_balanceQuery(contractsOnly: true));
+      _debtContracts.watch(_balanceQuery(scope: _BalanceScope.contracts));
 
   @override
   Future<void> addDebtContract(DebtContractDraft draft) =>
@@ -1334,6 +1340,28 @@ class DriftExpenseRepository implements ExpenseRepository {
   @override
   Future<void> unlinkDebtSettlement(String linkId) =>
       _debtContracts.unlink(linkId);
+
+  @override
+  Stream<List<SavingsAccountAllocation>> watchSavingsAllocations() =>
+      _savings.watch(_balanceQuery(scope: _BalanceScope.savings));
+
+  @override
+  Future<void> addSavingsGoal(SavingsGoalDraft draft) => _database.transaction(
+    () => _savings.save(_uuid.v4(), draft, editing: false),
+  );
+
+  @override
+  Future<void> updateSavingsGoal(String id, SavingsGoalDraft draft) =>
+      _database.transaction(() => _savings.save(id, draft, editing: true));
+
+  @override
+  Future<void> changeSavingsAllocation(
+    String id,
+    int changeMinor, {
+    required String note,
+  }) => _database.transaction(
+    () => _savings.change(id, _uuid.v4(), changeMinor, note, _currentBalance),
+  );
 
   @override
   Stream<List<RecurringPlan>> watchRecurringPlans() => _recurringPlans.watch();
@@ -2056,7 +2084,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     String? accountId,
     String? excludingEntryId,
     DateTime? asOf,
-    bool contractsOnly = false,
+    _BalanceScope scope = _BalanceScope.active,
   }) {
     final postingAccount = accountId == null ? '' : 'AND leg.account_id = ?';
     final exclusion = excludingEntryId == null
@@ -2065,9 +2093,14 @@ class DriftExpenseRepository implements ExpenseRepository {
     final cutoff = asOf == null ? '' : 'AND entry.occurred_at <= ?';
     final selection = accountId != null
         ? 'a.id = ?'
-        : contractsOnly
-        ? 'a.id IN (SELECT account_id FROM debt_contracts)'
-        : "a.is_archived = 0 AND a.kind <> 'familyDirect'";
+        : switch (scope) {
+            _BalanceScope.active =>
+              "a.is_archived = 0 AND a.kind <> 'familyDirect'",
+            _BalanceScope.contracts =>
+              'a.id IN (SELECT account_id FROM debt_contracts)',
+            _BalanceScope.savings =>
+              'a.id IN (SELECT account_id FROM savings_goals)',
+          };
     return _database.customSelect(
       """
       SELECT a.id, a.name, a.kind, a.currency_code, a.opening_balance_minor, a.is_archived,
@@ -2096,7 +2129,8 @@ class DriftExpenseRepository implements ExpenseRepository {
         _database.ledgerAccounts,
         _database.ledgerEntries,
         _database.ledgerPostings,
-        if (contractsOnly) _database.debtContracts,
+        if (scope == _BalanceScope.contracts) _database.debtContracts,
+        if (scope == _BalanceScope.savings) _database.savingsGoals,
       },
     );
   }
@@ -2594,7 +2628,8 @@ class DriftExpenseRepository implements ExpenseRepository {
     final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 12,
+      'backup_version': 13,
+      'savings_goals': await _savings.backup(),
       'debt_contracts': await _debtContracts.backup(),
       'recurring_plans': await _recurringPlans.backup(),
       'spending_plans': await _spendingPlans.backup(),
@@ -2636,6 +2671,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       spendingPlanCount: payload.spendingPlans.length,
       recurringPlanCount: payload.recurringPlans.length,
       debtContractCount: payload.debtContracts.length,
+      savingsGoalCount: payload.savingsGoals.length,
       categoryCount: payload.categories.length,
       entryCount: entries.length,
       deletedEntryCount: entries
@@ -2656,6 +2692,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         await _database.delete(_database.balanceCheckpoints).go();
         await _database.delete(_database.recurringPlans).go();
         await _database.delete(_database.debtContracts).go();
+        await _database.delete(_database.savingsGoals).go();
         await _database.delete(_database.ledgerEntries).go();
         await _database.delete(_database.importCategoryRules).go();
         await _database.delete(_database.spendingPlans).go();
@@ -2817,6 +2854,11 @@ class DriftExpenseRepository implements ExpenseRepository {
       await _spendingPlans.restore(payload.spendingPlans);
       await _recurringPlans.restore(payload.recurringPlans);
       await _debtContracts.restore(payload.debtContracts);
+      await _savings.restore(
+        payload.savingsGoals,
+        merging: mode == BackupRestoreMode.merge,
+        balance: _currentBalance,
+      );
       try {
         await _checkReceivableBalances();
       } on TransactionRuleException {
@@ -3455,6 +3497,7 @@ Map<String, Object?> _backupPosting(PostingRow posting) => {
   List<Map<String, dynamic>> spendingPlans,
   List<Map<String, dynamic>> recurringPlans,
   List<Map<String, dynamic>> debtContracts,
+  List<Map<String, dynamic>> savingsGoals,
 })
 _parseBackup(String source) {
   dynamic decoded;
@@ -3469,7 +3512,7 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 12) ||
+      !(format == _backupFormat && (version >= 1 && version <= 13) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
@@ -3487,6 +3530,9 @@ _parseBackup(String source) {
     accounts: _requiredObjectList(decoded, 'accounts'),
     categories: _requiredObjectList(decoded, 'categories'),
     entries: _requiredObjectList(decoded, 'entries'),
+    savingsGoals: version >= 13
+        ? _requiredObjectList(decoded, 'savings_goals')
+        : const [],
     debtContracts: version >= 12
         ? _requiredObjectList(decoded, 'debt_contracts')
         : const [],

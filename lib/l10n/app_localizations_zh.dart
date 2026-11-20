@@ -953,7 +953,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resetTransactionsAccountsMessage =>
-      '将清除所有交易、周期计划、债务与应收款合同及关联账户的预算和外部额度，删除自定义账户，并将默认账户余额归零。分类、其他预算和备份会保留。';
+      '将清除所有交易、周期计划、债务与应收款合同、储蓄目标及关联账户的预算和外部额度，删除自定义账户，并将默认账户余额归零。分类、其他预算和备份会保留。';
 
   @override
   String get confirmReset => '确认重置';
@@ -2134,5 +2134,94 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String backupDebtContractCount(int count) {
     return '债务与应收款合同 $count';
+  }
+
+  @override
+  String get savingsGoals => '储蓄目标';
+
+  @override
+  String get savingsAddGoal => '新建储蓄目标';
+
+  @override
+  String get savingsEditGoal => '编辑储蓄目标';
+
+  @override
+  String get savingsEmpty => '可为要预留的资金建立储蓄目标。';
+
+  @override
+  String get savingsLoadFailed => '无法加载储蓄目标。';
+
+  @override
+  String get savingsNoAccounts => '请先建立本人的现金、银行、钱包或储蓄账户。';
+
+  @override
+  String get savingsTarget => '目标金额';
+
+  @override
+  String get savingsTargetOn => '目标日期';
+
+  @override
+  String get savingsNoDate => '未设目标日期';
+
+  @override
+  String get savingsClearDate => '清除目标日期';
+
+  @override
+  String get savingsPriority => '优先级';
+
+  @override
+  String get savingsPriorityHigh => '高';
+
+  @override
+  String get savingsPriorityNormal => '普通';
+
+  @override
+  String get savingsPriorityLow => '低';
+
+  @override
+  String get savingsAllocated => '已分配给目标';
+
+  @override
+  String get savingsReserved => '已预留资金';
+
+  @override
+  String get savingsUnallocated => '未分配资金';
+
+  @override
+  String get savingsShortfall => '分配资金缺口';
+
+  @override
+  String get savingsReached => '目标金额已分配完成';
+
+  @override
+  String get savingsReserve => '预留资金';
+
+  @override
+  String get savingsRelease => '释放资金';
+
+  @override
+  String get savingsHistory => '分配历史';
+
+  @override
+  String get savingsNoHistory => '尚无预留或释放记录。';
+
+  @override
+  String get savingsAccountArchived => '账户已归档，仍可释放已预留资金。';
+
+  @override
+  String get savingsInvalid => '请检查目标、账户和金额。';
+
+  @override
+  String get savingsNotEnoughUnallocated => '金额超过该账户的未分配资金。';
+
+  @override
+  String get savingsNotEnoughReserved => '金额超过该目标已预留的资金。';
+
+  @override
+  String get savingsBackupConflict => '备份中的储蓄目标或资金分配无效或存在冲突。';
+
+  @override
+  String backupSavingsGoalCount(int count) {
+    return '储蓄目标 $count';
   }
 }

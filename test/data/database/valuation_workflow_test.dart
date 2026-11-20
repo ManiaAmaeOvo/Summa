@@ -93,8 +93,8 @@ void main() {
       final original = await settings();
       final backup = await repository.createFullBackup();
       final payload = jsonDecode(backup) as Map<String, dynamic>;
-      expect(payload['backup_version'], 12);
-      expect(payload['schema_version'], 18);
+      expect(payload['backup_version'], 13);
+      expect(payload['schema_version'], 19);
 
       await repository.resetToFactoryDefaults();
       expect((await settings()).rates, isEmpty);

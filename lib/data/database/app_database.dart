@@ -283,6 +283,33 @@ class DebtSettlements extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+@DataClassName('SavingsGoalRow')
+class SavingsGoals extends Table {
+  TextColumn get id => text()();
+  TextColumn get accountId => text().references(LedgerAccounts, #id)();
+  TextColumn get name => text()();
+  TextColumn get currency => text()();
+  IntColumn get targetMinor => integer()();
+  TextColumn get priority => text()();
+  TextColumn get targetOn => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DataClassName('SavingsActivityRow')
+class SavingsAllocations extends Table {
+  TextColumn get id => text()();
+  TextColumn get goalId =>
+      text().references(SavingsGoals, #id, onDelete: KeyAction.cascade)();
+  IntColumn get changeMinor => integer()();
+  IntColumn get savedAtMicros => integer()();
+  TextColumn get note => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     LedgerAccounts,
@@ -302,6 +329,8 @@ class DebtSettlements extends Table {
     DebtContracts,
     DebtInstallments,
     DebtSettlements,
+    SavingsGoals,
+    SavingsAllocations,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -310,7 +339,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -322,6 +351,7 @@ class AppDatabase extends _$AppDatabase {
       await _createCsvIndexes();
       await _createSpendingPlanIndex();
       await _createDebtSettlementIndex();
+      await _createSavingsIndex();
       await _seedDefaults();
       await customStatement('PRAGMA user_version = $schemaVersion');
     }),
@@ -407,6 +437,11 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(debtSettlements);
           await _createDebtSettlementIndex();
         }
+        if (from < 19) {
+          await migrator.createTable(savingsGoals);
+          await migrator.createTable(savingsAllocations);
+          await _createSavingsIndex();
+        }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
         await customStatement('PRAGMA user_version = $to');
@@ -446,6 +481,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _createDebtSettlementIndex() => customStatement('''
     CREATE UNIQUE INDEX debt_settlements_active_entry
       ON debt_settlements (entry_id) WHERE voided = 0
+  ''');
+
+  Future<void> _createSavingsIndex() => customStatement('''
+    CREATE INDEX savings_allocations_goal ON savings_allocations (goal_id, saved_at_micros)
   ''');
 
   Future<void> _createCsvIndexes() async {
@@ -526,6 +565,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(balanceCheckpoints).go();
       await delete(recurringPlans).go();
       await delete(debtContracts).go();
+      await delete(savingsGoals).go();
       await delete(ledgerEntries).go();
       await (delete(
         spendingPlans,
@@ -551,6 +591,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(balanceCheckpoints).go();
       await delete(recurringPlans).go();
       await delete(debtContracts).go();
+      await delete(savingsGoals).go();
       await delete(ledgerEntries).go();
       await delete(importCategoryRules).go();
       await delete(spendingPlans).go();

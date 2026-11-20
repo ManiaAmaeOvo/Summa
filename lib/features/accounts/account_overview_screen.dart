@@ -4,6 +4,7 @@ import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/features/planning/savings_goals_screen.dart';
 import 'package:summa/features/reconciliation/reconciliation_screen.dart';
 import 'package:summa/features/valuation/valuation_screen.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
@@ -187,6 +188,17 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
               ),
             ),
           ],
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: () => Navigator.push<void>(
+              context,
+              MaterialPageRoute(builder: (_) => const SavingsGoalsScreen()),
+            ),
+            icon: const Icon(Icons.savings_outlined),
+            label: Text(context.l10n.savingsGoals),
+          ),
         ),
         const SizedBox(height: 24),
         _AccountGroup(

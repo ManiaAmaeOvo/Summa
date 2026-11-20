@@ -12,6 +12,7 @@ class LedgerBackupPreview {
     this.spendingPlanCount = 0,
     this.recurringPlanCount = 0,
     this.debtContractCount = 0,
+    this.savingsGoalCount = 0,
   });
 
   final DateTime createdAt;
@@ -24,6 +25,7 @@ class LedgerBackupPreview {
   final int spendingPlanCount;
   final int recurringPlanCount;
   final int debtContractCount;
+  final int savingsGoalCount;
 }
 
 class LedgerBackupException implements Exception {

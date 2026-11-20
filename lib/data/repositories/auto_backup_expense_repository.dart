@@ -8,6 +8,7 @@ import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/planning/debt_contract.dart';
 import 'package:summa/domain/planning/recurring_plan.dart';
+import 'package:summa/domain/planning/savings_goal.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -318,6 +319,27 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
   @override
   Future<void> unlinkDebtSettlement(String linkId) =>
       _mutate(() => _delegate.unlinkDebtSettlement(linkId));
+
+  @override
+  Stream<List<SavingsAccountAllocation>> watchSavingsAllocations() =>
+      _delegate.watchSavingsAllocations();
+
+  @override
+  Future<void> addSavingsGoal(SavingsGoalDraft draft) =>
+      _mutate(() => _delegate.addSavingsGoal(draft));
+
+  @override
+  Future<void> updateSavingsGoal(String id, SavingsGoalDraft draft) =>
+      _mutate(() => _delegate.updateSavingsGoal(id, draft));
+
+  @override
+  Future<void> changeSavingsAllocation(
+    String id,
+    int changeMinor, {
+    required String note,
+  }) => _mutate(
+    () => _delegate.changeSavingsAllocation(id, changeMinor, note: note),
+  );
 
   @override
   Stream<List<RecurringPlan>> watchRecurringPlans() =>

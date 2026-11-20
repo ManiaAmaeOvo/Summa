@@ -317,7 +317,7 @@
   "confirmRestore": "Confirm restore",
   "confirmMerge": "Confirm merge",
   "resetTransactionsAccountsTitle": "Reset transactions & accounts?",
-  "resetTransactionsAccountsMessage": "All transactions, recurring plans, debt and receivable contracts, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.",
+  "resetTransactionsAccountsMessage": "All transactions, recurring plans, debt and receivable contracts, savings goals, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.",
   "confirmReset": "Confirm reset",
   "transactionsAccountsReset": "Transactions and accounts reset; all backups were preserved",
   "resetSafeFailure": "Reset failed; the data was not partially changed",
@@ -811,6 +811,42 @@
   "debtBackupConflict": "The backup has invalid or conflicting debt contracts or settlements.",
   "backupDebtContractCount": "Debt & receivable contracts {count}",
   "@backupDebtContractCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "savingsGoals": "Savings goals",
+  "savingsAddGoal": "Add savings goal",
+  "savingsEditGoal": "Edit savings goal",
+  "savingsEmpty": "Create a goal for money you want to set aside.",
+  "savingsLoadFailed": "Could not load savings goals.",
+  "savingsNoAccounts": "A personal cash, bank, wallet, or savings account is required.",
+  "savingsTarget": "Target amount",
+  "savingsTargetOn": "Target date",
+  "savingsNoDate": "No target date",
+  "savingsClearDate": "Clear target date",
+  "savingsPriority": "Priority",
+  "savingsPriorityHigh": "High",
+  "savingsPriorityNormal": "Normal",
+  "savingsPriorityLow": "Low",
+  "savingsAllocated": "Allocated to goal",
+  "savingsReserved": "Reserved funds",
+  "savingsUnallocated": "Unallocated funds",
+  "savingsShortfall": "Allocation shortfall",
+  "savingsReached": "Allocation target reached",
+  "savingsReserve": "Reserve funds",
+  "savingsRelease": "Release funds",
+  "savingsHistory": "Allocation history",
+  "savingsNoHistory": "No funds have been reserved or released.",
+  "savingsAccountArchived": "Archived account. Reserved funds can still be released.",
+  "savingsInvalid": "Check the goal, account and amount.",
+  "savingsNotEnoughUnallocated": "This amount exceeds the account’s unallocated funds.",
+  "savingsNotEnoughReserved": "This amount exceeds the funds reserved for this goal.",
+  "savingsBackupConflict": "The backup has invalid or conflicting savings goals or allocations.",
+  "backupSavingsGoalCount": "Savings goals {count}",
+  "@backupSavingsGoalCount": {
     "placeholders": {
       "count": {
         "type": "int"

@@ -240,9 +240,12 @@ void main() {
     final link = (await contract()).links.single;
     await ledger.unlinkDebtSettlement(link.id);
 
-    final backup = await ledger.createFullBackup();
-    final payload = jsonDecode(backup) as Map<String, dynamic>;
-    expect(payload['backup_version'], 12);
+    final payload =
+        (jsonDecode(await ledger.createFullBackup()) as Map<String, dynamic>)
+          ..['backup_version'] = 12
+          ..['schema_version'] = 18
+          ..remove('savings_goals');
+    final backup = jsonEncode(payload);
     expect(ledger.inspectFullBackup(backup).debtContractCount, 1);
     final old = jsonEncode(
       {...payload, 'backup_version': 11, 'schema_version': 17}

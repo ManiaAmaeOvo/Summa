@@ -681,6 +681,8 @@ class _BackupPreview extends StatelessWidget {
         Text(context.l10n.backupRecurringPlanCount(preview.recurringPlanCount)),
       if (preview.debtContractCount > 0)
         Text(context.l10n.backupDebtContractCount(preview.debtContractCount)),
+      if (preview.savingsGoalCount > 0)
+        Text(context.l10n.backupSavingsGoalCount(preview.savingsGoalCount)),
       Text(
         context.l10n.backupTransactionCount(
           preview.entryCount,
@@ -728,6 +730,9 @@ String _localizedBackupError(BuildContext context, String message) {
   }
   if (message.contains('债务合同或核销关联')) {
     return context.l10n.debtBackupConflict;
+  }
+  if (message.contains('储蓄目标或资金分配')) {
+    return context.l10n.savingsBackupConflict;
   }
   if (message.contains('CSV 导入批次')) return context.l10n.csvBackupConflict;
   if (message.contains('余额检查点')) return context.l10n.checkpointBackupConflict;

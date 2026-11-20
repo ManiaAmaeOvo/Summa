@@ -1871,7 +1871,7 @@ abstract class AppLocalizations {
   /// No description provided for @resetTransactionsAccountsMessage.
   ///
   /// In en, this message translates to:
-  /// **'All transactions, recurring plans, debt and receivable contracts, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.'**
+  /// **'All transactions, recurring plans, debt and receivable contracts, savings goals, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.'**
   String get resetTransactionsAccountsMessage;
 
   /// No description provided for @confirmReset.
@@ -4081,6 +4081,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Debt & receivable contracts {count}'**
   String backupDebtContractCount(int count);
+
+  /// No description provided for @savingsGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Savings goals'**
+  String get savingsGoals;
+
+  /// No description provided for @savingsAddGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Add savings goal'**
+  String get savingsAddGoal;
+
+  /// No description provided for @savingsEditGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit savings goal'**
+  String get savingsEditGoal;
+
+  /// No description provided for @savingsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a goal for money you want to set aside.'**
+  String get savingsEmpty;
+
+  /// No description provided for @savingsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load savings goals.'**
+  String get savingsLoadFailed;
+
+  /// No description provided for @savingsNoAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'A personal cash, bank, wallet, or savings account is required.'**
+  String get savingsNoAccounts;
+
+  /// No description provided for @savingsTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target amount'**
+  String get savingsTarget;
+
+  /// No description provided for @savingsTargetOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Target date'**
+  String get savingsTargetOn;
+
+  /// No description provided for @savingsNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No target date'**
+  String get savingsNoDate;
+
+  /// No description provided for @savingsClearDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear target date'**
+  String get savingsClearDate;
+
+  /// No description provided for @savingsPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get savingsPriority;
+
+  /// No description provided for @savingsPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get savingsPriorityHigh;
+
+  /// No description provided for @savingsPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get savingsPriorityNormal;
+
+  /// No description provided for @savingsPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get savingsPriorityLow;
+
+  /// No description provided for @savingsAllocated.
+  ///
+  /// In en, this message translates to:
+  /// **'Allocated to goal'**
+  String get savingsAllocated;
+
+  /// No description provided for @savingsReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved funds'**
+  String get savingsReserved;
+
+  /// No description provided for @savingsUnallocated.
+  ///
+  /// In en, this message translates to:
+  /// **'Unallocated funds'**
+  String get savingsUnallocated;
+
+  /// No description provided for @savingsShortfall.
+  ///
+  /// In en, this message translates to:
+  /// **'Allocation shortfall'**
+  String get savingsShortfall;
+
+  /// No description provided for @savingsReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Allocation target reached'**
+  String get savingsReached;
+
+  /// No description provided for @savingsReserve.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserve funds'**
+  String get savingsReserve;
+
+  /// No description provided for @savingsRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Release funds'**
+  String get savingsRelease;
+
+  /// No description provided for @savingsHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Allocation history'**
+  String get savingsHistory;
+
+  /// No description provided for @savingsNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No funds have been reserved or released.'**
+  String get savingsNoHistory;
+
+  /// No description provided for @savingsAccountArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived account. Reserved funds can still be released.'**
+  String get savingsAccountArchived;
+
+  /// No description provided for @savingsInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the goal, account and amount.'**
+  String get savingsInvalid;
+
+  /// No description provided for @savingsNotEnoughUnallocated.
+  ///
+  /// In en, this message translates to:
+  /// **'This amount exceeds the account’s unallocated funds.'**
+  String get savingsNotEnoughUnallocated;
+
+  /// No description provided for @savingsNotEnoughReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'This amount exceeds the funds reserved for this goal.'**
+  String get savingsNotEnoughReserved;
+
+  /// No description provided for @savingsBackupConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup has invalid or conflicting savings goals or allocations.'**
+  String get savingsBackupConflict;
+
+  /// No description provided for @backupSavingsGoalCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Savings goals {count}'**
+  String backupSavingsGoalCount(int count);
 }
 
 class _AppLocalizationsDelegate

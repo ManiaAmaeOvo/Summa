@@ -7,7 +7,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 
 void main() {
-  for (final version in [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]) {
+  for (final version in [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]) {
     test('migrates schema $version to persisted postings and reopens safely', () async {
       final directory = await Directory.systemTemp.createTemp(
         'summa-v$version-',
@@ -71,7 +71,8 @@ void main() {
           final schema = await after
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(schema.read<int>('user_version'), 18);
+          expect(schema.read<int>('user_version'), 19);
+          expect(await upgraded.watchSavingsAllocations().first, isEmpty);
           expect(await upgraded.watchDebtContracts().first, isEmpty);
           expect(await upgraded.watchRecurringPlans().first, isEmpty);
           expect(await upgraded.watchSpendingPlans().first, isEmpty);
@@ -217,6 +218,11 @@ class _LegacyDatabase extends AppDatabase {
           VALUES ('bank-to-cash', 2, 'CNY', 150, 'exchange'),
                  ('bank-to-cash', 3, 'JPY', -2000, 'exchange')
         ''');
+      }
+      if (schemaVersion >= 18) {
+        await migrator.createTable(debtContracts);
+        await migrator.createTable(debtInstallments);
+        await migrator.createTable(debtSettlements);
       }
       if (schemaVersion >= 17) {
         await migrator.createTable(recurringPlans);

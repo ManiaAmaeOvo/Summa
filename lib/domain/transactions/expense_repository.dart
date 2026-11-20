@@ -7,6 +7,7 @@ import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/planning/debt_contract.dart';
 import 'package:summa/domain/planning/recurring_plan.dart';
+import 'package:summa/domain/planning/savings_goal.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -211,6 +212,18 @@ abstract interface class ExpenseRepository {
   );
 
   Future<void> unlinkDebtSettlement(String linkId);
+
+  Stream<List<SavingsAccountAllocation>> watchSavingsAllocations();
+
+  Future<void> addSavingsGoal(SavingsGoalDraft draft);
+
+  Future<void> updateSavingsGoal(String id, SavingsGoalDraft draft);
+
+  Future<void> changeSavingsAllocation(
+    String id,
+    int changeMinor, {
+    required String note,
+  });
 
   Future<List<CsvReviewRow>> previewCsvImport(
     CsvImportFile file, {
