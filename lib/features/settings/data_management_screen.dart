@@ -423,36 +423,10 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
   Future<String?> _askForName({
     required String title,
     required String initial,
-  }) async {
-    final controller = TextEditingController(text: initial);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 40,
-          decoration: InputDecoration(labelText: context.l10n.name),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = controller.text.trim();
-              if (value.isNotEmpty) Navigator.pop(context, value);
-            },
-            child: Text(context.l10n.save),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    return result;
-  }
+  }) => showDialog<String>(
+    context: context,
+    builder: (_) => _BackupNameDialog(title: title, initial: initial),
+  );
 
   Future<bool> _confirm({
     required String title,
@@ -502,6 +476,56 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }
+}
+
+class _BackupNameDialog extends StatefulWidget {
+  const _BackupNameDialog({required this.title, required this.initial});
+
+  final String title;
+  final String initial;
+
+  @override
+  State<_BackupNameDialog> createState() => _BackupNameDialogState();
+}
+
+class _BackupNameDialogState extends State<_BackupNameDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initial);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(widget.title),
+    content: TextField(
+      controller: _controller,
+      autofocus: true,
+      maxLength: 40,
+      decoration: InputDecoration(labelText: context.l10n.name),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: Text(context.l10n.cancel),
+      ),
+      FilledButton(
+        onPressed: () {
+          final value = _controller.text.trim();
+          if (value.isNotEmpty) Navigator.pop(context, value);
+        },
+        child: Text(context.l10n.save),
+      ),
+    ],
+  );
 }
 
 enum _BackupNodeAction { replace, merge, rename, delete }
