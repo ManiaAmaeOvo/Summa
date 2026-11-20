@@ -645,6 +645,8 @@ class _BackupPreview extends StatelessWidget {
       ),
       Text(context.l10n.backupAccountCount(preview.accountCount)),
       Text(context.l10n.backupCategoryCount(preview.categoryCount)),
+      if (preview.importBatchCount > 0)
+        Text(context.l10n.backupImportBatchCount(preview.importBatchCount)),
       if (preview.checkpointCount > 0)
         Text(context.l10n.backupCheckpointCount(preview.checkpointCount)),
       Text(
@@ -685,6 +687,7 @@ String _localizedBackupError(BuildContext context, String message) {
       message.contains('拆分分类')) {
     return context.l10n.backupLedgerConflict;
   }
+  if (message.contains('CSV 导入批次')) return context.l10n.csvBackupConflict;
   if (message.contains('余额检查点')) return context.l10n.checkpointBackupConflict;
   if (message.startsWith('备份估值')) {
     return context.l10n.invalidBackupValuation;

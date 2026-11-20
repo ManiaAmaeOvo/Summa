@@ -130,6 +130,36 @@ class BalanceCheckpoints extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+@DataClassName('CsvBatchRecord')
+class CsvImportBatches extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get fingerprint => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get undoneAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DataClassName('CsvImportRecord')
+class CsvImportRows extends Table {
+  TextColumn get batchId =>
+      text().references(CsvImportBatches, #id, onDelete: KeyAction.cascade)();
+  IntColumn get rowNumber => integer()();
+  IntColumn get line => integer()();
+  TextColumn get fileRowKey => text()();
+  TextColumn get sourceKey => text().nullable()();
+  TextColumn get signature => text()();
+  TextColumn get rawJson => text()();
+  TextColumn get entryId => text().references(LedgerEntries, #id)();
+  TextColumn get snapshot => text().nullable()();
+  BoolColumn get active => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {batchId, rowNumber};
+}
+
 @DriftDatabase(
   tables: [
     LedgerAccounts,
@@ -139,6 +169,8 @@ class BalanceCheckpoints extends Table {
     ValuationPreferences,
     ValuationRates,
     BalanceCheckpoints,
+    CsvImportBatches,
+    CsvImportRows,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -147,7 +179,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -156,6 +188,7 @@ class AppDatabase extends _$AppDatabase {
       await _createPostingIndexes();
       await _createReversalIndex();
       await _createCheckpointIndex();
+      await _createCsvIndexes();
       await _seedDefaults();
       await customStatement('PRAGMA user_version = $schemaVersion');
     }),
@@ -218,6 +251,11 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(balanceCheckpoints);
           await _createCheckpointIndex();
         }
+        if (from < 14) {
+          await migrator.createTable(csvImportBatches);
+          await migrator.createTable(csvImportRows);
+          await _createCsvIndexes();
+        }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
         await customStatement('PRAGMA user_version = $to');
@@ -249,6 +287,24 @@ class AppDatabase extends _$AppDatabase {
     CREATE INDEX balance_checkpoints_account_date
     ON balance_checkpoints (account_id, observed_at DESC)
   ''');
+
+  Future<void> _createCsvIndexes() async {
+    await customStatement('''
+      CREATE UNIQUE INDEX csv_import_rows_active_file ON csv_import_rows (file_row_key)
+      WHERE active = 1
+    ''');
+    await customStatement('''
+      CREATE UNIQUE INDEX csv_import_rows_active_source ON csv_import_rows (source_key)
+      WHERE active = 1 AND source_key IS NOT NULL
+    ''');
+    await customStatement('''
+      CREATE INDEX csv_import_rows_active_signature ON csv_import_rows (signature)
+      WHERE active = 1
+    ''');
+    await customStatement('''
+      CREATE INDEX csv_import_rows_entry ON csv_import_rows (entry_id)
+    ''');
+  }
 
   Future<void> backfillLegacyPostings() =>
       customInsert(insertLegacyPostings, updates: {ledgerPostings});
@@ -306,6 +362,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> resetLedgerData() async {
     await transaction(() async {
+      await delete(csvImportBatches).go();
       await delete(balanceCheckpoints).go();
       await delete(ledgerEntries).go();
       await delete(ledgerAccounts).go();
@@ -325,6 +382,7 @@ class AppDatabase extends _$AppDatabase {
     await transaction(() async {
       await delete(valuationPreferences).go();
       await delete(valuationRates).go();
+      await delete(csvImportBatches).go();
       await delete(balanceCheckpoints).go();
       await delete(ledgerEntries).go();
       await delete(ledgerCategories).go();

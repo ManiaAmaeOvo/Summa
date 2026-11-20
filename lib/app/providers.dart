@@ -5,6 +5,7 @@ import 'package:summa/data/repositories/auto_backup_expense_repository.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
@@ -54,4 +55,15 @@ final valuationSettingsProvider = StreamProvider<ValuationSettings>((ref) {
 final balanceCheckpointsProvider = StreamProvider.autoDispose
     .family<List<BalanceCheckpoint>, String>((ref, id) {
       return ref.watch(expenseRepositoryProvider).watchBalanceCheckpoints(id);
+    });
+
+final csvBatchesProvider = StreamProvider.autoDispose<List<CsvBatchSummary>>((
+  ref,
+) {
+  return ref.watch(expenseRepositoryProvider).watchCsvBatches();
+});
+
+final csvBatchItemsProvider = FutureProvider.autoDispose
+    .family<List<CsvBatchItem>, String>((ref, id) {
+      return ref.watch(expenseRepositoryProvider).readCsvBatchItems(id);
     });

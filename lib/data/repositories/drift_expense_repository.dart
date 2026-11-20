@@ -6,6 +6,7 @@ import 'package:summa/core/money/money.dart';
 import 'package:summa/data/database/app_database.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
@@ -17,6 +18,7 @@ import 'package:summa/domain/defaults/default_ledger_names.dart';
 import 'package:summa/domain/valuation/net_worth_valuation.dart';
 import 'package:uuid/uuid.dart';
 
+import 'drift_csv_import_store.dart';
 import 'drift_reconciliation_store.dart';
 import 'drift_valuation_store.dart';
 
@@ -26,11 +28,13 @@ const _legacyBackupFormat = 'ledgerpro_full_backup';
 class DriftExpenseRepository implements ExpenseRepository {
   DriftExpenseRepository(this._database)
     : _valuation = DriftValuationStore(_database),
-      _reconciliation = DriftReconciliationStore(_database);
+      _reconciliation = DriftReconciliationStore(_database),
+      _csv = DriftCsvImportStore(_database);
 
   final AppDatabase _database;
   final DriftValuationStore _valuation;
   final DriftReconciliationStore _reconciliation;
+  final DriftCsvImportStore _csv;
   final Uuid _uuid = const Uuid();
 
   @override
@@ -380,6 +384,7 @@ class DriftExpenseRepository implements ExpenseRepository {
 
   Future<void> _saveTransaction({
     String? id,
+    String? newEntryId,
     required LedgerTransactionType type,
     required int amountMinor,
     required DateTime occurredAt,
@@ -439,6 +444,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     );
     await _writeEntry(
       previous: previous,
+      entryId: newEntryId,
       type: type,
       amountMinor: amountMinor,
       occurredAt: occurredAt,
@@ -1189,6 +1195,208 @@ class DriftExpenseRepository implements ExpenseRepository {
       );
     }
     return original;
+  }
+
+  @override
+  Future<List<CsvReviewRow>> previewCsvImport(
+    CsvImportFile file, {
+    Map<int, CsvMapping> mappings = const {},
+  }) => _database.transaction(() => _csv.review(file, mappings));
+
+  @override
+  Stream<List<CsvBatchSummary>> watchCsvBatches() => _csv.watchBatches();
+
+  @override
+  Future<List<CsvBatchItem>> readCsvBatchItems(String id) => _csv.items(id);
+
+  @override
+  Future<CsvImportResult> commitCsvImport(
+    CsvImportFile file,
+    List<CsvSelection> selections,
+  ) => _database.transaction(() async {
+    final choices = {for (final choice in selections) choice.number: choice};
+    if (choices.isEmpty || choices.length != selections.length) {
+      throw const CsvBatchException(CsvBatchError.reviewChanged);
+    }
+    final preview = await _csv.review(file, {
+      for (final choice in selections) choice.number: choice.mapping,
+    });
+    final chosen = preview
+        .where((item) => choices.containsKey(item.row.number))
+        .toList();
+    if (chosen.length != choices.length) {
+      throw const CsvBatchException(CsvBatchError.reviewChanged);
+    }
+    final matchedIds = <String>{};
+    for (final item in chosen) {
+      final choice = choices[item.row.number]!;
+      final matchId = choice.matchId;
+      final reviewedIds = choice.reviewedMatchIds;
+      final canAdd =
+          item.state == CsvReviewState.ready && reviewedIds == null ||
+          item.state == CsvReviewState.similar &&
+              reviewedIds != null &&
+              reviewedIds.length == item.matches.length &&
+              item.matches.every(
+                (candidate) => reviewedIds.contains(candidate.id),
+              );
+      final movement = item.row.movement;
+      if (matchId != null &&
+          item.state == CsvReviewState.similar &&
+          item.matches.any(
+            (candidate) => candidate.id == matchId && candidate.canLink,
+          ) &&
+          matchedIds.add(matchId)) {
+        continue;
+      }
+      if (matchId != null ||
+          !canAdd ||
+          movement == null ||
+          item.mapping != choice.mapping ||
+          (csvNeedsCategory(movement.type) &&
+              item.mapping.categoryId == null)) {
+        throw CsvBatchException(
+          CsvBatchError.reviewChanged,
+          line: item.row.line,
+        );
+      }
+    }
+    chosen.sort((a, b) {
+      final chronological = a.row.movement!.occurredAt.compareTo(
+        b.row.movement!.occurredAt,
+      );
+      return chronological != 0
+          ? chronological
+          : a.row.number.compareTo(b.row.number);
+    });
+    final batchId = _uuid.v4();
+    final fileName = file.name.trim();
+    await _csv.insertBatch(
+      CsvBatchRecord(
+        id: batchId,
+        name: fileName.isEmpty ? 'CSV' : fileName,
+        fingerprint: file.fingerprint,
+        createdAt: DateTime.now(),
+      ),
+    );
+    for (final item in chosen) {
+      final row = item.row;
+      final matchId = choices[row.number]!.matchId;
+      final entryId = matchId ?? _uuid.v4();
+      String? snapshot;
+      if (matchId == null) {
+        final movement = row.movement!;
+        try {
+          await _saveTransaction(
+            newEntryId: entryId,
+            type: movement.type,
+            amountMinor: movement.amountMinor,
+            occurredAt: movement.occurredAt,
+            accountId: item.mapping.accountId!,
+            targetAccountId: item.mapping.targetId,
+            categoryId: item.mapping.categoryId,
+            note: movement.note,
+            requiredCurrency: movement.currency,
+            payments: null,
+            status: LedgerPostingStatus.posted,
+          );
+        } on TransactionRuleException catch (error) {
+          throw CsvPostingException(row.line, error);
+        } on ArgumentError catch (error) {
+          throw CsvPostingException(row.line, error);
+        }
+        snapshot = await _csvSnapshot(await _activeEntry(entryId));
+      }
+      await _csv.insertRow(
+        CsvImportRecord(
+          batchId: batchId,
+          rowNumber: row.number,
+          line: row.line,
+          fileRowKey: file.rowKey(row),
+          sourceKey: row.sourceKey,
+          signature: row.signature!,
+          rawJson: csvRawCellsJson(row.raw),
+          entryId: entryId,
+          snapshot: snapshot,
+          active: true,
+        ),
+      );
+    }
+    return (
+      batchId: batchId,
+      added: chosen.length - matchedIds.length,
+      matched: matchedIds.length,
+    );
+  });
+
+  @override
+  Future<void> undoCsvImport(String id) => _database.transaction(() async {
+    final batch = await _csv.readBatch(id);
+    if (batch == null) throw const CsvBatchException(CsvBatchError.unavailable);
+    if (batch.undoneAt != null) return;
+    final entries = <EntryRow>[];
+    for (final row in await _csv.readRows(id)) {
+      final saved = row.snapshot;
+      if (saved == null) continue;
+      final entry = await (_database.select(
+        _database.ledgerEntries,
+      )..where((entry) => entry.id.equals(row.entryId))).getSingleOrNull();
+      if (entry == null ||
+          entry.isDeleted ||
+          saved != await _csvSnapshot(entry)) {
+        throw CsvBatchException(CsvBatchError.modified, line: row.line);
+      }
+      if (await _hasActiveRefunds(entry.id) ||
+          await _hasActiveReversal(entry.id) ||
+          await _csv.hasOtherLink(entry.id, id)) {
+        throw CsvBatchException(CsvBatchError.linked, line: row.line);
+      }
+      entries.add(entry);
+    }
+    await _checkCsvUndoBalances(entries);
+    final now = DateTime.now();
+    for (final entry in entries) {
+      await _softDeleteEntry(entry, now);
+    }
+    await _csv.markUndone(id, now);
+  });
+
+  Future<void> _checkCsvUndoBalances(List<EntryRow> entries) async {
+    final changes = <String, BigInt>{};
+    for (final entry in entries) {
+      for (final leg in await _accountPostings(entry.id)) {
+        final accountId = leg.accountId!;
+        changes.update(
+          accountId,
+          (sum) => sum + BigInt.from(leg.debitMinor),
+          ifAbsent: () => BigInt.from(leg.debitMinor),
+        );
+      }
+    }
+    if (changes.isEmpty) return;
+    final accounts = await (_database.select(
+      _database.ledgerAccounts,
+    )..where((row) => row.id.isIn(changes.keys))).get();
+    for (final account in accounts) {
+      final kind = AccountKind.values.byName(account.kind);
+      final change = kind.isLiability
+          ? changes[account.id]!
+          : -changes[account.id]!;
+      if (!change.isNegative) continue;
+      if (BigInt.from(await _currentBalance(account.id)) + change <
+          BigInt.zero) {
+        throw const CsvBatchException(CsvBatchError.linked);
+      }
+    }
+  }
+
+  Future<String> _csvSnapshot(EntryRow entry) async {
+    final snapshot = _backupEntry(entry, await _allPostings(entry.id));
+    // Backup ISO strings may be written in different device time zones.
+    snapshot['occurred_at'] = entry.occurredAt.millisecondsSinceEpoch;
+    snapshot['created_at'] = entry.createdAt.millisecondsSinceEpoch;
+    snapshot['updated_at'] = entry.updatedAt.millisecondsSinceEpoch;
+    return csvDigest(snapshot);
   }
 
   @override
@@ -2155,7 +2363,8 @@ class DriftExpenseRepository implements ExpenseRepository {
     final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 7,
+      'backup_version': 8,
+      'csv_import': await _csv.backup(),
       'balance_checkpoints': await _reconciliation.backup(),
       'valuation': {
         'base_currency': valuation.baseCurrency,
@@ -2188,6 +2397,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       createdAt: payload.createdAt,
       accountCount: payload.accounts.length,
       checkpointCount: payload.checkpoints.length,
+      importBatchCount: payload.csvBatches.length,
       categoryCount: payload.categories.length,
       entryCount: entries.length,
       deletedEntryCount: entries
@@ -2204,6 +2414,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     final payload = _parseBackup(source);
     await _database.transaction(() async {
       if (mode == BackupRestoreMode.replace) {
+        await _database.delete(_database.csvImportBatches).go();
         await _database.delete(_database.balanceCheckpoints).go();
         await _database.delete(_database.ledgerEntries).go();
         await _database.delete(_database.ledgerCategories).go();
@@ -2359,6 +2570,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       }
       await _validateRestoredLedger();
       await _reconciliation.restore(payload.checkpoints);
+      await _csv.restore(payload.csvBatches, payload.csvRows);
       try {
         await _checkReceivableBalances();
       } on TransactionRuleException {
@@ -2734,14 +2946,14 @@ Map<String, Object?> _backupEntry(EntryRow item, List<PostingRow> postings) => {
   'transaction_type': item.transactionType,
   'amount_minor': item.amountMinor,
   'currency_code': item.currencyCode,
-  'occurred_at': item.occurredAt.toIso8601String(),
+  'occurred_at': item.occurredAt.toUtc().toIso8601String(),
   'timezone_offset_minutes': item.timezoneOffsetMinutes,
   'category_id': item.categoryId,
   'account_id': item.accountId,
   'target_account_id': item.targetAccountId,
   'note': item.note,
-  'created_at': item.createdAt.toIso8601String(),
-  'updated_at': item.updatedAt.toIso8601String(),
+  'created_at': item.createdAt.toUtc().toIso8601String(),
+  'updated_at': item.updatedAt.toUtc().toIso8601String(),
   'is_deleted': item.isDeleted,
   'status': item.status,
   'refund_of_id': item.refundOfId,
@@ -2991,6 +3203,8 @@ Map<String, Object?> _backupPosting(PostingRow posting) => {
   List<Map<String, dynamic>> categories,
   List<Map<String, dynamic>> entries,
   List<Map<String, dynamic>> checkpoints,
+  List<Map<String, dynamic>> csvBatches,
+  List<Map<String, dynamic>> csvRows,
 })
 _parseBackup(String source) {
   dynamic decoded;
@@ -3005,12 +3219,17 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 7) ||
+      !(format == _backupFormat && (version >= 1 && version <= 8) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
   final createdAt = DateTime.tryParse(decoded['created_at']?.toString() ?? '');
   if (createdAt == null) throw const LedgerBackupException('备份时间无效');
+  final csv = decoded['csv_import'];
+  if (version >= 8 && csv is! Map<String, dynamic>) {
+    throw const LedgerBackupException('备份缺少 CSV 导入批次');
+  }
+  final csvData = version >= 8 ? csv as Map<String, dynamic> : null;
   return (
     createdAt: createdAt,
     version: version,
@@ -3018,6 +3237,10 @@ _parseBackup(String source) {
     accounts: _requiredObjectList(decoded, 'accounts'),
     categories: _requiredObjectList(decoded, 'categories'),
     entries: _requiredObjectList(decoded, 'entries'),
+    csvBatches: csvData == null
+        ? const []
+        : _requiredObjectList(csvData, 'batches'),
+    csvRows: csvData == null ? const [] : _requiredObjectList(csvData, 'rows'),
     checkpoints: version >= 7
         ? _requiredObjectList(decoded, 'balance_checkpoints')
         : const [],

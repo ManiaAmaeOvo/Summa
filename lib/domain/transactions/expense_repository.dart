@@ -1,6 +1,7 @@
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
+import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
@@ -151,6 +152,22 @@ abstract interface class ExpenseRepository {
   });
 
   Future<void> importTransactions(List<LedgerImportDraft> drafts);
+
+  Future<List<CsvReviewRow>> previewCsvImport(
+    CsvImportFile file, {
+    Map<int, CsvMapping> mappings = const {},
+  });
+
+  Future<CsvImportResult> commitCsvImport(
+    CsvImportFile file,
+    List<CsvSelection> selections,
+  );
+
+  Stream<List<CsvBatchSummary>> watchCsvBatches();
+
+  Future<List<CsvBatchItem>> readCsvBatchItems(String id);
+
+  Future<void> undoCsvImport(String id);
 
   Future<void> setCurrentBalance({
     required String accountId,

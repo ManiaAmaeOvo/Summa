@@ -3938,6 +3938,995 @@ class BalanceCheckpointsCompanion extends UpdateCompanion<CheckpointRow> {
   }
 }
 
+class $CsvImportBatchesTable extends CsvImportBatches
+    with TableInfo<$CsvImportBatchesTable, CsvBatchRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CsvImportBatchesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fingerprintMeta = const VerificationMeta(
+    'fingerprint',
+  );
+  @override
+  late final GeneratedColumn<String> fingerprint = GeneratedColumn<String>(
+    'fingerprint',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _undoneAtMeta = const VerificationMeta(
+    'undoneAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> undoneAt = GeneratedColumn<DateTime>(
+    'undone_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    fingerprint,
+    createdAt,
+    undoneAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'csv_import_batches';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CsvBatchRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('fingerprint')) {
+      context.handle(
+        _fingerprintMeta,
+        fingerprint.isAcceptableOrUnknown(
+          data['fingerprint']!,
+          _fingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fingerprintMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('undone_at')) {
+      context.handle(
+        _undoneAtMeta,
+        undoneAt.isAcceptableOrUnknown(data['undone_at']!, _undoneAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CsvBatchRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CsvBatchRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      fingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fingerprint'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      undoneAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}undone_at'],
+      ),
+    );
+  }
+
+  @override
+  $CsvImportBatchesTable createAlias(String alias) {
+    return $CsvImportBatchesTable(attachedDatabase, alias);
+  }
+}
+
+class CsvBatchRecord extends DataClass implements Insertable<CsvBatchRecord> {
+  final String id;
+  final String name;
+  final String fingerprint;
+  final DateTime createdAt;
+  final DateTime? undoneAt;
+  const CsvBatchRecord({
+    required this.id,
+    required this.name,
+    required this.fingerprint,
+    required this.createdAt,
+    this.undoneAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['fingerprint'] = Variable<String>(fingerprint);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || undoneAt != null) {
+      map['undone_at'] = Variable<DateTime>(undoneAt);
+    }
+    return map;
+  }
+
+  CsvImportBatchesCompanion toCompanion(bool nullToAbsent) {
+    return CsvImportBatchesCompanion(
+      id: Value(id),
+      name: Value(name),
+      fingerprint: Value(fingerprint),
+      createdAt: Value(createdAt),
+      undoneAt: undoneAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(undoneAt),
+    );
+  }
+
+  factory CsvBatchRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CsvBatchRecord(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      fingerprint: serializer.fromJson<String>(json['fingerprint']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      undoneAt: serializer.fromJson<DateTime?>(json['undoneAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'fingerprint': serializer.toJson<String>(fingerprint),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'undoneAt': serializer.toJson<DateTime?>(undoneAt),
+    };
+  }
+
+  CsvBatchRecord copyWith({
+    String? id,
+    String? name,
+    String? fingerprint,
+    DateTime? createdAt,
+    Value<DateTime?> undoneAt = const Value.absent(),
+  }) => CsvBatchRecord(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    fingerprint: fingerprint ?? this.fingerprint,
+    createdAt: createdAt ?? this.createdAt,
+    undoneAt: undoneAt.present ? undoneAt.value : this.undoneAt,
+  );
+  CsvBatchRecord copyWithCompanion(CsvImportBatchesCompanion data) {
+    return CsvBatchRecord(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      fingerprint: data.fingerprint.present
+          ? data.fingerprint.value
+          : this.fingerprint,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      undoneAt: data.undoneAt.present ? data.undoneAt.value : this.undoneAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CsvBatchRecord(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('undoneAt: $undoneAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, fingerprint, createdAt, undoneAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CsvBatchRecord &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.fingerprint == this.fingerprint &&
+          other.createdAt == this.createdAt &&
+          other.undoneAt == this.undoneAt);
+}
+
+class CsvImportBatchesCompanion extends UpdateCompanion<CsvBatchRecord> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> fingerprint;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> undoneAt;
+  final Value<int> rowid;
+  const CsvImportBatchesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.fingerprint = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.undoneAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CsvImportBatchesCompanion.insert({
+    required String id,
+    required String name,
+    required String fingerprint,
+    required DateTime createdAt,
+    this.undoneAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       fingerprint = Value(fingerprint),
+       createdAt = Value(createdAt);
+  static Insertable<CsvBatchRecord> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? fingerprint,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? undoneAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (fingerprint != null) 'fingerprint': fingerprint,
+      if (createdAt != null) 'created_at': createdAt,
+      if (undoneAt != null) 'undone_at': undoneAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CsvImportBatchesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? fingerprint,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? undoneAt,
+    Value<int>? rowid,
+  }) {
+    return CsvImportBatchesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      fingerprint: fingerprint ?? this.fingerprint,
+      createdAt: createdAt ?? this.createdAt,
+      undoneAt: undoneAt ?? this.undoneAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (fingerprint.present) {
+      map['fingerprint'] = Variable<String>(fingerprint.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (undoneAt.present) {
+      map['undone_at'] = Variable<DateTime>(undoneAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CsvImportBatchesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('undoneAt: $undoneAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CsvImportRowsTable extends CsvImportRows
+    with TableInfo<$CsvImportRowsTable, CsvImportRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CsvImportRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _batchIdMeta = const VerificationMeta(
+    'batchId',
+  );
+  @override
+  late final GeneratedColumn<String> batchId = GeneratedColumn<String>(
+    'batch_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES csv_import_batches (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _rowNumberMeta = const VerificationMeta(
+    'rowNumber',
+  );
+  @override
+  late final GeneratedColumn<int> rowNumber = GeneratedColumn<int>(
+    'row_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lineMeta = const VerificationMeta('line');
+  @override
+  late final GeneratedColumn<int> line = GeneratedColumn<int>(
+    'line',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileRowKeyMeta = const VerificationMeta(
+    'fileRowKey',
+  );
+  @override
+  late final GeneratedColumn<String> fileRowKey = GeneratedColumn<String>(
+    'file_row_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceKeyMeta = const VerificationMeta(
+    'sourceKey',
+  );
+  @override
+  late final GeneratedColumn<String> sourceKey = GeneratedColumn<String>(
+    'source_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _signatureMeta = const VerificationMeta(
+    'signature',
+  );
+  @override
+  late final GeneratedColumn<String> signature = GeneratedColumn<String>(
+    'signature',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rawJsonMeta = const VerificationMeta(
+    'rawJson',
+  );
+  @override
+  late final GeneratedColumn<String> rawJson = GeneratedColumn<String>(
+    'raw_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entryIdMeta = const VerificationMeta(
+    'entryId',
+  );
+  @override
+  late final GeneratedColumn<String> entryId = GeneratedColumn<String>(
+    'entry_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_entries (id)',
+    ),
+  );
+  static const VerificationMeta _snapshotMeta = const VerificationMeta(
+    'snapshot',
+  );
+  @override
+  late final GeneratedColumn<String> snapshot = GeneratedColumn<String>(
+    'snapshot',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _activeMeta = const VerificationMeta('active');
+  @override
+  late final GeneratedColumn<bool> active = GeneratedColumn<bool>(
+    'active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    batchId,
+    rowNumber,
+    line,
+    fileRowKey,
+    sourceKey,
+    signature,
+    rawJson,
+    entryId,
+    snapshot,
+    active,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'csv_import_rows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CsvImportRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('batch_id')) {
+      context.handle(
+        _batchIdMeta,
+        batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_batchIdMeta);
+    }
+    if (data.containsKey('row_number')) {
+      context.handle(
+        _rowNumberMeta,
+        rowNumber.isAcceptableOrUnknown(data['row_number']!, _rowNumberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rowNumberMeta);
+    }
+    if (data.containsKey('line')) {
+      context.handle(
+        _lineMeta,
+        line.isAcceptableOrUnknown(data['line']!, _lineMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lineMeta);
+    }
+    if (data.containsKey('file_row_key')) {
+      context.handle(
+        _fileRowKeyMeta,
+        fileRowKey.isAcceptableOrUnknown(
+          data['file_row_key']!,
+          _fileRowKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fileRowKeyMeta);
+    }
+    if (data.containsKey('source_key')) {
+      context.handle(
+        _sourceKeyMeta,
+        sourceKey.isAcceptableOrUnknown(data['source_key']!, _sourceKeyMeta),
+      );
+    }
+    if (data.containsKey('signature')) {
+      context.handle(
+        _signatureMeta,
+        signature.isAcceptableOrUnknown(data['signature']!, _signatureMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_signatureMeta);
+    }
+    if (data.containsKey('raw_json')) {
+      context.handle(
+        _rawJsonMeta,
+        rawJson.isAcceptableOrUnknown(data['raw_json']!, _rawJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rawJsonMeta);
+    }
+    if (data.containsKey('entry_id')) {
+      context.handle(
+        _entryIdMeta,
+        entryId.isAcceptableOrUnknown(data['entry_id']!, _entryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entryIdMeta);
+    }
+    if (data.containsKey('snapshot')) {
+      context.handle(
+        _snapshotMeta,
+        snapshot.isAcceptableOrUnknown(data['snapshot']!, _snapshotMeta),
+      );
+    }
+    if (data.containsKey('active')) {
+      context.handle(
+        _activeMeta,
+        active.isAcceptableOrUnknown(data['active']!, _activeMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {batchId, rowNumber};
+  @override
+  CsvImportRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CsvImportRecord(
+      batchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}batch_id'],
+      )!,
+      rowNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_number'],
+      )!,
+      line: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}line'],
+      )!,
+      fileRowKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_row_key'],
+      )!,
+      sourceKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_key'],
+      ),
+      signature: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}signature'],
+      )!,
+      rawJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raw_json'],
+      )!,
+      entryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entry_id'],
+      )!,
+      snapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}snapshot'],
+      ),
+      active: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}active'],
+      )!,
+    );
+  }
+
+  @override
+  $CsvImportRowsTable createAlias(String alias) {
+    return $CsvImportRowsTable(attachedDatabase, alias);
+  }
+}
+
+class CsvImportRecord extends DataClass implements Insertable<CsvImportRecord> {
+  final String batchId;
+  final int rowNumber;
+  final int line;
+  final String fileRowKey;
+  final String? sourceKey;
+  final String signature;
+  final String rawJson;
+  final String entryId;
+  final String? snapshot;
+  final bool active;
+  const CsvImportRecord({
+    required this.batchId,
+    required this.rowNumber,
+    required this.line,
+    required this.fileRowKey,
+    this.sourceKey,
+    required this.signature,
+    required this.rawJson,
+    required this.entryId,
+    this.snapshot,
+    required this.active,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['batch_id'] = Variable<String>(batchId);
+    map['row_number'] = Variable<int>(rowNumber);
+    map['line'] = Variable<int>(line);
+    map['file_row_key'] = Variable<String>(fileRowKey);
+    if (!nullToAbsent || sourceKey != null) {
+      map['source_key'] = Variable<String>(sourceKey);
+    }
+    map['signature'] = Variable<String>(signature);
+    map['raw_json'] = Variable<String>(rawJson);
+    map['entry_id'] = Variable<String>(entryId);
+    if (!nullToAbsent || snapshot != null) {
+      map['snapshot'] = Variable<String>(snapshot);
+    }
+    map['active'] = Variable<bool>(active);
+    return map;
+  }
+
+  CsvImportRowsCompanion toCompanion(bool nullToAbsent) {
+    return CsvImportRowsCompanion(
+      batchId: Value(batchId),
+      rowNumber: Value(rowNumber),
+      line: Value(line),
+      fileRowKey: Value(fileRowKey),
+      sourceKey: sourceKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceKey),
+      signature: Value(signature),
+      rawJson: Value(rawJson),
+      entryId: Value(entryId),
+      snapshot: snapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(snapshot),
+      active: Value(active),
+    );
+  }
+
+  factory CsvImportRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CsvImportRecord(
+      batchId: serializer.fromJson<String>(json['batchId']),
+      rowNumber: serializer.fromJson<int>(json['rowNumber']),
+      line: serializer.fromJson<int>(json['line']),
+      fileRowKey: serializer.fromJson<String>(json['fileRowKey']),
+      sourceKey: serializer.fromJson<String?>(json['sourceKey']),
+      signature: serializer.fromJson<String>(json['signature']),
+      rawJson: serializer.fromJson<String>(json['rawJson']),
+      entryId: serializer.fromJson<String>(json['entryId']),
+      snapshot: serializer.fromJson<String?>(json['snapshot']),
+      active: serializer.fromJson<bool>(json['active']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'batchId': serializer.toJson<String>(batchId),
+      'rowNumber': serializer.toJson<int>(rowNumber),
+      'line': serializer.toJson<int>(line),
+      'fileRowKey': serializer.toJson<String>(fileRowKey),
+      'sourceKey': serializer.toJson<String?>(sourceKey),
+      'signature': serializer.toJson<String>(signature),
+      'rawJson': serializer.toJson<String>(rawJson),
+      'entryId': serializer.toJson<String>(entryId),
+      'snapshot': serializer.toJson<String?>(snapshot),
+      'active': serializer.toJson<bool>(active),
+    };
+  }
+
+  CsvImportRecord copyWith({
+    String? batchId,
+    int? rowNumber,
+    int? line,
+    String? fileRowKey,
+    Value<String?> sourceKey = const Value.absent(),
+    String? signature,
+    String? rawJson,
+    String? entryId,
+    Value<String?> snapshot = const Value.absent(),
+    bool? active,
+  }) => CsvImportRecord(
+    batchId: batchId ?? this.batchId,
+    rowNumber: rowNumber ?? this.rowNumber,
+    line: line ?? this.line,
+    fileRowKey: fileRowKey ?? this.fileRowKey,
+    sourceKey: sourceKey.present ? sourceKey.value : this.sourceKey,
+    signature: signature ?? this.signature,
+    rawJson: rawJson ?? this.rawJson,
+    entryId: entryId ?? this.entryId,
+    snapshot: snapshot.present ? snapshot.value : this.snapshot,
+    active: active ?? this.active,
+  );
+  CsvImportRecord copyWithCompanion(CsvImportRowsCompanion data) {
+    return CsvImportRecord(
+      batchId: data.batchId.present ? data.batchId.value : this.batchId,
+      rowNumber: data.rowNumber.present ? data.rowNumber.value : this.rowNumber,
+      line: data.line.present ? data.line.value : this.line,
+      fileRowKey: data.fileRowKey.present
+          ? data.fileRowKey.value
+          : this.fileRowKey,
+      sourceKey: data.sourceKey.present ? data.sourceKey.value : this.sourceKey,
+      signature: data.signature.present ? data.signature.value : this.signature,
+      rawJson: data.rawJson.present ? data.rawJson.value : this.rawJson,
+      entryId: data.entryId.present ? data.entryId.value : this.entryId,
+      snapshot: data.snapshot.present ? data.snapshot.value : this.snapshot,
+      active: data.active.present ? data.active.value : this.active,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CsvImportRecord(')
+          ..write('batchId: $batchId, ')
+          ..write('rowNumber: $rowNumber, ')
+          ..write('line: $line, ')
+          ..write('fileRowKey: $fileRowKey, ')
+          ..write('sourceKey: $sourceKey, ')
+          ..write('signature: $signature, ')
+          ..write('rawJson: $rawJson, ')
+          ..write('entryId: $entryId, ')
+          ..write('snapshot: $snapshot, ')
+          ..write('active: $active')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    batchId,
+    rowNumber,
+    line,
+    fileRowKey,
+    sourceKey,
+    signature,
+    rawJson,
+    entryId,
+    snapshot,
+    active,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CsvImportRecord &&
+          other.batchId == this.batchId &&
+          other.rowNumber == this.rowNumber &&
+          other.line == this.line &&
+          other.fileRowKey == this.fileRowKey &&
+          other.sourceKey == this.sourceKey &&
+          other.signature == this.signature &&
+          other.rawJson == this.rawJson &&
+          other.entryId == this.entryId &&
+          other.snapshot == this.snapshot &&
+          other.active == this.active);
+}
+
+class CsvImportRowsCompanion extends UpdateCompanion<CsvImportRecord> {
+  final Value<String> batchId;
+  final Value<int> rowNumber;
+  final Value<int> line;
+  final Value<String> fileRowKey;
+  final Value<String?> sourceKey;
+  final Value<String> signature;
+  final Value<String> rawJson;
+  final Value<String> entryId;
+  final Value<String?> snapshot;
+  final Value<bool> active;
+  final Value<int> rowid;
+  const CsvImportRowsCompanion({
+    this.batchId = const Value.absent(),
+    this.rowNumber = const Value.absent(),
+    this.line = const Value.absent(),
+    this.fileRowKey = const Value.absent(),
+    this.sourceKey = const Value.absent(),
+    this.signature = const Value.absent(),
+    this.rawJson = const Value.absent(),
+    this.entryId = const Value.absent(),
+    this.snapshot = const Value.absent(),
+    this.active = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CsvImportRowsCompanion.insert({
+    required String batchId,
+    required int rowNumber,
+    required int line,
+    required String fileRowKey,
+    this.sourceKey = const Value.absent(),
+    required String signature,
+    required String rawJson,
+    required String entryId,
+    this.snapshot = const Value.absent(),
+    this.active = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : batchId = Value(batchId),
+       rowNumber = Value(rowNumber),
+       line = Value(line),
+       fileRowKey = Value(fileRowKey),
+       signature = Value(signature),
+       rawJson = Value(rawJson),
+       entryId = Value(entryId);
+  static Insertable<CsvImportRecord> custom({
+    Expression<String>? batchId,
+    Expression<int>? rowNumber,
+    Expression<int>? line,
+    Expression<String>? fileRowKey,
+    Expression<String>? sourceKey,
+    Expression<String>? signature,
+    Expression<String>? rawJson,
+    Expression<String>? entryId,
+    Expression<String>? snapshot,
+    Expression<bool>? active,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (batchId != null) 'batch_id': batchId,
+      if (rowNumber != null) 'row_number': rowNumber,
+      if (line != null) 'line': line,
+      if (fileRowKey != null) 'file_row_key': fileRowKey,
+      if (sourceKey != null) 'source_key': sourceKey,
+      if (signature != null) 'signature': signature,
+      if (rawJson != null) 'raw_json': rawJson,
+      if (entryId != null) 'entry_id': entryId,
+      if (snapshot != null) 'snapshot': snapshot,
+      if (active != null) 'active': active,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CsvImportRowsCompanion copyWith({
+    Value<String>? batchId,
+    Value<int>? rowNumber,
+    Value<int>? line,
+    Value<String>? fileRowKey,
+    Value<String?>? sourceKey,
+    Value<String>? signature,
+    Value<String>? rawJson,
+    Value<String>? entryId,
+    Value<String?>? snapshot,
+    Value<bool>? active,
+    Value<int>? rowid,
+  }) {
+    return CsvImportRowsCompanion(
+      batchId: batchId ?? this.batchId,
+      rowNumber: rowNumber ?? this.rowNumber,
+      line: line ?? this.line,
+      fileRowKey: fileRowKey ?? this.fileRowKey,
+      sourceKey: sourceKey ?? this.sourceKey,
+      signature: signature ?? this.signature,
+      rawJson: rawJson ?? this.rawJson,
+      entryId: entryId ?? this.entryId,
+      snapshot: snapshot ?? this.snapshot,
+      active: active ?? this.active,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (batchId.present) {
+      map['batch_id'] = Variable<String>(batchId.value);
+    }
+    if (rowNumber.present) {
+      map['row_number'] = Variable<int>(rowNumber.value);
+    }
+    if (line.present) {
+      map['line'] = Variable<int>(line.value);
+    }
+    if (fileRowKey.present) {
+      map['file_row_key'] = Variable<String>(fileRowKey.value);
+    }
+    if (sourceKey.present) {
+      map['source_key'] = Variable<String>(sourceKey.value);
+    }
+    if (signature.present) {
+      map['signature'] = Variable<String>(signature.value);
+    }
+    if (rawJson.present) {
+      map['raw_json'] = Variable<String>(rawJson.value);
+    }
+    if (entryId.present) {
+      map['entry_id'] = Variable<String>(entryId.value);
+    }
+    if (snapshot.present) {
+      map['snapshot'] = Variable<String>(snapshot.value);
+    }
+    if (active.present) {
+      map['active'] = Variable<bool>(active.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CsvImportRowsCompanion(')
+          ..write('batchId: $batchId, ')
+          ..write('rowNumber: $rowNumber, ')
+          ..write('line: $line, ')
+          ..write('fileRowKey: $fileRowKey, ')
+          ..write('sourceKey: $sourceKey, ')
+          ..write('signature: $signature, ')
+          ..write('rawJson: $rawJson, ')
+          ..write('entryId: $entryId, ')
+          ..write('snapshot: $snapshot, ')
+          ..write('active: $active, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3952,6 +4941,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ValuationRatesTable valuationRates = $ValuationRatesTable(this);
   late final $BalanceCheckpointsTable balanceCheckpoints =
       $BalanceCheckpointsTable(this);
+  late final $CsvImportBatchesTable csvImportBatches = $CsvImportBatchesTable(
+    this,
+  );
+  late final $CsvImportRowsTable csvImportRows = $CsvImportRowsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3964,6 +4957,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     valuationPreferences,
     valuationRates,
     balanceCheckpoints,
+    csvImportBatches,
+    csvImportRows,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3973,6 +4968,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('ledger_postings', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'csv_import_batches',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('csv_import_rows', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -5303,6 +6305,24 @@ final class $$LedgerEntriesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$CsvImportRowsTable, List<CsvImportRecord>>
+  _csvImportRowsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.csvImportRows,
+    aliasName: 'ledger_entries__id__csv_import_rows__entry_id',
+  );
+
+  $$CsvImportRowsTableProcessedTableManager get csvImportRowsRefs {
+    final manager = $$CsvImportRowsTableTableManager(
+      $_db,
+      $_db.csvImportRows,
+    ).filter((f) => f.entryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_csvImportRowsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LedgerEntriesTableFilterComposer
@@ -5522,6 +6542,31 @@ class $$LedgerEntriesTableFilterComposer
           }) => $$BalanceCheckpointsTableFilterComposer(
             $db: $db,
             $table: $db.balanceCheckpoints,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> csvImportRowsRefs(
+    Expression<bool> Function($$CsvImportRowsTableFilterComposer f) f,
+  ) {
+    final $$CsvImportRowsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.csvImportRows,
+      getReferencedColumn: (t) => t.entryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CsvImportRowsTableFilterComposer(
+            $db: $db,
+            $table: $db.csvImportRows,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5921,6 +6966,31 @@ class $$LedgerEntriesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> csvImportRowsRefs<T extends Object>(
+    Expression<T> Function($$CsvImportRowsTableAnnotationComposer a) f,
+  ) {
+    final $$CsvImportRowsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.csvImportRows,
+      getReferencedColumn: (t) => t.entryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CsvImportRowsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.csvImportRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LedgerEntriesTableTableManager
@@ -5943,6 +7013,7 @@ class $$LedgerEntriesTableTableManager
             bool refundOfId,
             bool ledgerPostingsRefs,
             bool balanceCheckpointsRefs,
+            bool csvImportRowsRefs,
           })
         > {
   $$LedgerEntriesTableTableManager(_$AppDatabase db, $LedgerEntriesTable table)
@@ -6060,12 +7131,14 @@ class $$LedgerEntriesTableTableManager
                 refundOfId = false,
                 ledgerPostingsRefs = false,
                 balanceCheckpointsRefs = false,
+                csvImportRowsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (ledgerPostingsRefs) db.ledgerPostings,
                     if (balanceCheckpointsRefs) db.balanceCheckpoints,
+                    if (csvImportRowsRefs) db.csvImportRows,
                   ],
                   addJoins:
                       <
@@ -6174,6 +7247,27 @@ class $$LedgerEntriesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (csvImportRowsRefs)
+                        await $_getPrefetchedData<
+                          EntryRow,
+                          $LedgerEntriesTable,
+                          CsvImportRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerEntriesTableReferences
+                              ._csvImportRowsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerEntriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).csvImportRowsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.entryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -6201,6 +7295,7 @@ typedef $$LedgerEntriesTableProcessedTableManager =
         bool refundOfId,
         bool ledgerPostingsRefs,
         bool balanceCheckpointsRefs,
+        bool csvImportRowsRefs,
       })
     >;
 typedef $$LedgerPostingsTableCreateCompanionBuilder =
@@ -7555,6 +8650,820 @@ typedef $$BalanceCheckpointsTableProcessedTableManager =
       CheckpointRow,
       PrefetchHooks Function({bool accountId, bool adjustmentId})
     >;
+typedef $$CsvImportBatchesTableCreateCompanionBuilder =
+    CsvImportBatchesCompanion Function({
+      required String id,
+      required String name,
+      required String fingerprint,
+      required DateTime createdAt,
+      Value<DateTime?> undoneAt,
+      Value<int> rowid,
+    });
+typedef $$CsvImportBatchesTableUpdateCompanionBuilder =
+    CsvImportBatchesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> fingerprint,
+      Value<DateTime> createdAt,
+      Value<DateTime?> undoneAt,
+      Value<int> rowid,
+    });
+
+final class $$CsvImportBatchesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $CsvImportBatchesTable, CsvBatchRecord> {
+  $$CsvImportBatchesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$CsvImportRowsTable, List<CsvImportRecord>>
+  _csvImportRowsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.csvImportRows,
+    aliasName: 'csv_import_batches__id__csv_import_rows__batch_id',
+  );
+
+  $$CsvImportRowsTableProcessedTableManager get csvImportRowsRefs {
+    final manager = $$CsvImportRowsTableTableManager(
+      $_db,
+      $_db.csvImportRows,
+    ).filter((f) => f.batchId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_csvImportRowsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$CsvImportBatchesTableFilterComposer
+    extends Composer<_$AppDatabase, $CsvImportBatchesTable> {
+  $$CsvImportBatchesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fingerprint => $composableBuilder(
+    column: $table.fingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get undoneAt => $composableBuilder(
+    column: $table.undoneAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> csvImportRowsRefs(
+    Expression<bool> Function($$CsvImportRowsTableFilterComposer f) f,
+  ) {
+    final $$CsvImportRowsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.csvImportRows,
+      getReferencedColumn: (t) => t.batchId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CsvImportRowsTableFilterComposer(
+            $db: $db,
+            $table: $db.csvImportRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CsvImportBatchesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CsvImportBatchesTable> {
+  $$CsvImportBatchesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fingerprint => $composableBuilder(
+    column: $table.fingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get undoneAt => $composableBuilder(
+    column: $table.undoneAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CsvImportBatchesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CsvImportBatchesTable> {
+  $$CsvImportBatchesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get fingerprint => $composableBuilder(
+    column: $table.fingerprint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get undoneAt =>
+      $composableBuilder(column: $table.undoneAt, builder: (column) => column);
+
+  Expression<T> csvImportRowsRefs<T extends Object>(
+    Expression<T> Function($$CsvImportRowsTableAnnotationComposer a) f,
+  ) {
+    final $$CsvImportRowsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.csvImportRows,
+      getReferencedColumn: (t) => t.batchId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CsvImportRowsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.csvImportRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CsvImportBatchesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CsvImportBatchesTable,
+          CsvBatchRecord,
+          $$CsvImportBatchesTableFilterComposer,
+          $$CsvImportBatchesTableOrderingComposer,
+          $$CsvImportBatchesTableAnnotationComposer,
+          $$CsvImportBatchesTableCreateCompanionBuilder,
+          $$CsvImportBatchesTableUpdateCompanionBuilder,
+          (CsvBatchRecord, $$CsvImportBatchesTableReferences),
+          CsvBatchRecord,
+          PrefetchHooks Function({bool csvImportRowsRefs})
+        > {
+  $$CsvImportBatchesTableTableManager(
+    _$AppDatabase db,
+    $CsvImportBatchesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CsvImportBatchesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CsvImportBatchesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CsvImportBatchesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> fingerprint = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> undoneAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CsvImportBatchesCompanion(
+                id: id,
+                name: name,
+                fingerprint: fingerprint,
+                createdAt: createdAt,
+                undoneAt: undoneAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String fingerprint,
+                required DateTime createdAt,
+                Value<DateTime?> undoneAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CsvImportBatchesCompanion.insert(
+                id: id,
+                name: name,
+                fingerprint: fingerprint,
+                createdAt: createdAt,
+                undoneAt: undoneAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CsvImportBatchesTable, CsvBatchRecord>(table),
+                  $$CsvImportBatchesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({csvImportRowsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (csvImportRowsRefs) db.csvImportRows,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (csvImportRowsRefs)
+                    await $_getPrefetchedData<
+                      CsvBatchRecord,
+                      $CsvImportBatchesTable,
+                      CsvImportRecord
+                    >(
+                      currentTable: table,
+                      referencedTable: $$CsvImportBatchesTableReferences
+                          ._csvImportRowsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$CsvImportBatchesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).csvImportRowsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.batchId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CsvImportBatchesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CsvImportBatchesTable,
+      CsvBatchRecord,
+      $$CsvImportBatchesTableFilterComposer,
+      $$CsvImportBatchesTableOrderingComposer,
+      $$CsvImportBatchesTableAnnotationComposer,
+      $$CsvImportBatchesTableCreateCompanionBuilder,
+      $$CsvImportBatchesTableUpdateCompanionBuilder,
+      (CsvBatchRecord, $$CsvImportBatchesTableReferences),
+      CsvBatchRecord,
+      PrefetchHooks Function({bool csvImportRowsRefs})
+    >;
+typedef $$CsvImportRowsTableCreateCompanionBuilder =
+    CsvImportRowsCompanion Function({
+      required String batchId,
+      required int rowNumber,
+      required int line,
+      required String fileRowKey,
+      Value<String?> sourceKey,
+      required String signature,
+      required String rawJson,
+      required String entryId,
+      Value<String?> snapshot,
+      Value<bool> active,
+      Value<int> rowid,
+    });
+typedef $$CsvImportRowsTableUpdateCompanionBuilder =
+    CsvImportRowsCompanion Function({
+      Value<String> batchId,
+      Value<int> rowNumber,
+      Value<int> line,
+      Value<String> fileRowKey,
+      Value<String?> sourceKey,
+      Value<String> signature,
+      Value<String> rawJson,
+      Value<String> entryId,
+      Value<String?> snapshot,
+      Value<bool> active,
+      Value<int> rowid,
+    });
+
+final class $$CsvImportRowsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $CsvImportRowsTable, CsvImportRecord> {
+  $$CsvImportRowsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $CsvImportBatchesTable _batchIdTable(_$AppDatabase db) => db
+      .csvImportBatches
+      .createAlias('csv_import_rows__batch_id__csv_import_batches__id');
+
+  $$CsvImportBatchesTableProcessedTableManager get batchId {
+    final $_column = $_itemColumn<String>('batch_id')!;
+
+    final manager = $$CsvImportBatchesTableTableManager(
+      $_db,
+      $_db.csvImportBatches,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_batchIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LedgerEntriesTable _entryIdTable(_$AppDatabase db) => db.ledgerEntries
+      .createAlias('csv_import_rows__entry_id__ledger_entries__id');
+
+  $$LedgerEntriesTableProcessedTableManager get entryId {
+    final $_column = $_itemColumn<String>('entry_id')!;
+
+    final manager = $$LedgerEntriesTableTableManager(
+      $_db,
+      $_db.ledgerEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_entryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CsvImportRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $CsvImportRowsTable> {
+  $$CsvImportRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get rowNumber => $composableBuilder(
+    column: $table.rowNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get line => $composableBuilder(
+    column: $table.line,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileRowKey => $composableBuilder(
+    column: $table.fileRowKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceKey => $composableBuilder(
+    column: $table.sourceKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get signature => $composableBuilder(
+    column: $table.signature,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rawJson => $composableBuilder(
+    column: $table.rawJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get snapshot => $composableBuilder(
+    column: $table.snapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CsvImportBatchesTableFilterComposer get batchId {
+    final $$CsvImportBatchesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.batchId,
+      referencedTable: $db.csvImportBatches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CsvImportBatchesTableFilterComposer(
+            $db: $db,
+            $table: $db.csvImportBatches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerEntriesTableFilterComposer get entryId {
+    final $$LedgerEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.entryId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CsvImportRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CsvImportRowsTable> {
+  $$CsvImportRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get rowNumber => $composableBuilder(
+    column: $table.rowNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get line => $composableBuilder(
+    column: $table.line,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileRowKey => $composableBuilder(
+    column: $table.fileRowKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceKey => $composableBuilder(
+    column: $table.sourceKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get signature => $composableBuilder(
+    column: $table.signature,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rawJson => $composableBuilder(
+    column: $table.rawJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get snapshot => $composableBuilder(
+    column: $table.snapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CsvImportBatchesTableOrderingComposer get batchId {
+    final $$CsvImportBatchesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.batchId,
+      referencedTable: $db.csvImportBatches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CsvImportBatchesTableOrderingComposer(
+            $db: $db,
+            $table: $db.csvImportBatches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerEntriesTableOrderingComposer get entryId {
+    final $$LedgerEntriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.entryId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CsvImportRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CsvImportRowsTable> {
+  $$CsvImportRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get rowNumber =>
+      $composableBuilder(column: $table.rowNumber, builder: (column) => column);
+
+  GeneratedColumn<int> get line =>
+      $composableBuilder(column: $table.line, builder: (column) => column);
+
+  GeneratedColumn<String> get fileRowKey => $composableBuilder(
+    column: $table.fileRowKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceKey =>
+      $composableBuilder(column: $table.sourceKey, builder: (column) => column);
+
+  GeneratedColumn<String> get signature =>
+      $composableBuilder(column: $table.signature, builder: (column) => column);
+
+  GeneratedColumn<String> get rawJson =>
+      $composableBuilder(column: $table.rawJson, builder: (column) => column);
+
+  GeneratedColumn<String> get snapshot =>
+      $composableBuilder(column: $table.snapshot, builder: (column) => column);
+
+  GeneratedColumn<bool> get active =>
+      $composableBuilder(column: $table.active, builder: (column) => column);
+
+  $$CsvImportBatchesTableAnnotationComposer get batchId {
+    final $$CsvImportBatchesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.batchId,
+      referencedTable: $db.csvImportBatches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CsvImportBatchesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.csvImportBatches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerEntriesTableAnnotationComposer get entryId {
+    final $$LedgerEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.entryId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CsvImportRowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CsvImportRowsTable,
+          CsvImportRecord,
+          $$CsvImportRowsTableFilterComposer,
+          $$CsvImportRowsTableOrderingComposer,
+          $$CsvImportRowsTableAnnotationComposer,
+          $$CsvImportRowsTableCreateCompanionBuilder,
+          $$CsvImportRowsTableUpdateCompanionBuilder,
+          (CsvImportRecord, $$CsvImportRowsTableReferences),
+          CsvImportRecord,
+          PrefetchHooks Function({bool batchId, bool entryId})
+        > {
+  $$CsvImportRowsTableTableManager(_$AppDatabase db, $CsvImportRowsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CsvImportRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CsvImportRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CsvImportRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> batchId = const Value.absent(),
+                Value<int> rowNumber = const Value.absent(),
+                Value<int> line = const Value.absent(),
+                Value<String> fileRowKey = const Value.absent(),
+                Value<String?> sourceKey = const Value.absent(),
+                Value<String> signature = const Value.absent(),
+                Value<String> rawJson = const Value.absent(),
+                Value<String> entryId = const Value.absent(),
+                Value<String?> snapshot = const Value.absent(),
+                Value<bool> active = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CsvImportRowsCompanion(
+                batchId: batchId,
+                rowNumber: rowNumber,
+                line: line,
+                fileRowKey: fileRowKey,
+                sourceKey: sourceKey,
+                signature: signature,
+                rawJson: rawJson,
+                entryId: entryId,
+                snapshot: snapshot,
+                active: active,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String batchId,
+                required int rowNumber,
+                required int line,
+                required String fileRowKey,
+                Value<String?> sourceKey = const Value.absent(),
+                required String signature,
+                required String rawJson,
+                required String entryId,
+                Value<String?> snapshot = const Value.absent(),
+                Value<bool> active = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CsvImportRowsCompanion.insert(
+                batchId: batchId,
+                rowNumber: rowNumber,
+                line: line,
+                fileRowKey: fileRowKey,
+                sourceKey: sourceKey,
+                signature: signature,
+                rawJson: rawJson,
+                entryId: entryId,
+                snapshot: snapshot,
+                active: active,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CsvImportRowsTable, CsvImportRecord>(table),
+                  $$CsvImportRowsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({batchId = false, entryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (batchId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.batchId,
+                        referencedTable: $$CsvImportRowsTableReferences
+                            ._batchIdTable(db),
+                        referencedColumn: $$CsvImportRowsTableReferences
+                            ._batchIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (entryId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.entryId,
+                        referencedTable: $$CsvImportRowsTableReferences
+                            ._entryIdTable(db),
+                        referencedColumn: $$CsvImportRowsTableReferences
+                            ._entryIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CsvImportRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CsvImportRowsTable,
+      CsvImportRecord,
+      $$CsvImportRowsTableFilterComposer,
+      $$CsvImportRowsTableOrderingComposer,
+      $$CsvImportRowsTableAnnotationComposer,
+      $$CsvImportRowsTableCreateCompanionBuilder,
+      $$CsvImportRowsTableUpdateCompanionBuilder,
+      (CsvImportRecord, $$CsvImportRowsTableReferences),
+      CsvImportRecord,
+      PrefetchHooks Function({bool batchId, bool entryId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7573,4 +9482,8 @@ class $AppDatabaseManager {
       $$ValuationRatesTableTableManager(_db, _db.valuationRates);
   $$BalanceCheckpointsTableTableManager get balanceCheckpoints =>
       $$BalanceCheckpointsTableTableManager(_db, _db.balanceCheckpoints);
+  $$CsvImportBatchesTableTableManager get csvImportBatches =>
+      $$CsvImportBatchesTableTableManager(_db, _db.csvImportBatches);
+  $$CsvImportRowsTableTableManager get csvImportRows =>
+      $$CsvImportRowsTableTableManager(_db, _db.csvImportRows);
 }

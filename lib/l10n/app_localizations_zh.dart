@@ -1505,4 +1505,185 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get checkpointBackupConflict => '备份中的余额检查点无效或与现有记录冲突。';
+
+  @override
+  String get csvImport => 'CSV 导入';
+
+  @override
+  String get csvHistory => '导入批次';
+
+  @override
+  String get csvInstructions => '选择 UTF-8 编码的 CSV 文件，或粘贴 CSV 内容。请在入账前核对账户和分类。';
+
+  @override
+  String get csvChooseFile => '选择 CSV 文件';
+
+  @override
+  String get csvPaste => '粘贴 CSV';
+
+  @override
+  String get csvPastedFile => '粘贴的 CSV';
+
+  @override
+  String csvReviewSummary(int total, int selected) {
+    return '共 $total 行，已选择 $selected 行';
+  }
+
+  @override
+  String csvCommit(int count) {
+    return '确认选中的 $count 行';
+  }
+
+  @override
+  String get csvChangeFile => '更换输入';
+
+  @override
+  String get csvRefresh => '刷新复核结果';
+
+  @override
+  String csvLine(int line) {
+    return '第 $line 行';
+  }
+
+  @override
+  String get csvReady => '可入账';
+
+  @override
+  String get csvUnresolved => '待确认账户或分类';
+
+  @override
+  String get csvSimilar => '疑似已有交易';
+
+  @override
+  String get csvDuplicate => '已入账或文件内重复';
+
+  @override
+  String get csvSourceConflict => '来源和外部编号相同，账单内容有冲突';
+
+  @override
+  String get csvInvalid => '无法识别的行';
+
+  @override
+  String get csvLinkedRow => '已匹配现有交易';
+
+  @override
+  String get csvCreatedRow => '新增交易';
+
+  @override
+  String get csvSeparateRow => '已确认为独立交易';
+
+  @override
+  String get csvSourceAccount => '入账账户';
+
+  @override
+  String get csvTargetAccount => '目标账户';
+
+  @override
+  String get csvNoEligibleAccounts => '请在「账户」创建类型和币种相符的账户，再返回复核。';
+
+  @override
+  String get csvReviewMapping => '核对映射';
+
+  @override
+  String get csvSimilarHint => '点选已有交易可建立匹配。若这一行是独立的一笔，可确认单独入账。';
+
+  @override
+  String get csvEarlierSource => '此前批次有相同账单内容';
+
+  @override
+  String get csvCategoryForNew => '新增交易前需要选定分类。';
+
+  @override
+  String get csvSkipRow => '跳过此行';
+
+  @override
+  String get csvChangeMapping => '修改映射';
+
+  @override
+  String get csvAddSeparately => '单独入账';
+
+  @override
+  String csvBatchCounts(int added, int matched) {
+    return '新增 $added 笔，匹配 $matched 笔';
+  }
+
+  @override
+  String get csvNoHistory => '暂无 CSV 导入批次。';
+
+  @override
+  String get csvBatchDetails => '导入批次详情';
+
+  @override
+  String get csvUndone => '已撤销';
+
+  @override
+  String get csvUndo => '撤销批次';
+
+  @override
+  String get csvConfirmUndo => '撤销此批次新增的交易？匹配到的原有交易会保留。';
+
+  @override
+  String get csvOriginalRow => 'CSV 原始行';
+
+  @override
+  String get csvLedgerId => '账本交易 ID';
+
+  @override
+  String get csvEncoding => '请将文件保存为 UTF-8 编码的 CSV。';
+
+  @override
+  String get csvTooLarge => '单个文件上限为 2 MB、500 行数据。';
+
+  @override
+  String get csvEmpty => '没有可导入的数据行。';
+
+  @override
+  String get csvHeaders => '表头须包含 type、amount、occurred_at、account，且列名互不重复。';
+
+  @override
+  String get csvSyntax => '请检查 CSV 引号。';
+
+  @override
+  String get csvColumns => '该行列数与表头不一致。';
+
+  @override
+  String get csvTypeInvalid => '类型须为支出、收入、转账、借入或还款。';
+
+  @override
+  String get csvAmountInvalid => '请使用正数金额，并符合该币种的小数精度。';
+
+  @override
+  String get csvDateInvalid => '请使用有效的 ISO 8601 日期或日期时间。';
+
+  @override
+  String get csvCurrencyInvalid => '该币种暂不支持。';
+
+  @override
+  String get csvSourceRequired => '填写外部编号时，同时填写来源。';
+
+  @override
+  String get csvAdvanced => '带有高级分录明细的交易请通过完整备份恢复。';
+
+  @override
+  String get csvReviewChanged => '账本或选择已变化，请刷新并重新复核相关行。';
+
+  @override
+  String get csvUndoModified => '批次中的交易已被编辑或删除，整批未撤销。';
+
+  @override
+  String get csvUndoLinked => '批次交易涉及退款、冲销、其他批次、后续动用的资金或已偿还负债，整批未撤销。';
+
+  @override
+  String get csvBatchUnavailable => '该批次已不可用。';
+
+  @override
+  String get csvOperationFailed => 'CSV 操作未完成。';
+
+  @override
+  String get csvBackupConflict => '备份中的 CSV 导入批次无效或与现有记录冲突。';
+
+  @override
+  String backupImportBatchCount(int count) {
+    return 'CSV 导入批次 $count';
+  }
 }

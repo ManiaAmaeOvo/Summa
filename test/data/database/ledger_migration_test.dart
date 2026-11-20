@@ -7,7 +7,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 
 void main() {
-  for (final version in [6, 7, 8, 9, 10, 11, 12]) {
+  for (final version in [6, 7, 8, 9, 10, 11, 12, 13]) {
     test('migrates schema $version to persisted postings and reopens safely', () async {
       final directory = await Directory.systemTemp.createTemp(
         'summa-v$version-',
@@ -71,8 +71,15 @@ void main() {
           final schema = await after
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(schema.read<int>('user_version'), 13);
-          expect(await upgraded.watchBalanceCheckpoints('bank').first, isEmpty);
+          expect(schema.read<int>('user_version'), 14);
+          final checkpoints = await upgraded
+              .watchBalanceCheckpoints('bank')
+              .first;
+          expect(
+            checkpoints.map((point) => point.note),
+            version == 13 ? ['Test statement'] : isEmpty,
+          );
+          expect(await upgraded.watchCsvBatches().first, isEmpty);
           final valuation = await upgraded.watchValuationSettings().first;
           expect(valuation.baseCurrency, version >= 10 ? 'EUR' : 'CNY');
           expect(
@@ -206,6 +213,14 @@ class _LegacyDatabase extends AppDatabase {
           INSERT INTO ledger_postings (transaction_id, position, currency_code, debit_minor, role)
           VALUES ('bank-to-cash', 2, 'CNY', 150, 'exchange'),
                  ('bank-to-cash', 3, 'JPY', -2000, 'exchange')
+        ''');
+      }
+      if (schemaVersion >= 13) {
+        await migrator.createTable(balanceCheckpoints);
+        await customStatement('''
+          INSERT INTO balance_checkpoints (id, account_id, currency_code, observed_at,
+            actual_minor, recorded_book_minor, note, created_at)
+          VALUES ('old-checkpoint', 'bank', 'CNY', 2000, 800, 800, 'Test statement', 2000)
         ''');
       }
       if (schemaVersion >= 12) {

@@ -3,6 +3,7 @@ import 'package:summa/data/backup/local_backup_store.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -251,6 +252,36 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       status: status,
     ),
   );
+
+  @override
+  Future<List<CsvReviewRow>> previewCsvImport(
+    CsvImportFile file, {
+    Map<int, CsvMapping> mappings = const {},
+  }) => _delegate.previewCsvImport(file, mappings: mappings);
+
+  @override
+  Future<CsvImportResult> commitCsvImport(
+    CsvImportFile file,
+    List<CsvSelection> selections,
+  ) async {
+    late CsvImportResult result;
+    await _mutate(
+      () async => result = await _delegate.commitCsvImport(file, selections),
+    );
+    return result;
+  }
+
+  @override
+  Stream<List<CsvBatchSummary>> watchCsvBatches() =>
+      _delegate.watchCsvBatches();
+
+  @override
+  Future<List<CsvBatchItem>> readCsvBatchItems(String id) =>
+      _delegate.readCsvBatchItems(id);
+
+  @override
+  Future<void> undoCsvImport(String id) =>
+      _mutate(() => _delegate.undoCsvImport(id));
 
   @override
   Future<void> importTransactions(List<LedgerImportDraft> drafts) =>

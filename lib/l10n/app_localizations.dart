@@ -2863,6 +2863,348 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The backup has invalid or conflicting balance checkpoints.'**
   String get checkpointBackupConflict;
+
+  /// No description provided for @csvImport.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV import'**
+  String get csvImport;
+
+  /// No description provided for @csvHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Import batches'**
+  String get csvHistory;
+
+  /// No description provided for @csvInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a UTF-8 CSV file or paste its contents. Review account and category assignments before posting.'**
+  String get csvInstructions;
+
+  /// No description provided for @csvChooseFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose CSV file'**
+  String get csvChooseFile;
+
+  /// No description provided for @csvPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste CSV'**
+  String get csvPaste;
+
+  /// No description provided for @csvPastedFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pasted CSV'**
+  String get csvPastedFile;
+
+  /// No description provided for @csvReviewSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} rows · {selected} selected'**
+  String csvReviewSummary(int total, int selected);
+
+  /// No description provided for @csvCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm {count} selected'**
+  String csvCommit(int count);
+
+  /// No description provided for @csvChangeFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Change input'**
+  String get csvChangeFile;
+
+  /// No description provided for @csvRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh review'**
+  String get csvRefresh;
+
+  /// No description provided for @csvLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Line {line}'**
+  String csvLine(int line);
+
+  /// No description provided for @csvReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to import'**
+  String get csvReady;
+
+  /// No description provided for @csvUnresolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose account or category'**
+  String get csvUnresolved;
+
+  /// No description provided for @csvSimilar.
+  ///
+  /// In en, this message translates to:
+  /// **'Possible match'**
+  String get csvSimilar;
+
+  /// No description provided for @csvDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Already imported or repeated in file'**
+  String get csvDuplicate;
+
+  /// No description provided for @csvSourceConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Same source and ID with conflicting values'**
+  String get csvSourceConflict;
+
+  /// No description provided for @csvInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid row'**
+  String get csvInvalid;
+
+  /// No description provided for @csvLinkedRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched to existing transaction'**
+  String get csvLinkedRow;
+
+  /// No description provided for @csvCreatedRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Created transaction'**
+  String get csvCreatedRow;
+
+  /// No description provided for @csvSeparateRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved as a distinct transaction'**
+  String get csvSeparateRow;
+
+  /// No description provided for @csvSourceAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting account'**
+  String get csvSourceAccount;
+
+  /// No description provided for @csvTargetAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination account'**
+  String get csvTargetAccount;
+
+  /// No description provided for @csvNoEligibleAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a compatible account in Accounts, then return to review.'**
+  String get csvNoEligibleAccounts;
+
+  /// No description provided for @csvReviewMapping.
+  ///
+  /// In en, this message translates to:
+  /// **'Check assignment'**
+  String get csvReviewMapping;
+
+  /// No description provided for @csvSimilarHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an existing transaction to link it. If this row represents a separate payment, approve it as a new entry.'**
+  String get csvSimilarHint;
+
+  /// No description provided for @csvEarlierSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Also seen in an earlier batch'**
+  String get csvEarlierSource;
+
+  /// No description provided for @csvCategoryForNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a category before posting a new entry.'**
+  String get csvCategoryForNew;
+
+  /// No description provided for @csvSkipRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip row'**
+  String get csvSkipRow;
+
+  /// No description provided for @csvChangeMapping.
+  ///
+  /// In en, this message translates to:
+  /// **'Change assignment'**
+  String get csvChangeMapping;
+
+  /// No description provided for @csvAddSeparately.
+  ///
+  /// In en, this message translates to:
+  /// **'Post as separate entry'**
+  String get csvAddSeparately;
+
+  /// No description provided for @csvBatchCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'{added} added · {matched} matched'**
+  String csvBatchCounts(int added, int matched);
+
+  /// No description provided for @csvNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No CSV import batches yet.'**
+  String get csvNoHistory;
+
+  /// No description provided for @csvBatchDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Import batch details'**
+  String get csvBatchDetails;
+
+  /// No description provided for @csvUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'Undone'**
+  String get csvUndone;
+
+  /// No description provided for @csvUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo batch'**
+  String get csvUndo;
+
+  /// No description provided for @csvConfirmUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the transactions created by this batch? Matched transactions will remain in the ledger.'**
+  String get csvConfirmUndo;
+
+  /// No description provided for @csvOriginalRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Original CSV row'**
+  String get csvOriginalRow;
+
+  /// No description provided for @csvLedgerId.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger transaction ID'**
+  String get csvLedgerId;
+
+  /// No description provided for @csvEncoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the file as UTF-8 CSV.'**
+  String get csvEncoding;
+
+  /// No description provided for @csvTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a file of up to 2 MB and 500 data rows.'**
+  String get csvTooLarge;
+
+  /// No description provided for @csvEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No data rows were found.'**
+  String get csvEmpty;
+
+  /// No description provided for @csvHeaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Use unique headers including type, amount, occurred_at, and account.'**
+  String get csvHeaders;
+
+  /// No description provided for @csvSyntax.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the quotation marks in the CSV.'**
+  String get csvSyntax;
+
+  /// No description provided for @csvColumns.
+  ///
+  /// In en, this message translates to:
+  /// **'The column count differs from the header.'**
+  String get csvColumns;
+
+  /// No description provided for @csvTypeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use expense, income, transfer, borrowing, or repayment.'**
+  String get csvTypeInvalid;
+
+  /// No description provided for @csvAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a positive decimal amount with the currency’s supported precision.'**
+  String get csvAmountInvalid;
+
+  /// No description provided for @csvDateInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a valid ISO 8601 date or date and time.'**
+  String get csvDateInvalid;
+
+  /// No description provided for @csvCurrencyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This currency is unsupported.'**
+  String get csvCurrencyInvalid;
+
+  /// No description provided for @csvSourceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide a source for each external ID.'**
+  String get csvSourceRequired;
+
+  /// No description provided for @csvAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a complete backup for advanced transaction details.'**
+  String get csvAdvanced;
+
+  /// No description provided for @csvReviewChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The ledger or selection changed. Refresh and review the affected rows.'**
+  String get csvReviewChanged;
+
+  /// No description provided for @csvUndoModified.
+  ///
+  /// In en, this message translates to:
+  /// **'A transaction in this batch was edited or deleted. The batch was kept intact.'**
+  String get csvUndoModified;
+
+  /// No description provided for @csvUndoLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'A transaction is linked to a refund, reversal, another batch, a repayment, or funds later used. The batch was kept intact.'**
+  String get csvUndoLinked;
+
+  /// No description provided for @csvBatchUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This batch is unavailable.'**
+  String get csvBatchUnavailable;
+
+  /// No description provided for @csvOperationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The CSV operation failed.'**
+  String get csvOperationFailed;
+
+  /// No description provided for @csvBackupConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup contains invalid or conflicting CSV import batches.'**
+  String get csvBackupConflict;
+
+  /// No description provided for @backupImportBatchCount.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV import batches {count}'**
+  String backupImportBatchCount(int count);
 }
 
 class _AppLocalizationsDelegate

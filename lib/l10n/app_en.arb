@@ -537,5 +537,103 @@
       }
     }
   },
-  "checkpointBackupConflict": "The backup has invalid or conflicting balance checkpoints."
+  "checkpointBackupConflict": "The backup has invalid or conflicting balance checkpoints.",
+  "csvImport": "CSV import",
+  "csvHistory": "Import batches",
+  "csvInstructions": "Select a UTF-8 CSV file or paste its contents. Review account and category assignments before posting.",
+  "csvChooseFile": "Choose CSV file",
+  "csvPaste": "Paste CSV",
+  "csvPastedFile": "Pasted CSV",
+  "csvReviewSummary": "{total} rows · {selected} selected",
+  "@csvReviewSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "selected": {
+        "type": "int"
+      }
+    }
+  },
+  "csvCommit": "Confirm {count} selected",
+  "@csvCommit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "csvChangeFile": "Change input",
+  "csvRefresh": "Refresh review",
+  "csvLine": "Line {line}",
+  "@csvLine": {
+    "placeholders": {
+      "line": {
+        "type": "int"
+      }
+    }
+  },
+  "csvReady": "Ready to import",
+  "csvUnresolved": "Choose account or category",
+  "csvSimilar": "Possible match",
+  "csvDuplicate": "Already imported or repeated in file",
+  "csvSourceConflict": "Same source and ID with conflicting values",
+  "csvInvalid": "Invalid row",
+  "csvLinkedRow": "Matched to existing transaction",
+  "csvCreatedRow": "Created transaction",
+  "csvSeparateRow": "Approved as a distinct transaction",
+  "csvSourceAccount": "Posting account",
+  "csvTargetAccount": "Destination account",
+  "csvNoEligibleAccounts": "Create a compatible account in Accounts, then return to review.",
+  "csvReviewMapping": "Check assignment",
+  "csvSimilarHint": "Tap an existing transaction to link it. If this row represents a separate payment, approve it as a new entry.",
+  "csvEarlierSource": "Also seen in an earlier batch",
+  "csvCategoryForNew": "Choose a category before posting a new entry.",
+  "csvSkipRow": "Skip row",
+  "csvChangeMapping": "Change assignment",
+  "csvAddSeparately": "Post as separate entry",
+  "csvBatchCounts": "{added} added · {matched} matched",
+  "@csvBatchCounts": {
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "matched": {
+        "type": "int"
+      }
+    }
+  },
+  "csvNoHistory": "No CSV import batches yet.",
+  "csvBatchDetails": "Import batch details",
+  "csvUndone": "Undone",
+  "csvUndo": "Undo batch",
+  "csvConfirmUndo": "Remove the transactions created by this batch? Matched transactions will remain in the ledger.",
+  "csvOriginalRow": "Original CSV row",
+  "csvLedgerId": "Ledger transaction ID",
+  "csvEncoding": "Save the file as UTF-8 CSV.",
+  "csvTooLarge": "Use a file of up to 2 MB and 500 data rows.",
+  "csvEmpty": "No data rows were found.",
+  "csvHeaders": "Use unique headers including type, amount, occurred_at, and account.",
+  "csvSyntax": "Check the quotation marks in the CSV.",
+  "csvColumns": "The column count differs from the header.",
+  "csvTypeInvalid": "Use expense, income, transfer, borrowing, or repayment.",
+  "csvAmountInvalid": "Use a positive decimal amount with the currency’s supported precision.",
+  "csvDateInvalid": "Use a valid ISO 8601 date or date and time.",
+  "csvCurrencyInvalid": "This currency is unsupported.",
+  "csvSourceRequired": "Provide a source for each external ID.",
+  "csvAdvanced": "Use a complete backup for advanced transaction details.",
+  "csvReviewChanged": "The ledger or selection changed. Refresh and review the affected rows.",
+  "csvUndoModified": "A transaction in this batch was edited or deleted. The batch was kept intact.",
+  "csvUndoLinked": "A transaction is linked to a refund, reversal, another batch, a repayment, or funds later used. The batch was kept intact.",
+  "csvBatchUnavailable": "This batch is unavailable.",
+  "csvOperationFailed": "The CSV operation failed.",
+  "csvBackupConflict": "The backup contains invalid or conflicting CSV import batches.",
+  "backupImportBatchCount": "CSV import batches {count}",
+  "@backupImportBatchCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

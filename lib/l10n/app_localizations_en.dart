@@ -1614,4 +1614,198 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get checkpointBackupConflict =>
       'The backup has invalid or conflicting balance checkpoints.';
+
+  @override
+  String get csvImport => 'CSV import';
+
+  @override
+  String get csvHistory => 'Import batches';
+
+  @override
+  String get csvInstructions =>
+      'Select a UTF-8 CSV file or paste its contents. Review account and category assignments before posting.';
+
+  @override
+  String get csvChooseFile => 'Choose CSV file';
+
+  @override
+  String get csvPaste => 'Paste CSV';
+
+  @override
+  String get csvPastedFile => 'Pasted CSV';
+
+  @override
+  String csvReviewSummary(int total, int selected) {
+    return '$total rows · $selected selected';
+  }
+
+  @override
+  String csvCommit(int count) {
+    return 'Confirm $count selected';
+  }
+
+  @override
+  String get csvChangeFile => 'Change input';
+
+  @override
+  String get csvRefresh => 'Refresh review';
+
+  @override
+  String csvLine(int line) {
+    return 'Line $line';
+  }
+
+  @override
+  String get csvReady => 'Ready to import';
+
+  @override
+  String get csvUnresolved => 'Choose account or category';
+
+  @override
+  String get csvSimilar => 'Possible match';
+
+  @override
+  String get csvDuplicate => 'Already imported or repeated in file';
+
+  @override
+  String get csvSourceConflict => 'Same source and ID with conflicting values';
+
+  @override
+  String get csvInvalid => 'Invalid row';
+
+  @override
+  String get csvLinkedRow => 'Matched to existing transaction';
+
+  @override
+  String get csvCreatedRow => 'Created transaction';
+
+  @override
+  String get csvSeparateRow => 'Approved as a distinct transaction';
+
+  @override
+  String get csvSourceAccount => 'Posting account';
+
+  @override
+  String get csvTargetAccount => 'Destination account';
+
+  @override
+  String get csvNoEligibleAccounts =>
+      'Create a compatible account in Accounts, then return to review.';
+
+  @override
+  String get csvReviewMapping => 'Check assignment';
+
+  @override
+  String get csvSimilarHint =>
+      'Tap an existing transaction to link it. If this row represents a separate payment, approve it as a new entry.';
+
+  @override
+  String get csvEarlierSource => 'Also seen in an earlier batch';
+
+  @override
+  String get csvCategoryForNew =>
+      'Choose a category before posting a new entry.';
+
+  @override
+  String get csvSkipRow => 'Skip row';
+
+  @override
+  String get csvChangeMapping => 'Change assignment';
+
+  @override
+  String get csvAddSeparately => 'Post as separate entry';
+
+  @override
+  String csvBatchCounts(int added, int matched) {
+    return '$added added · $matched matched';
+  }
+
+  @override
+  String get csvNoHistory => 'No CSV import batches yet.';
+
+  @override
+  String get csvBatchDetails => 'Import batch details';
+
+  @override
+  String get csvUndone => 'Undone';
+
+  @override
+  String get csvUndo => 'Undo batch';
+
+  @override
+  String get csvConfirmUndo =>
+      'Remove the transactions created by this batch? Matched transactions will remain in the ledger.';
+
+  @override
+  String get csvOriginalRow => 'Original CSV row';
+
+  @override
+  String get csvLedgerId => 'Ledger transaction ID';
+
+  @override
+  String get csvEncoding => 'Save the file as UTF-8 CSV.';
+
+  @override
+  String get csvTooLarge => 'Use a file of up to 2 MB and 500 data rows.';
+
+  @override
+  String get csvEmpty => 'No data rows were found.';
+
+  @override
+  String get csvHeaders =>
+      'Use unique headers including type, amount, occurred_at, and account.';
+
+  @override
+  String get csvSyntax => 'Check the quotation marks in the CSV.';
+
+  @override
+  String get csvColumns => 'The column count differs from the header.';
+
+  @override
+  String get csvTypeInvalid =>
+      'Use expense, income, transfer, borrowing, or repayment.';
+
+  @override
+  String get csvAmountInvalid =>
+      'Use a positive decimal amount with the currency’s supported precision.';
+
+  @override
+  String get csvDateInvalid => 'Use a valid ISO 8601 date or date and time.';
+
+  @override
+  String get csvCurrencyInvalid => 'This currency is unsupported.';
+
+  @override
+  String get csvSourceRequired => 'Provide a source for each external ID.';
+
+  @override
+  String get csvAdvanced =>
+      'Use a complete backup for advanced transaction details.';
+
+  @override
+  String get csvReviewChanged =>
+      'The ledger or selection changed. Refresh and review the affected rows.';
+
+  @override
+  String get csvUndoModified =>
+      'A transaction in this batch was edited or deleted. The batch was kept intact.';
+
+  @override
+  String get csvUndoLinked =>
+      'A transaction is linked to a refund, reversal, another batch, a repayment, or funds later used. The batch was kept intact.';
+
+  @override
+  String get csvBatchUnavailable => 'This batch is unavailable.';
+
+  @override
+  String get csvOperationFailed => 'The CSV operation failed.';
+
+  @override
+  String get csvBackupConflict =>
+      'The backup contains invalid or conflicting CSV import batches.';
+
+  @override
+  String backupImportBatchCount(int count) {
+    return 'CSV import batches $count';
+  }
 }
