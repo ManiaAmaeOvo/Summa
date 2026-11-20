@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 
 const csvImportTemplate =
@@ -25,6 +26,8 @@ enum CsvIssue {
   currency,
   source,
   advanced,
+  statementSkipped,
+  workbook,
 }
 
 class CsvImportException implements Exception {
@@ -62,6 +65,18 @@ class CsvImportRow {
   final String? signature;
   final String? sourceKey;
   final CsvIssue? issue;
+
+  factory CsvImportRow.invalid(
+    int number,
+    int line,
+    CsvIssue issue, {
+    Map<String, String> raw = const {},
+  }) => CsvImportRow._(
+    number: number,
+    line: line,
+    raw: Map.unmodifiable(raw),
+    issue: issue,
+  );
 
   factory CsvImportRow.fromCells(
     int number,
@@ -136,6 +151,24 @@ class CsvImportFile {
   final String fingerprint;
   final List<CsvImportRow> rows;
 
+  factory CsvImportFile.fromStatement(
+    String name,
+    Iterable<CsvImportRow> rows,
+  ) {
+    final result = List<CsvImportRow>.unmodifiable(rows);
+    if (result.isEmpty) throw const CsvImportException(CsvIssue.empty);
+    if (result.length > maxCsvImportRows) {
+      throw const CsvImportException(CsvIssue.tooLarge);
+    }
+    return CsvImportFile._(
+      name,
+      csvDigest([
+        for (final row in result) [row.issue?.name, csvRawCellsJson(row.raw)],
+      ]),
+      result,
+    );
+  }
+
   String rowKey(CsvImportRow row) => csvDigest([fingerprint, row.number]);
 }
 
@@ -149,7 +182,7 @@ CsvImportFile parseCsvImport(String name, List<int> bytes) {
   } on FormatException {
     throw const CsvImportException(CsvIssue.encoding);
   }
-  final records = _readRecords(
+  final records = readCsvRecords(
     text.startsWith('\uFEFF') ? text.substring(1) : text,
   );
   final input = records.iterator;
@@ -237,6 +270,9 @@ const _headers = {
   '来源': 'source',
   '外部编号': 'external_id',
   '入账状态': 'status',
+  '商户': 'merchant',
+  '商品说明': 'description',
+  '支付渠道': 'payment_channel',
   '原消费 id': 'refund_of_id',
   '付款明细': 'payments',
   '实际到账金额': 'settlement_amount',
@@ -288,7 +324,7 @@ const _advanced = {
 
 enum _CsvState { start, plain, quoted, closed }
 
-Iterable<({int line, List<String> cells})> _readRecords(String text) sync* {
+Iterable<({int line, List<String> cells})> readCsvRecords(String text) sync* {
   var line = 1;
   var startLine = 1;
   var state = _CsvState.start;
@@ -368,6 +404,7 @@ typedef CsvReviewRow = ({
   CsvReviewState state,
   CsvMapping mapping,
   List<CsvMatch> matches,
+  ImportCategorySuggestion? suggestion,
 });
 
 class CsvSelection {

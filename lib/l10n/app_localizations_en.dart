@@ -1623,10 +1623,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get csvInstructions =>
-      'Select a UTF-8 CSV file or paste its contents. Review account and category assignments before posting.';
+      'Choose a generic CSV or a WeChat Pay or Alipay CSV/XLSX statement. Review the rows before posting.';
 
   @override
-  String get csvChooseFile => 'Choose CSV file';
+  String get csvChooseFile => 'Choose statement file';
 
   @override
   String get csvPaste => 'Paste CSV';
@@ -1808,4 +1808,97 @@ class AppLocalizationsEn extends AppLocalizations {
   String backupImportBatchCount(int count) {
     return 'CSV import batches $count';
   }
+
+  @override
+  String get importCategoryRules => 'Import category rules';
+
+  @override
+  String get importRuleInstructions =>
+      'Suggest categories from keywords. Review suggestions before posting.';
+
+  @override
+  String get importRuleEmpty =>
+      'No rules yet. Add a keyword and choose a category.';
+
+  @override
+  String get importRuleAdd => 'Add rule';
+
+  @override
+  String get importRuleEdit => 'Edit rule';
+
+  @override
+  String get importRuleDelete => 'Delete this rule?';
+
+  @override
+  String get importRuleFieldLabel => 'Match field';
+
+  @override
+  String get importRuleKeyword => 'Contains keyword';
+
+  @override
+  String get importRulePriority => 'Priority';
+
+  @override
+  String get importRulePriorityHint => 'Smaller numbers take priority.';
+
+  @override
+  String importRulePriorityValue(int value) {
+    return 'Priority $value';
+  }
+
+  @override
+  String get importRuleEnabled => 'Enabled';
+
+  @override
+  String get importRuleDisabled => 'Disabled';
+
+  @override
+  String get importRuleInvalid =>
+      'Enter a keyword and a priority between 0 and 9999.';
+
+  @override
+  String get importRuleUnavailable => 'Category unavailable';
+
+  @override
+  String get importRuleMerchant => 'Merchant or counterparty';
+
+  @override
+  String get importRuleDescription => 'Description or note';
+
+  @override
+  String get importRulePayment => 'Payment channel';
+
+  @override
+  String get importRuleSource => 'Source';
+
+  @override
+  String importRuleSuggested(String keyword) {
+    return 'Suggested by rule “$keyword”';
+  }
+
+  @override
+  String get importRuleConflict => 'Rules disagree. Choose a category.';
+
+  @override
+  String get importRulesBackupConflict =>
+      'The backup has invalid or conflicting import rules.';
+
+  @override
+  String get statementSkipped =>
+      'Review the platform status and type. This row cannot be posted as ordinary income or spending.';
+
+  @override
+  String get statementWorkbookInvalid =>
+      'Use an unencrypted XLSX workbook with one supported statement sheet.';
+
+  @override
+  String get csvCopyScreenshotPrompt => 'Copy screenshot transcription prompt';
+
+  @override
+  String get csvScreenshotPromptCopied =>
+      'Screenshot transcription prompt copied';
+
+  @override
+  String get csvScreenshotPrompt =>
+      'Transcribe only clearly visible completed income and expense entries from my screenshots. Return CSV only, without a Markdown fence. Use this header verbatim:\ntype,amount,occurred_at,account,category,note,currency_code,merchant,description,payment_channel,source,external_id\nUse expense or income, a positive amount, and an ISO 8601 date or timestamp. Leave unknown fields blank. Do not infer dates, totals, or transaction IDs. Only include an external ID if the screenshot shows the actual transaction ID and its source. Keep refunds, transfers, repayments, and pending items separate from ordinary income and expenses. Omit names of private individuals, account numbers, and card numbers. Quote fields containing commas, double quotes, or line breaks and escape double quotes by doubling them.';
 }

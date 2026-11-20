@@ -540,8 +540,8 @@
   "checkpointBackupConflict": "The backup has invalid or conflicting balance checkpoints.",
   "csvImport": "CSV import",
   "csvHistory": "Import batches",
-  "csvInstructions": "Select a UTF-8 CSV file or paste its contents. Review account and category assignments before posting.",
-  "csvChooseFile": "Choose CSV file",
+  "csvInstructions": "Choose a generic CSV or a WeChat Pay or Alipay CSV/XLSX statement. Review the rows before posting.",
+  "csvChooseFile": "Choose statement file",
   "csvPaste": "Paste CSV",
   "csvPastedFile": "Pasted CSV",
   "csvReviewSummary": "{total} rows · {selected} selected",
@@ -635,5 +635,46 @@
         "type": "int"
       }
     }
-  }
+  },
+  "importCategoryRules": "Import category rules",
+  "importRuleInstructions": "Suggest categories from keywords. Review suggestions before posting.",
+  "importRuleEmpty": "No rules yet. Add a keyword and choose a category.",
+  "importRuleAdd": "Add rule",
+  "importRuleEdit": "Edit rule",
+  "importRuleDelete": "Delete this rule?",
+  "importRuleFieldLabel": "Match field",
+  "importRuleKeyword": "Contains keyword",
+  "importRulePriority": "Priority",
+  "importRulePriorityHint": "Smaller numbers take priority.",
+  "importRulePriorityValue": "Priority {value}",
+  "@importRulePriorityValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "importRuleEnabled": "Enabled",
+  "importRuleDisabled": "Disabled",
+  "importRuleInvalid": "Enter a keyword and a priority between 0 and 9999.",
+  "importRuleUnavailable": "Category unavailable",
+  "importRuleMerchant": "Merchant or counterparty",
+  "importRuleDescription": "Description or note",
+  "importRulePayment": "Payment channel",
+  "importRuleSource": "Source",
+  "importRuleSuggested": "Suggested by rule “{keyword}”",
+  "@importRuleSuggested": {
+    "placeholders": {
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "importRuleConflict": "Rules disagree. Choose a category.",
+  "importRulesBackupConflict": "The backup has invalid or conflicting import rules.",
+  "statementSkipped": "Review the platform status and type. This row cannot be posted as ordinary income or spending.",
+  "statementWorkbookInvalid": "Use an unencrypted XLSX workbook with one supported statement sheet.",
+  "csvCopyScreenshotPrompt": "Copy screenshot transcription prompt",
+  "csvScreenshotPromptCopied": "Screenshot transcription prompt copied",
+  "csvScreenshotPrompt": "Transcribe only clearly visible completed income and expense entries from my screenshots. Return CSV only, without a Markdown fence. Use this header verbatim:\ntype,amount,occurred_at,account,category,note,currency_code,merchant,description,payment_channel,source,external_id\nUse expense or income, a positive amount, and an ISO 8601 date or timestamp. Leave unknown fields blank. Do not infer dates, totals, or transaction IDs. Only include an external ID if the screenshot shows the actual transaction ID and its source. Keep refunds, transfers, repayments, and pending items separate from ordinary income and expenses. Omit names of private individuals, account numbers, and card numbers. Quote fields containing commas, double quotes, or line breaks and escape double quotes by doubling them."
 }

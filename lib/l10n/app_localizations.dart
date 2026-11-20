@@ -2879,13 +2879,13 @@ abstract class AppLocalizations {
   /// No description provided for @csvInstructions.
   ///
   /// In en, this message translates to:
-  /// **'Select a UTF-8 CSV file or paste its contents. Review account and category assignments before posting.'**
+  /// **'Choose a generic CSV or a WeChat Pay or Alipay CSV/XLSX statement. Review the rows before posting.'**
   String get csvInstructions;
 
   /// No description provided for @csvChooseFile.
   ///
   /// In en, this message translates to:
-  /// **'Choose CSV file'**
+  /// **'Choose statement file'**
   String get csvChooseFile;
 
   /// No description provided for @csvPaste.
@@ -3205,6 +3205,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'CSV import batches {count}'**
   String backupImportBatchCount(int count);
+
+  /// No description provided for @importCategoryRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Import category rules'**
+  String get importCategoryRules;
+
+  /// No description provided for @importRuleInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest categories from keywords. Review suggestions before posting.'**
+  String get importRuleInstructions;
+
+  /// No description provided for @importRuleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No rules yet. Add a keyword and choose a category.'**
+  String get importRuleEmpty;
+
+  /// No description provided for @importRuleAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add rule'**
+  String get importRuleAdd;
+
+  /// No description provided for @importRuleEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit rule'**
+  String get importRuleEdit;
+
+  /// No description provided for @importRuleDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this rule?'**
+  String get importRuleDelete;
+
+  /// No description provided for @importRuleFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Match field'**
+  String get importRuleFieldLabel;
+
+  /// No description provided for @importRuleKeyword.
+  ///
+  /// In en, this message translates to:
+  /// **'Contains keyword'**
+  String get importRuleKeyword;
+
+  /// No description provided for @importRulePriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get importRulePriority;
+
+  /// No description provided for @importRulePriorityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Smaller numbers take priority.'**
+  String get importRulePriorityHint;
+
+  /// No description provided for @importRulePriorityValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority {value}'**
+  String importRulePriorityValue(int value);
+
+  /// No description provided for @importRuleEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get importRuleEnabled;
+
+  /// No description provided for @importRuleDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get importRuleDisabled;
+
+  /// No description provided for @importRuleInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a keyword and a priority between 0 and 9999.'**
+  String get importRuleInvalid;
+
+  /// No description provided for @importRuleUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Category unavailable'**
+  String get importRuleUnavailable;
+
+  /// No description provided for @importRuleMerchant.
+  ///
+  /// In en, this message translates to:
+  /// **'Merchant or counterparty'**
+  String get importRuleMerchant;
+
+  /// No description provided for @importRuleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description or note'**
+  String get importRuleDescription;
+
+  /// No description provided for @importRulePayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment channel'**
+  String get importRulePayment;
+
+  /// No description provided for @importRuleSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get importRuleSource;
+
+  /// No description provided for @importRuleSuggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested by rule “{keyword}”'**
+  String importRuleSuggested(String keyword);
+
+  /// No description provided for @importRuleConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules disagree. Choose a category.'**
+  String get importRuleConflict;
+
+  /// No description provided for @importRulesBackupConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup has invalid or conflicting import rules.'**
+  String get importRulesBackupConflict;
+
+  /// No description provided for @statementSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the platform status and type. This row cannot be posted as ordinary income or spending.'**
+  String get statementSkipped;
+
+  /// No description provided for @statementWorkbookInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an unencrypted XLSX workbook with one supported statement sheet.'**
+  String get statementWorkbookInvalid;
+
+  /// No description provided for @csvCopyScreenshotPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy screenshot transcription prompt'**
+  String get csvCopyScreenshotPrompt;
+
+  /// No description provided for @csvScreenshotPromptCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot transcription prompt copied'**
+  String get csvScreenshotPromptCopied;
+
+  /// No description provided for @csvScreenshotPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe only clearly visible completed income and expense entries from my screenshots. Return CSV only, without a Markdown fence. Use this header verbatim:\ntype,amount,occurred_at,account,category,note,currency_code,merchant,description,payment_channel,source,external_id\nUse expense or income, a positive amount, and an ISO 8601 date or timestamp. Leave unknown fields blank. Do not infer dates, totals, or transaction IDs. Only include an external ID if the screenshot shows the actual transaction ID and its source. Keep refunds, transfers, repayments, and pending items separate from ordinary income and expenses. Omit names of private individuals, account numbers, and card numbers. Quote fields containing commas, double quotes, or line breaks and escape double quotes by doubling them.'**
+  String get csvScreenshotPrompt;
 }
 
 class _AppLocalizationsDelegate

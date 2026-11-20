@@ -946,8 +946,8 @@ void main() {
     final backup = await repository.createFullBackup();
     final payload = jsonDecode(backup) as Map<String, dynamic>;
     expect(payload['format'], 'summa_full_backup');
-    expect(payload['schema_version'], 14);
-    expect(payload['backup_version'], 8);
+    expect(payload['schema_version'], 15);
+    expect(payload['backup_version'], 9);
     final preview = repository.inspectFullBackup(backup);
     expect(preview.entryCount, 2);
     expect(preview.deletedEntryCount, 1);

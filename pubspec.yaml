@@ -1,12 +1,14 @@
 name: summa
 description: "Summa, a local-first personal ledger for Android and future desktop platforms."
 publish_to: 'none'
-version: 2.0.0-dev.8+14
+version: 2.0.0-dev.9+15
 
 environment:
   sdk: ^3.13.2
 
 dependencies:
+  archive: ^4.7.1
+  chinese_codec: ^0.1.2
   crypto: ^3.0.7
   drift: ^2.34.4
   file_picker: ^12.2.0
@@ -23,6 +25,7 @@ dependencies:
   shared_preferences: ^2.5.4
   url_launcher: ^6.3.2
   uuid: ^4.6.0
+  xml: ^7.0.1
 
 dev_dependencies:
   flutter_test:

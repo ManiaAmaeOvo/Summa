@@ -38,6 +38,8 @@ String csvIssueLabel(BuildContext context, CsvIssue issue) => switch (issue) {
   CsvIssue.currency => context.l10n.csvCurrencyInvalid,
   CsvIssue.source => context.l10n.csvSourceRequired,
   CsvIssue.advanced => context.l10n.csvAdvanced,
+  CsvIssue.statementSkipped => context.l10n.statementSkipped,
+  CsvIssue.workbook => context.l10n.statementWorkbookInvalid,
 };
 
 String csvErrorText(BuildContext context, Object error) {

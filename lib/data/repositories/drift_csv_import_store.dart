@@ -6,6 +6,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/defaults/default_ledger_names.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
+import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 
 class DriftCsvImportStore {
@@ -15,6 +16,7 @@ class DriftCsvImportStore {
   Future<List<CsvReviewRow>> review(
     CsvImportFile file,
     Map<int, CsvMapping> overrides,
+    List<ImportCategoryRule> rules,
   ) async {
     final valid = file.rows.where((row) => row.movement != null).toList();
     if (valid.isEmpty) {
@@ -71,6 +73,7 @@ class DriftCsvImportStore {
             movement,
             file: file,
             overrides: overrides,
+            rules: rules,
             accounts: accounts,
             categories: categoryRows,
             byFile: byFile,
@@ -91,6 +94,7 @@ class DriftCsvImportStore {
     CsvMovement movement, {
     required CsvImportFile file,
     required Map<int, CsvMapping> overrides,
+    required List<ImportCategoryRule> rules,
     required Map<String, AccountRow> accounts,
     required List<CategoryRow> categories,
     required Map<String, CsvImportRecord> byFile,
@@ -168,10 +172,30 @@ class DriftCsvImportStore {
         : override == null
         ? guessAccount(movement.target, target: true)
         : override.targetId;
-    final requestedCategory = !hasCategory
-        ? null
-        : override == null
+    final explicitCategory = hasCategory
         ? _guessCategory(movement.category, children, activeParents)
+        : null;
+    final eligible = children.map((child) => child.id).toSet();
+    final suggestion =
+        hasCategory && override == null && explicitCategory == null
+        ? suggestImportCategory(
+            rules: rules,
+            fields: {
+              ImportRuleField.merchant: row.raw['merchant'] ?? '',
+              ImportRuleField.description: [
+                ?row.raw['description'],
+                row.raw['备注'] ?? movement.note,
+              ].join('\n'),
+              ImportRuleField.paymentChannel: row.raw['payment_channel'] ?? '',
+              ImportRuleField.account:
+                  accounts[requestedAccount]?.name ?? movement.account,
+              ImportRuleField.source: row.raw['source'] ?? '',
+            },
+            eligibleCategories: eligible,
+          )
+        : null;
+    final requestedCategory = override == null
+        ? explicitCategory ?? suggestion?.categoryId
         : override.categoryId;
     final mapping = (
       accountId: usableAccount(accounts[requestedAccount], target: false)
@@ -215,7 +239,13 @@ class DriftCsvImportStore {
         : exactSource.isNotEmpty
         ? CsvReviewState.similar
         : CsvReviewState.ready;
-    return (row: row, state: state, mapping: mapping, matches: matches);
+    return (
+      row: row,
+      state: state,
+      mapping: mapping,
+      matches: matches,
+      suggestion: suggestion,
+    );
   }
 
   Future<List<EntryRow>> _matchableEntries(List<CsvImportRow> rows) async {
@@ -472,6 +502,7 @@ CsvReviewRow _unavailable(CsvImportRow row, CsvReviewState state) => (
   state: state,
   mapping: (accountId: null, categoryId: null, targetId: null),
   matches: const [],
+  suggestion: null,
 );
 
 Map<String, String> _rawCells(String json) =>

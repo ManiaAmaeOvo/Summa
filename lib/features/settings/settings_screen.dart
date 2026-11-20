@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:summa/app/locale_controller.dart';
 import 'package:summa/app/text_scale_controller.dart';
 import 'package:summa/features/categories/category_management_screen.dart';
+import 'package:summa/features/import_export/import_category_rules_screen.dart';
 import 'package:summa/features/settings/about_screen.dart';
 import 'package:summa/features/settings/data_management_screen.dart';
 import 'package:summa/features/settings/help_screen.dart';
@@ -28,6 +29,13 @@ class SettingsScreen extends StatelessWidget {
                   title: l10n.categoryManagement,
                   subtitle: l10n.categoryManagementSubtitle,
                   screen: const CategoryManagementScreen(),
+                ),
+                const Divider(height: 1),
+                _SettingsTile(
+                  icon: Icons.rule_outlined,
+                  title: l10n.importCategoryRules,
+                  subtitle: l10n.importRuleInstructions,
+                  screen: const ImportCategoryRulesScreen(),
                 ),
                 const Divider(height: 1),
                 _SettingsTile(

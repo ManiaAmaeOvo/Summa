@@ -10,12 +10,14 @@ import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
+import 'package:summa/domain/import_export/statement_import.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/l10n.dart';
 
 import 'csv_import_history_screen.dart';
 import 'csv_import_labels.dart';
+import 'import_category_rules_screen.dart';
 
 class CsvImportScreen extends ConsumerStatefulWidget {
   const CsvImportScreen({super.key});
@@ -39,6 +41,21 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       appBar: AppBar(
         title: Text(labels.csvImport),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.rule_outlined),
+            tooltip: labels.importCategoryRules,
+            onPressed: _busy
+                ? null
+                : () async {
+                    await Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ImportCategoryRulesScreen(),
+                      ),
+                    );
+                    if (mounted && _file != null) await _refresh();
+                  },
+          ),
           IconButton(
             tooltip: labels.csvHistory,
             onPressed: _busy
@@ -76,25 +93,32 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
         TextButton.icon(
           onPressed: _busy
               ? null
-              : () async {
-                  await Clipboard.setData(
-                    const ClipboardData(text: csvImportTemplate),
-                  );
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(context.l10n.importTemplateCopied),
-                      ),
-                    );
-                  }
-                },
+              : () => _copy(csvImportTemplate, labels.importTemplateCopied),
           icon: const Icon(Icons.copy),
           label: Text(labels.copyTemplate),
+        ),
+        TextButton.icon(
+          onPressed: _busy
+              ? null
+              : () => _copy(
+                  labels.csvScreenshotPrompt,
+                  labels.csvScreenshotPromptCopied,
+                ),
+          icon: const Icon(Icons.document_scanner_outlined),
+          label: Text(labels.csvCopyScreenshotPrompt),
         ),
         if (_busy) const LinearProgressIndicator(),
         if (_error case final error?) _ErrorText(error),
       ],
     );
+  }
+
+  Future<void> _copy(String value, String confirmation) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(confirmation)));
+    }
   }
 
   Widget _preview() {
@@ -212,6 +236,10 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           [
             if (movement != null) labels.csvLine(row.line),
             status,
+            if (item.suggestion case final suggestion?)
+              suggestion.categoryId == null
+                  ? labels.importRuleConflict
+                  : labels.importRuleSuggested(suggestion.keyword),
             if (movement != null) ...[
               _date(context, movement.occurredAt),
               if (source.isNotEmpty)
@@ -243,21 +271,48 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
             : editable
             ? const Icon(Icons.chevron_right)
             : null,
-        onTap: _busy || !editable ? null : () => _editRow(item),
+        onTap: _busy
+            ? null
+            : editable
+            ? () => _editRow(item)
+            : row.issue != null && row.raw.isNotEmpty
+            ? () => _showOriginal(row)
+            : null,
       ),
     );
   }
 
+  void _showOriginal(CsvImportRow row) => showDialog<void>(
+    context: context,
+    builder: (dialog) => AlertDialog(
+      title: Text(context.l10n.csvLine(row.line)),
+      content: SingleChildScrollView(
+        child: SelectableText(
+          [
+            for (final item in row.raw.entries)
+              if (item.value.isNotEmpty) '${item.key}  ${item.value}',
+          ].join('\n'),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialog),
+          child: Text(context.l10n.close),
+        ),
+      ],
+    ),
+  );
+
   Future<void> _pickFile() => _start(() async {
     final file = await FilePicker.pickFile(
       type: FileType.custom,
-      allowedExtensions: ['csv'],
+      allowedExtensions: ['csv', 'xlsx'],
     );
     if (file == null) return;
     if (await file.length() > maxCsvImportBytes) {
       throw const CsvImportException(CsvIssue.tooLarge);
     }
-    await _open(parseCsvImport(file.name, await file.readAsBytes()));
+    await _open(parseStatementImport(file.name, await file.readAsBytes()));
   });
 
   Future<void> _paste() async {
@@ -268,7 +323,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     if (source == null || !mounted) return;
     await _start(
       () => _open(
-        parseCsvImport(context.l10n.csvPastedFile, utf8.encode(source)),
+        parseStatementImport(context.l10n.csvPastedFile, utf8.encode(source)),
       ),
     );
   }
@@ -286,7 +341,11 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
         ..clear()
         ..addEntries(
           rows
-              .where((item) => item.state == CsvReviewState.ready)
+              .where(
+                (item) =>
+                    item.state == CsvReviewState.ready &&
+                    item.suggestion == null,
+              )
               .map(
                 (item) => MapEntry(
                   item.row.number,

@@ -160,6 +160,19 @@ class CsvImportRows extends Table {
   Set<Column<Object>> get primaryKey => {batchId, rowNumber};
 }
 
+@DataClassName('ImportCategoryRuleRow')
+class ImportCategoryRules extends Table {
+  TextColumn get id => text()();
+  TextColumn get field => text()();
+  TextColumn get keyword => text()();
+  TextColumn get categoryId => text().references(LedgerCategories, #id)();
+  IntColumn get priority => integer()();
+  BoolColumn get enabled => boolean()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     LedgerAccounts,
@@ -171,6 +184,7 @@ class CsvImportRows extends Table {
     BalanceCheckpoints,
     CsvImportBatches,
     CsvImportRows,
+    ImportCategoryRules,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -179,7 +193,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -255,6 +269,9 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(csvImportBatches);
           await migrator.createTable(csvImportRows);
           await _createCsvIndexes();
+        }
+        if (from < 15) {
+          await migrator.createTable(importCategoryRules);
         }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
@@ -385,6 +402,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(csvImportBatches).go();
       await delete(balanceCheckpoints).go();
       await delete(ledgerEntries).go();
+      await delete(importCategoryRules).go();
       await delete(ledgerCategories).go();
       await delete(ledgerAccounts).go();
       await _seedDefaults();

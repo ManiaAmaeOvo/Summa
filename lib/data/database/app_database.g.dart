@@ -4927,6 +4927,424 @@ class CsvImportRowsCompanion extends UpdateCompanion<CsvImportRecord> {
   }
 }
 
+class $ImportCategoryRulesTable extends ImportCategoryRules
+    with TableInfo<$ImportCategoryRulesTable, ImportCategoryRuleRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ImportCategoryRulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fieldMeta = const VerificationMeta('field');
+  @override
+  late final GeneratedColumn<String> field = GeneratedColumn<String>(
+    'field',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _keywordMeta = const VerificationMeta(
+    'keyword',
+  );
+  @override
+  late final GeneratedColumn<String> keyword = GeneratedColumn<String>(
+    'keyword',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_categories (id)',
+    ),
+  );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<int> priority = GeneratedColumn<int>(
+    'priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    field,
+    keyword,
+    categoryId,
+    priority,
+    enabled,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'import_category_rules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ImportCategoryRuleRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('field')) {
+      context.handle(
+        _fieldMeta,
+        field.isAcceptableOrUnknown(data['field']!, _fieldMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fieldMeta);
+    }
+    if (data.containsKey('keyword')) {
+      context.handle(
+        _keywordMeta,
+        keyword.isAcceptableOrUnknown(data['keyword']!, _keywordMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keywordMeta);
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryIdMeta);
+    }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_priorityMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_enabledMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ImportCategoryRuleRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImportCategoryRuleRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      field: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}field'],
+      )!,
+      keyword: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}keyword'],
+      )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      )!,
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}priority'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+    );
+  }
+
+  @override
+  $ImportCategoryRulesTable createAlias(String alias) {
+    return $ImportCategoryRulesTable(attachedDatabase, alias);
+  }
+}
+
+class ImportCategoryRuleRow extends DataClass
+    implements Insertable<ImportCategoryRuleRow> {
+  final String id;
+  final String field;
+  final String keyword;
+  final String categoryId;
+  final int priority;
+  final bool enabled;
+  const ImportCategoryRuleRow({
+    required this.id,
+    required this.field,
+    required this.keyword,
+    required this.categoryId,
+    required this.priority,
+    required this.enabled,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['field'] = Variable<String>(field);
+    map['keyword'] = Variable<String>(keyword);
+    map['category_id'] = Variable<String>(categoryId);
+    map['priority'] = Variable<int>(priority);
+    map['enabled'] = Variable<bool>(enabled);
+    return map;
+  }
+
+  ImportCategoryRulesCompanion toCompanion(bool nullToAbsent) {
+    return ImportCategoryRulesCompanion(
+      id: Value(id),
+      field: Value(field),
+      keyword: Value(keyword),
+      categoryId: Value(categoryId),
+      priority: Value(priority),
+      enabled: Value(enabled),
+    );
+  }
+
+  factory ImportCategoryRuleRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImportCategoryRuleRow(
+      id: serializer.fromJson<String>(json['id']),
+      field: serializer.fromJson<String>(json['field']),
+      keyword: serializer.fromJson<String>(json['keyword']),
+      categoryId: serializer.fromJson<String>(json['categoryId']),
+      priority: serializer.fromJson<int>(json['priority']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'field': serializer.toJson<String>(field),
+      'keyword': serializer.toJson<String>(keyword),
+      'categoryId': serializer.toJson<String>(categoryId),
+      'priority': serializer.toJson<int>(priority),
+      'enabled': serializer.toJson<bool>(enabled),
+    };
+  }
+
+  ImportCategoryRuleRow copyWith({
+    String? id,
+    String? field,
+    String? keyword,
+    String? categoryId,
+    int? priority,
+    bool? enabled,
+  }) => ImportCategoryRuleRow(
+    id: id ?? this.id,
+    field: field ?? this.field,
+    keyword: keyword ?? this.keyword,
+    categoryId: categoryId ?? this.categoryId,
+    priority: priority ?? this.priority,
+    enabled: enabled ?? this.enabled,
+  );
+  ImportCategoryRuleRow copyWithCompanion(ImportCategoryRulesCompanion data) {
+    return ImportCategoryRuleRow(
+      id: data.id.present ? data.id.value : this.id,
+      field: data.field.present ? data.field.value : this.field,
+      keyword: data.keyword.present ? data.keyword.value : this.keyword,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportCategoryRuleRow(')
+          ..write('id: $id, ')
+          ..write('field: $field, ')
+          ..write('keyword: $keyword, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('priority: $priority, ')
+          ..write('enabled: $enabled')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, field, keyword, categoryId, priority, enabled);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImportCategoryRuleRow &&
+          other.id == this.id &&
+          other.field == this.field &&
+          other.keyword == this.keyword &&
+          other.categoryId == this.categoryId &&
+          other.priority == this.priority &&
+          other.enabled == this.enabled);
+}
+
+class ImportCategoryRulesCompanion
+    extends UpdateCompanion<ImportCategoryRuleRow> {
+  final Value<String> id;
+  final Value<String> field;
+  final Value<String> keyword;
+  final Value<String> categoryId;
+  final Value<int> priority;
+  final Value<bool> enabled;
+  final Value<int> rowid;
+  const ImportCategoryRulesCompanion({
+    this.id = const Value.absent(),
+    this.field = const Value.absent(),
+    this.keyword = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ImportCategoryRulesCompanion.insert({
+    required String id,
+    required String field,
+    required String keyword,
+    required String categoryId,
+    required int priority,
+    required bool enabled,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       field = Value(field),
+       keyword = Value(keyword),
+       categoryId = Value(categoryId),
+       priority = Value(priority),
+       enabled = Value(enabled);
+  static Insertable<ImportCategoryRuleRow> custom({
+    Expression<String>? id,
+    Expression<String>? field,
+    Expression<String>? keyword,
+    Expression<String>? categoryId,
+    Expression<int>? priority,
+    Expression<bool>? enabled,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (field != null) 'field': field,
+      if (keyword != null) 'keyword': keyword,
+      if (categoryId != null) 'category_id': categoryId,
+      if (priority != null) 'priority': priority,
+      if (enabled != null) 'enabled': enabled,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ImportCategoryRulesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? field,
+    Value<String>? keyword,
+    Value<String>? categoryId,
+    Value<int>? priority,
+    Value<bool>? enabled,
+    Value<int>? rowid,
+  }) {
+    return ImportCategoryRulesCompanion(
+      id: id ?? this.id,
+      field: field ?? this.field,
+      keyword: keyword ?? this.keyword,
+      categoryId: categoryId ?? this.categoryId,
+      priority: priority ?? this.priority,
+      enabled: enabled ?? this.enabled,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (field.present) {
+      map['field'] = Variable<String>(field.value);
+    }
+    if (keyword.present) {
+      map['keyword'] = Variable<String>(keyword.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (priority.present) {
+      map['priority'] = Variable<int>(priority.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportCategoryRulesCompanion(')
+          ..write('id: $id, ')
+          ..write('field: $field, ')
+          ..write('keyword: $keyword, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('priority: $priority, ')
+          ..write('enabled: $enabled, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4945,6 +5363,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $CsvImportRowsTable csvImportRows = $CsvImportRowsTable(this);
+  late final $ImportCategoryRulesTable importCategoryRules =
+      $ImportCategoryRulesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4959,6 +5379,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     balanceCheckpoints,
     csvImportBatches,
     csvImportRows,
+    importCategoryRules,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5732,6 +6153,30 @@ final class $$LedgerCategoriesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $ImportCategoryRulesTable,
+    List<ImportCategoryRuleRow>
+  >
+  _importCategoryRulesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.importCategoryRules,
+        aliasName: 'ledger_categories__id__import_category_rules__category_id',
+      );
+
+  $$ImportCategoryRulesTableProcessedTableManager get importCategoryRulesRefs {
+    final manager = $$ImportCategoryRulesTableTableManager(
+      $_db,
+      $_db.importCategoryRules,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _importCategoryRulesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LedgerCategoriesTableFilterComposer
@@ -5817,6 +6262,31 @@ class $$LedgerCategoriesTableFilterComposer
           }) => $$LedgerEntriesTableFilterComposer(
             $db: $db,
             $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> importCategoryRulesRefs(
+    Expression<bool> Function($$ImportCategoryRulesTableFilterComposer f) f,
+  ) {
+    final $$ImportCategoryRulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.importCategoryRules,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ImportCategoryRulesTableFilterComposer(
+            $db: $db,
+            $table: $db.importCategoryRules,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5976,6 +6446,32 @@ class $$LedgerCategoriesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> importCategoryRulesRefs<T extends Object>(
+    Expression<T> Function($$ImportCategoryRulesTableAnnotationComposer a) f,
+  ) {
+    final $$ImportCategoryRulesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.importCategoryRules,
+          getReferencedColumn: (t) => t.categoryId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ImportCategoryRulesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.importCategoryRules,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LedgerCategoriesTableTableManager
@@ -5991,7 +6487,11 @@ class $$LedgerCategoriesTableTableManager
           $$LedgerCategoriesTableUpdateCompanionBuilder,
           (CategoryRow, $$LedgerCategoriesTableReferences),
           CategoryRow,
-          PrefetchHooks Function({bool parentId, bool ledgerEntriesRefs})
+          PrefetchHooks Function({
+            bool parentId,
+            bool ledgerEntriesRefs,
+            bool importCategoryRulesRefs,
+          })
         > {
   $$LedgerCategoriesTableTableManager(
     _$AppDatabase db,
@@ -6059,11 +6559,16 @@ class $$LedgerCategoriesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({parentId = false, ledgerEntriesRefs = false}) {
+              ({
+                parentId = false,
+                ledgerEntriesRefs = false,
+                importCategoryRulesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (ledgerEntriesRefs) db.ledgerEntries,
+                    if (importCategoryRulesRefs) db.importCategoryRules,
                   ],
                   addJoins:
                       <
@@ -6118,6 +6623,27 @@ class $$LedgerCategoriesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (importCategoryRulesRefs)
+                        await $_getPrefetchedData<
+                          CategoryRow,
+                          $LedgerCategoriesTable,
+                          ImportCategoryRuleRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerCategoriesTableReferences
+                              ._importCategoryRulesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerCategoriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).importCategoryRulesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -6138,7 +6664,11 @@ typedef $$LedgerCategoriesTableProcessedTableManager =
       $$LedgerCategoriesTableUpdateCompanionBuilder,
       (CategoryRow, $$LedgerCategoriesTableReferences),
       CategoryRow,
-      PrefetchHooks Function({bool parentId, bool ledgerEntriesRefs})
+      PrefetchHooks Function({
+        bool parentId,
+        bool ledgerEntriesRefs,
+        bool importCategoryRulesRefs,
+      })
     >;
 typedef $$LedgerEntriesTableCreateCompanionBuilder =
     LedgerEntriesCompanion Function({
@@ -9464,6 +9994,360 @@ typedef $$CsvImportRowsTableProcessedTableManager =
       CsvImportRecord,
       PrefetchHooks Function({bool batchId, bool entryId})
     >;
+typedef $$ImportCategoryRulesTableCreateCompanionBuilder =
+    ImportCategoryRulesCompanion Function({
+      required String id,
+      required String field,
+      required String keyword,
+      required String categoryId,
+      required int priority,
+      required bool enabled,
+      Value<int> rowid,
+    });
+typedef $$ImportCategoryRulesTableUpdateCompanionBuilder =
+    ImportCategoryRulesCompanion Function({
+      Value<String> id,
+      Value<String> field,
+      Value<String> keyword,
+      Value<String> categoryId,
+      Value<int> priority,
+      Value<bool> enabled,
+      Value<int> rowid,
+    });
+
+final class $$ImportCategoryRulesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ImportCategoryRulesTable,
+          ImportCategoryRuleRow
+        > {
+  $$ImportCategoryRulesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LedgerCategoriesTable _categoryIdTable(_$AppDatabase db) => db
+      .ledgerCategories
+      .createAlias('import_category_rules__category_id__ledger_categories__id');
+
+  $$LedgerCategoriesTableProcessedTableManager get categoryId {
+    final $_column = $_itemColumn<String>('category_id')!;
+
+    final manager = $$LedgerCategoriesTableTableManager(
+      $_db,
+      $_db.ledgerCategories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ImportCategoryRulesTableFilterComposer
+    extends Composer<_$AppDatabase, $ImportCategoryRulesTable> {
+  $$ImportCategoryRulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get field => $composableBuilder(
+    column: $table.field,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get keyword => $composableBuilder(
+    column: $table.keyword,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LedgerCategoriesTableFilterComposer get categoryId {
+    final $$LedgerCategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.ledgerCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerCategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ImportCategoryRulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ImportCategoryRulesTable> {
+  $$ImportCategoryRulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get field => $composableBuilder(
+    column: $table.field,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get keyword => $composableBuilder(
+    column: $table.keyword,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LedgerCategoriesTableOrderingComposer get categoryId {
+    final $$LedgerCategoriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.ledgerCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerCategoriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ImportCategoryRulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ImportCategoryRulesTable> {
+  $$ImportCategoryRulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get field =>
+      $composableBuilder(column: $table.field, builder: (column) => column);
+
+  GeneratedColumn<String> get keyword =>
+      $composableBuilder(column: $table.keyword, builder: (column) => column);
+
+  GeneratedColumn<int> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  $$LedgerCategoriesTableAnnotationComposer get categoryId {
+    final $$LedgerCategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.ledgerCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerCategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ImportCategoryRulesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ImportCategoryRulesTable,
+          ImportCategoryRuleRow,
+          $$ImportCategoryRulesTableFilterComposer,
+          $$ImportCategoryRulesTableOrderingComposer,
+          $$ImportCategoryRulesTableAnnotationComposer,
+          $$ImportCategoryRulesTableCreateCompanionBuilder,
+          $$ImportCategoryRulesTableUpdateCompanionBuilder,
+          (ImportCategoryRuleRow, $$ImportCategoryRulesTableReferences),
+          ImportCategoryRuleRow,
+          PrefetchHooks Function({bool categoryId})
+        > {
+  $$ImportCategoryRulesTableTableManager(
+    _$AppDatabase db,
+    $ImportCategoryRulesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ImportCategoryRulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImportCategoryRulesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ImportCategoryRulesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> field = const Value.absent(),
+                Value<String> keyword = const Value.absent(),
+                Value<String> categoryId = const Value.absent(),
+                Value<int> priority = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImportCategoryRulesCompanion(
+                id: id,
+                field: field,
+                keyword: keyword,
+                categoryId: categoryId,
+                priority: priority,
+                enabled: enabled,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String field,
+                required String keyword,
+                required String categoryId,
+                required int priority,
+                required bool enabled,
+                Value<int> rowid = const Value.absent(),
+              }) => ImportCategoryRulesCompanion.insert(
+                id: id,
+                field: field,
+                keyword: keyword,
+                categoryId: categoryId,
+                priority: priority,
+                enabled: enabled,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ImportCategoryRulesTable, ImportCategoryRuleRow>(
+                    table,
+                  ),
+                  $$ImportCategoryRulesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({categoryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (categoryId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.categoryId,
+                        referencedTable: $$ImportCategoryRulesTableReferences
+                            ._categoryIdTable(db),
+                        referencedColumn: $$ImportCategoryRulesTableReferences
+                            ._categoryIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ImportCategoryRulesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ImportCategoryRulesTable,
+      ImportCategoryRuleRow,
+      $$ImportCategoryRulesTableFilterComposer,
+      $$ImportCategoryRulesTableOrderingComposer,
+      $$ImportCategoryRulesTableAnnotationComposer,
+      $$ImportCategoryRulesTableCreateCompanionBuilder,
+      $$ImportCategoryRulesTableUpdateCompanionBuilder,
+      (ImportCategoryRuleRow, $$ImportCategoryRulesTableReferences),
+      ImportCategoryRuleRow,
+      PrefetchHooks Function({bool categoryId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9486,4 +10370,6 @@ class $AppDatabaseManager {
       $$CsvImportBatchesTableTableManager(_db, _db.csvImportBatches);
   $$CsvImportRowsTableTableManager get csvImportRows =>
       $$CsvImportRowsTableTableManager(_db, _db.csvImportRows);
+  $$ImportCategoryRulesTableTableManager get importCategoryRules =>
+      $$ImportCategoryRulesTableTableManager(_db, _db.importCategoryRules);
 }

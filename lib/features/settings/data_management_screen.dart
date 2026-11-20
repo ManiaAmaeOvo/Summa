@@ -687,6 +687,7 @@ String _localizedBackupError(BuildContext context, String message) {
       message.contains('拆分分类')) {
     return context.l10n.backupLedgerConflict;
   }
+  if (message.contains('导入分类规则')) return context.l10n.importRulesBackupConflict;
   if (message.contains('CSV 导入批次')) return context.l10n.csvBackupConflict;
   if (message.contains('余额检查点')) return context.l10n.checkpointBackupConflict;
   if (message.startsWith('备份估值')) {

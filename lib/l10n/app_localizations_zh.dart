@@ -1513,10 +1513,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get csvHistory => '导入批次';
 
   @override
-  String get csvInstructions => '选择 UTF-8 编码的 CSV 文件，或粘贴 CSV 内容。请在入账前核对账户和分类。';
+  String get csvInstructions => '可导入通用 CSV 或微信、支付宝的 CSV/XLSX 账单。入账前请复核账单行。';
 
   @override
-  String get csvChooseFile => '选择 CSV 文件';
+  String get csvChooseFile => '选择账单文件';
 
   @override
   String get csvPaste => '粘贴 CSV';
@@ -1686,4 +1686,90 @@ class AppLocalizationsZh extends AppLocalizations {
   String backupImportBatchCount(int count) {
     return 'CSV 导入批次 $count';
   }
+
+  @override
+  String get importCategoryRules => '导入分类规则';
+
+  @override
+  String get importRuleInstructions => '按关键词建议分类，入账前仍需复核。';
+
+  @override
+  String get importRuleEmpty => '暂无规则。可添加关键词并选择分类。';
+
+  @override
+  String get importRuleAdd => '添加规则';
+
+  @override
+  String get importRuleEdit => '编辑规则';
+
+  @override
+  String get importRuleDelete => '删除这条分类规则？';
+
+  @override
+  String get importRuleFieldLabel => '匹配字段';
+
+  @override
+  String get importRuleKeyword => '包含关键词';
+
+  @override
+  String get importRulePriority => '优先级';
+
+  @override
+  String get importRulePriorityHint => '数字越小，优先级越高。';
+
+  @override
+  String importRulePriorityValue(int value) {
+    return '优先级 $value';
+  }
+
+  @override
+  String get importRuleEnabled => '已启用';
+
+  @override
+  String get importRuleDisabled => '已停用';
+
+  @override
+  String get importRuleInvalid => '请输入关键词以及 0 至 9999 的优先级。';
+
+  @override
+  String get importRuleUnavailable => '分类已不可用';
+
+  @override
+  String get importRuleMerchant => '商户或交易对方';
+
+  @override
+  String get importRuleDescription => '商品说明或备注';
+
+  @override
+  String get importRulePayment => '支付渠道';
+
+  @override
+  String get importRuleSource => '账单来源';
+
+  @override
+  String importRuleSuggested(String keyword) {
+    return '规则「$keyword」建议分类';
+  }
+
+  @override
+  String get importRuleConflict => '同优先级规则冲突，请选择分类。';
+
+  @override
+  String get importRulesBackupConflict => '备份中的导入分类规则无效或与现有规则冲突。';
+
+  @override
+  String get statementSkipped => '请核对平台状态和交易类型，此行暂不能按普通收支入账。';
+
+  @override
+  String get statementWorkbookInvalid => '请选择未加密且只含一张可识别账单表的 XLSX 文件。';
+
+  @override
+  String get csvCopyScreenshotPrompt => '复制截图转录提示';
+
+  @override
+  String get csvScreenshotPromptCopied => '已复制截图转录提示';
+
+  @override
+  String get csvScreenshotPrompt =>
+      '只转录截图中清晰可见且已完成的普通支出和收入。仅输出 CSV，不加 Markdown 代码块。首行原样使用：\ntype,amount,occurred_at,account,category,note,currency_code,merchant,description,payment_channel,source,external_id\n类型填写 expense 或 income，金额使用正数，日期或时间使用 ISO 8601。不确定的字段留空，不猜日期、金额或交易号。仅当截图明确显示实际交易编号和来源时填写外部编号。退款、转账、还款和待入账项目不作为普通收支输出。省略私人姓名、账号和卡号。包含逗号、双引号或换行的字段用双引号括起来，并把字段内的双引号写成两个。';
 }

@@ -7,6 +7,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
+import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
@@ -19,6 +20,7 @@ import 'package:summa/domain/valuation/net_worth_valuation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'drift_csv_import_store.dart';
+import 'drift_import_rule_store.dart';
 import 'drift_reconciliation_store.dart';
 import 'drift_valuation_store.dart';
 
@@ -29,12 +31,14 @@ class DriftExpenseRepository implements ExpenseRepository {
   DriftExpenseRepository(this._database)
     : _valuation = DriftValuationStore(_database),
       _reconciliation = DriftReconciliationStore(_database),
-      _csv = DriftCsvImportStore(_database);
+      _csv = DriftCsvImportStore(_database),
+      _importRules = DriftImportRuleStore(_database);
 
   final AppDatabase _database;
   final DriftValuationStore _valuation;
   final DriftReconciliationStore _reconciliation;
   final DriftCsvImportStore _csv;
+  final DriftImportRuleStore _importRules;
   final Uuid _uuid = const Uuid();
 
   @override
@@ -1198,10 +1202,39 @@ class DriftExpenseRepository implements ExpenseRepository {
   }
 
   @override
+  Stream<List<ImportCategoryRule>> watchImportRules() => _importRules.watch();
+
+  @override
+  Future<void> saveImportRule({
+    String? id,
+    required ImportRuleField field,
+    required String keyword,
+    required String categoryId,
+    required int priority,
+    required bool enabled,
+  }) => _database.transaction(
+    () => _importRules.save(
+      ImportCategoryRule(
+        id: id ?? _uuid.v4(),
+        field: field,
+        keyword: keyword,
+        categoryId: categoryId,
+        priority: priority,
+        enabled: enabled,
+      ),
+    ),
+  );
+
+  @override
+  Future<void> deleteImportRule(String id) => _importRules.delete(id);
+
+  @override
   Future<List<CsvReviewRow>> previewCsvImport(
     CsvImportFile file, {
     Map<int, CsvMapping> mappings = const {},
-  }) => _database.transaction(() => _csv.review(file, mappings));
+  }) => _database.transaction(
+    () async => _csv.review(file, mappings, await _importRules.read()),
+  );
 
   @override
   Stream<List<CsvBatchSummary>> watchCsvBatches() => _csv.watchBatches();
@@ -1220,7 +1253,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     }
     final preview = await _csv.review(file, {
       for (final choice in selections) choice.number: choice.mapping,
-    });
+    }, const []);
     final chosen = preview
         .where((item) => choices.containsKey(item.row.number))
         .toList();
@@ -2363,7 +2396,8 @@ class DriftExpenseRepository implements ExpenseRepository {
     final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 8,
+      'backup_version': 9,
+      'import_category_rules': await _importRules.backup(),
       'csv_import': await _csv.backup(),
       'balance_checkpoints': await _reconciliation.backup(),
       'valuation': {
@@ -2417,6 +2451,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         await _database.delete(_database.csvImportBatches).go();
         await _database.delete(_database.balanceCheckpoints).go();
         await _database.delete(_database.ledgerEntries).go();
+        await _database.delete(_database.importCategoryRules).go();
         await _database.delete(_database.ledgerCategories).go();
         await _database.delete(_database.ledgerAccounts).go();
       }
@@ -2571,6 +2606,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       await _validateRestoredLedger();
       await _reconciliation.restore(payload.checkpoints);
       await _csv.restore(payload.csvBatches, payload.csvRows);
+      await _importRules.restore(payload.importRules);
       try {
         await _checkReceivableBalances();
       } on TransactionRuleException {
@@ -3205,6 +3241,7 @@ Map<String, Object?> _backupPosting(PostingRow posting) => {
   List<Map<String, dynamic>> checkpoints,
   List<Map<String, dynamic>> csvBatches,
   List<Map<String, dynamic>> csvRows,
+  List<Map<String, dynamic>> importRules,
 })
 _parseBackup(String source) {
   dynamic decoded;
@@ -3219,7 +3256,7 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 8) ||
+      !(format == _backupFormat && (version >= 1 && version <= 9) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
@@ -3237,6 +3274,9 @@ _parseBackup(String source) {
     accounts: _requiredObjectList(decoded, 'accounts'),
     categories: _requiredObjectList(decoded, 'categories'),
     entries: _requiredObjectList(decoded, 'entries'),
+    importRules: version >= 9
+        ? _requiredObjectList(decoded, 'import_category_rules')
+        : const [],
     csvBatches: csvData == null
         ? const []
         : _requiredObjectList(csvData, 'batches'),

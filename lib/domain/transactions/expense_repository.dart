@@ -2,6 +2,7 @@ import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
+import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
@@ -152,6 +153,19 @@ abstract interface class ExpenseRepository {
   });
 
   Future<void> importTransactions(List<LedgerImportDraft> drafts);
+
+  Stream<List<ImportCategoryRule>> watchImportRules();
+
+  Future<void> saveImportRule({
+    String? id,
+    required ImportRuleField field,
+    required String keyword,
+    required String categoryId,
+    required int priority,
+    required bool enabled,
+  });
+
+  Future<void> deleteImportRule(String id);
 
   Future<List<CsvReviewRow>> previewCsvImport(
     CsvImportFile file, {

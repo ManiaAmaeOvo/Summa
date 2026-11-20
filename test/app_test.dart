@@ -470,6 +470,11 @@ void main() {
     expect(find.textContaining('借入会同时增加负债'), findsOneWidget);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
+    await tester.drag(
+      find.ancestor(of: find.text('分类管理'), matching: find.byType(ListView)),
+      const Offset(0, 200),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('分类管理'));
     await tester.pumpAndSettle();
     expect(find.text('分类管理'), findsOneWidget);

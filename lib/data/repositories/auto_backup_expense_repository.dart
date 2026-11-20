@@ -4,6 +4,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
+import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -252,6 +253,33 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
       status: status,
     ),
   );
+
+  @override
+  Stream<List<ImportCategoryRule>> watchImportRules() =>
+      _delegate.watchImportRules();
+
+  @override
+  Future<void> saveImportRule({
+    String? id,
+    required ImportRuleField field,
+    required String keyword,
+    required String categoryId,
+    required int priority,
+    required bool enabled,
+  }) => _mutate(
+    () => _delegate.saveImportRule(
+      id: id,
+      field: field,
+      keyword: keyword,
+      categoryId: categoryId,
+      priority: priority,
+      enabled: enabled,
+    ),
+  );
+
+  @override
+  Future<void> deleteImportRule(String id) =>
+      _mutate(() => _delegate.deleteImportRule(id));
 
   @override
   Future<List<CsvReviewRow>> previewCsvImport(

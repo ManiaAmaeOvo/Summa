@@ -6,6 +6,7 @@ import 'package:summa/data/repositories/drift_expense_repository.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
+import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
@@ -66,4 +67,9 @@ final csvBatchesProvider = StreamProvider.autoDispose<List<CsvBatchSummary>>((
 final csvBatchItemsProvider = FutureProvider.autoDispose
     .family<List<CsvBatchItem>, String>((ref, id) {
       return ref.watch(expenseRepositoryProvider).readCsvBatchItems(id);
+    });
+
+final importCategoryRulesProvider =
+    StreamProvider.autoDispose<List<ImportCategoryRule>>((ref) {
+      return ref.watch(expenseRepositoryProvider).watchImportRules();
     });
