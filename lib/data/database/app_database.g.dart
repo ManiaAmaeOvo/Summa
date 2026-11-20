@@ -4962,6 +4962,17 @@ class $ImportCategoryRulesTable extends ImportCategoryRules
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _conditionsJsonMeta = const VerificationMeta(
+    'conditionsJson',
+  );
+  @override
+  late final GeneratedColumn<String> conditionsJson = GeneratedColumn<String>(
+    'conditions_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _categoryIdMeta = const VerificationMeta(
     'categoryId',
   );
@@ -5006,6 +5017,7 @@ class $ImportCategoryRulesTable extends ImportCategoryRules
     id,
     field,
     keyword,
+    conditionsJson,
     categoryId,
     priority,
     enabled,
@@ -5042,6 +5054,15 @@ class $ImportCategoryRulesTable extends ImportCategoryRules
       );
     } else if (isInserting) {
       context.missing(_keywordMeta);
+    }
+    if (data.containsKey('conditions_json')) {
+      context.handle(
+        _conditionsJsonMeta,
+        conditionsJson.isAcceptableOrUnknown(
+          data['conditions_json']!,
+          _conditionsJsonMeta,
+        ),
+      );
     }
     if (data.containsKey('category_id')) {
       context.handle(
@@ -5088,6 +5109,10 @@ class $ImportCategoryRulesTable extends ImportCategoryRules
         DriftSqlType.string,
         data['${effectivePrefix}keyword'],
       )!,
+      conditionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conditions_json'],
+      ),
       categoryId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}category_id'],
@@ -5114,6 +5139,7 @@ class ImportCategoryRuleRow extends DataClass
   final String id;
   final String field;
   final String keyword;
+  final String? conditionsJson;
   final String categoryId;
   final int priority;
   final bool enabled;
@@ -5121,6 +5147,7 @@ class ImportCategoryRuleRow extends DataClass
     required this.id,
     required this.field,
     required this.keyword,
+    this.conditionsJson,
     required this.categoryId,
     required this.priority,
     required this.enabled,
@@ -5131,6 +5158,9 @@ class ImportCategoryRuleRow extends DataClass
     map['id'] = Variable<String>(id);
     map['field'] = Variable<String>(field);
     map['keyword'] = Variable<String>(keyword);
+    if (!nullToAbsent || conditionsJson != null) {
+      map['conditions_json'] = Variable<String>(conditionsJson);
+    }
     map['category_id'] = Variable<String>(categoryId);
     map['priority'] = Variable<int>(priority);
     map['enabled'] = Variable<bool>(enabled);
@@ -5142,6 +5172,9 @@ class ImportCategoryRuleRow extends DataClass
       id: Value(id),
       field: Value(field),
       keyword: Value(keyword),
+      conditionsJson: conditionsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(conditionsJson),
       categoryId: Value(categoryId),
       priority: Value(priority),
       enabled: Value(enabled),
@@ -5157,6 +5190,7 @@ class ImportCategoryRuleRow extends DataClass
       id: serializer.fromJson<String>(json['id']),
       field: serializer.fromJson<String>(json['field']),
       keyword: serializer.fromJson<String>(json['keyword']),
+      conditionsJson: serializer.fromJson<String?>(json['conditionsJson']),
       categoryId: serializer.fromJson<String>(json['categoryId']),
       priority: serializer.fromJson<int>(json['priority']),
       enabled: serializer.fromJson<bool>(json['enabled']),
@@ -5169,6 +5203,7 @@ class ImportCategoryRuleRow extends DataClass
       'id': serializer.toJson<String>(id),
       'field': serializer.toJson<String>(field),
       'keyword': serializer.toJson<String>(keyword),
+      'conditionsJson': serializer.toJson<String?>(conditionsJson),
       'categoryId': serializer.toJson<String>(categoryId),
       'priority': serializer.toJson<int>(priority),
       'enabled': serializer.toJson<bool>(enabled),
@@ -5179,6 +5214,7 @@ class ImportCategoryRuleRow extends DataClass
     String? id,
     String? field,
     String? keyword,
+    Value<String?> conditionsJson = const Value.absent(),
     String? categoryId,
     int? priority,
     bool? enabled,
@@ -5186,6 +5222,9 @@ class ImportCategoryRuleRow extends DataClass
     id: id ?? this.id,
     field: field ?? this.field,
     keyword: keyword ?? this.keyword,
+    conditionsJson: conditionsJson.present
+        ? conditionsJson.value
+        : this.conditionsJson,
     categoryId: categoryId ?? this.categoryId,
     priority: priority ?? this.priority,
     enabled: enabled ?? this.enabled,
@@ -5195,6 +5234,9 @@ class ImportCategoryRuleRow extends DataClass
       id: data.id.present ? data.id.value : this.id,
       field: data.field.present ? data.field.value : this.field,
       keyword: data.keyword.present ? data.keyword.value : this.keyword,
+      conditionsJson: data.conditionsJson.present
+          ? data.conditionsJson.value
+          : this.conditionsJson,
       categoryId: data.categoryId.present
           ? data.categoryId.value
           : this.categoryId,
@@ -5209,6 +5251,7 @@ class ImportCategoryRuleRow extends DataClass
           ..write('id: $id, ')
           ..write('field: $field, ')
           ..write('keyword: $keyword, ')
+          ..write('conditionsJson: $conditionsJson, ')
           ..write('categoryId: $categoryId, ')
           ..write('priority: $priority, ')
           ..write('enabled: $enabled')
@@ -5217,8 +5260,15 @@ class ImportCategoryRuleRow extends DataClass
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, field, keyword, categoryId, priority, enabled);
+  int get hashCode => Object.hash(
+    id,
+    field,
+    keyword,
+    conditionsJson,
+    categoryId,
+    priority,
+    enabled,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5226,6 +5276,7 @@ class ImportCategoryRuleRow extends DataClass
           other.id == this.id &&
           other.field == this.field &&
           other.keyword == this.keyword &&
+          other.conditionsJson == this.conditionsJson &&
           other.categoryId == this.categoryId &&
           other.priority == this.priority &&
           other.enabled == this.enabled);
@@ -5236,6 +5287,7 @@ class ImportCategoryRulesCompanion
   final Value<String> id;
   final Value<String> field;
   final Value<String> keyword;
+  final Value<String?> conditionsJson;
   final Value<String> categoryId;
   final Value<int> priority;
   final Value<bool> enabled;
@@ -5244,6 +5296,7 @@ class ImportCategoryRulesCompanion
     this.id = const Value.absent(),
     this.field = const Value.absent(),
     this.keyword = const Value.absent(),
+    this.conditionsJson = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.priority = const Value.absent(),
     this.enabled = const Value.absent(),
@@ -5253,6 +5306,7 @@ class ImportCategoryRulesCompanion
     required String id,
     required String field,
     required String keyword,
+    this.conditionsJson = const Value.absent(),
     required String categoryId,
     required int priority,
     required bool enabled,
@@ -5267,6 +5321,7 @@ class ImportCategoryRulesCompanion
     Expression<String>? id,
     Expression<String>? field,
     Expression<String>? keyword,
+    Expression<String>? conditionsJson,
     Expression<String>? categoryId,
     Expression<int>? priority,
     Expression<bool>? enabled,
@@ -5276,6 +5331,7 @@ class ImportCategoryRulesCompanion
       if (id != null) 'id': id,
       if (field != null) 'field': field,
       if (keyword != null) 'keyword': keyword,
+      if (conditionsJson != null) 'conditions_json': conditionsJson,
       if (categoryId != null) 'category_id': categoryId,
       if (priority != null) 'priority': priority,
       if (enabled != null) 'enabled': enabled,
@@ -5287,6 +5343,7 @@ class ImportCategoryRulesCompanion
     Value<String>? id,
     Value<String>? field,
     Value<String>? keyword,
+    Value<String?>? conditionsJson,
     Value<String>? categoryId,
     Value<int>? priority,
     Value<bool>? enabled,
@@ -5296,6 +5353,7 @@ class ImportCategoryRulesCompanion
       id: id ?? this.id,
       field: field ?? this.field,
       keyword: keyword ?? this.keyword,
+      conditionsJson: conditionsJson ?? this.conditionsJson,
       categoryId: categoryId ?? this.categoryId,
       priority: priority ?? this.priority,
       enabled: enabled ?? this.enabled,
@@ -5314,6 +5372,9 @@ class ImportCategoryRulesCompanion
     }
     if (keyword.present) {
       map['keyword'] = Variable<String>(keyword.value);
+    }
+    if (conditionsJson.present) {
+      map['conditions_json'] = Variable<String>(conditionsJson.value);
     }
     if (categoryId.present) {
       map['category_id'] = Variable<String>(categoryId.value);
@@ -5336,6 +5397,7 @@ class ImportCategoryRulesCompanion
           ..write('id: $id, ')
           ..write('field: $field, ')
           ..write('keyword: $keyword, ')
+          ..write('conditionsJson: $conditionsJson, ')
           ..write('categoryId: $categoryId, ')
           ..write('priority: $priority, ')
           ..write('enabled: $enabled, ')
@@ -14989,6 +15051,7 @@ typedef $$ImportCategoryRulesTableCreateCompanionBuilder =
       required String id,
       required String field,
       required String keyword,
+      Value<String?> conditionsJson,
       required String categoryId,
       required int priority,
       required bool enabled,
@@ -14999,6 +15062,7 @@ typedef $$ImportCategoryRulesTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> field,
       Value<String> keyword,
+      Value<String?> conditionsJson,
       Value<String> categoryId,
       Value<int> priority,
       Value<bool> enabled,
@@ -15061,6 +15125,11 @@ class $$ImportCategoryRulesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get conditionsJson => $composableBuilder(
+    column: $table.conditionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get priority => $composableBuilder(
     column: $table.priority,
     builder: (column) => ColumnFilters(column),
@@ -15119,6 +15188,11 @@ class $$ImportCategoryRulesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get conditionsJson => $composableBuilder(
+    column: $table.conditionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get priority => $composableBuilder(
     column: $table.priority,
     builder: (column) => ColumnOrderings(column),
@@ -15170,6 +15244,11 @@ class $$ImportCategoryRulesTableAnnotationComposer
 
   GeneratedColumn<String> get keyword =>
       $composableBuilder(column: $table.keyword, builder: (column) => column);
+
+  GeneratedColumn<String> get conditionsJson => $composableBuilder(
+    column: $table.conditionsJson,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get priority =>
       $composableBuilder(column: $table.priority, builder: (column) => column);
@@ -15240,6 +15319,7 @@ class $$ImportCategoryRulesTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> field = const Value.absent(),
                 Value<String> keyword = const Value.absent(),
+                Value<String?> conditionsJson = const Value.absent(),
                 Value<String> categoryId = const Value.absent(),
                 Value<int> priority = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
@@ -15248,6 +15328,7 @@ class $$ImportCategoryRulesTableTableManager
                 id: id,
                 field: field,
                 keyword: keyword,
+                conditionsJson: conditionsJson,
                 categoryId: categoryId,
                 priority: priority,
                 enabled: enabled,
@@ -15258,6 +15339,7 @@ class $$ImportCategoryRulesTableTableManager
                 required String id,
                 required String field,
                 required String keyword,
+                Value<String?> conditionsJson = const Value.absent(),
                 required String categoryId,
                 required int priority,
                 required bool enabled,
@@ -15266,6 +15348,7 @@ class $$ImportCategoryRulesTableTableManager
                 id: id,
                 field: field,
                 keyword: keyword,
+                conditionsJson: conditionsJson,
                 categoryId: categoryId,
                 priority: priority,
                 enabled: enabled,

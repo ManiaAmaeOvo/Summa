@@ -51,8 +51,13 @@ void main() {
           .singleWhere((item) => item.name == 'Reviewed lunch')
           .id;
       await ledger.saveImportRule(
-        field: ImportRuleField.description,
-        keyword: 'Demo',
+        conditions: const [
+          ImportRuleCondition(
+            field: ImportRuleField.description,
+            operator: ImportRuleOperator.contains,
+            value: 'Demo',
+          ),
+        ],
         categoryId: _suggestedCategory,
         priority: 100,
         enabled: true,
@@ -70,7 +75,10 @@ void main() {
 
       final suggestion = (await ledger.previewCsvImport(file)).single;
       expect(suggestion.mapping.categoryId, _suggestedCategory);
-      expect(suggestion.suggestion?.keyword, 'Demo');
+      expect(
+        suggestion.suggestion?.matchedRules.first.conditions.single.value,
+        'Demo',
+      );
       expect(await cash(), 7655);
 
       final batch = await ledger.commitCsvImport(file, [
@@ -141,7 +149,10 @@ void main() {
             .categoryId,
         reviewedCategory,
       );
-      expect((await ledger.watchImportRules().first).single.keyword, 'Demo');
+      expect(
+        (await ledger.watchImportRules().first).single.conditions.single.value,
+        'Demo',
+      );
       expect(
         (await ledger.watchBalanceCheckpoints(_account).first)
             .single

@@ -152,7 +152,7 @@ void main() {
 
     final backedUp = await ledger.createFullBackup();
     final data = _backupContent(backedUp);
-    expect(data['backup_version'], 13);
+    expect(data['backup_version'], 14);
     await ledger.restoreFullBackup(backedUp, mode: BackupRestoreMode.replace);
     expect(
       analyzeLedger(await records(), 'CNY', combined).activity,

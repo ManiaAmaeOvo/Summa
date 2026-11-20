@@ -407,6 +407,12 @@ typedef CsvReviewRow = ({
   ImportCategorySuggestion? suggestion,
 });
 
+typedef CsvRuleTrialRow = ({
+  CsvImportRow row,
+  String? explicitCategoryId,
+  ImportCategorySuggestion? suggestion,
+});
+
 class CsvSelection {
   const CsvSelection(
     this.number,

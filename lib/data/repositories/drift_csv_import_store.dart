@@ -8,11 +8,64 @@ import 'package:summa/domain/defaults/default_ledger_names.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/transaction_source.dart';
 
 class DriftCsvImportStore {
   DriftCsvImportStore(this._db);
   final AppDatabase _db;
+
+  Future<({Map<String, AccountRow> accounts, List<CategoryRow> categories})>
+  _ruleData() async => (
+    accounts: {
+      for (final row in await _db.select(_db.ledgerAccounts).get()) row.id: row,
+    },
+    categories: await (_db.select(
+      _db.ledgerCategories,
+    )..where((row) => row.isArchived.equals(false))).get(),
+  );
+
+  Future<List<CsvRuleTrialRow>> previewRules(
+    CsvImportFile file,
+    List<ImportCategoryRule> rules,
+  ) async {
+    final data = await _ruleData();
+    return [
+      for (final row in file.rows)
+        if (row.movement case final movement?
+            when csvNeedsCategory(movement.type))
+          _previewRule(row, movement, data.accounts, data.categories, rules)
+        else
+          (row: row, explicitCategoryId: null, suggestion: null),
+    ];
+  }
+
+  CsvRuleTrialRow _previewRule(
+    CsvImportRow row,
+    CsvMovement movement,
+    Map<String, AccountRow> accounts,
+    List<CategoryRow> categories,
+    List<ImportCategoryRule> rules,
+  ) {
+    final (parents, children) = _eligibleCategories(categories, movement.type);
+    final account = _guessAccount(
+      accounts,
+      movement,
+      movement.account,
+      target: false,
+    );
+    return (
+      row: row,
+      explicitCategoryId: _guessCategory(movement.category, children, parents),
+      suggestion: _ruleSuggestion(
+        row,
+        movement,
+        accounts[account]?.name,
+        children,
+        rules,
+      ),
+    );
+  }
 
   Future<List<CsvReviewRow>> review(
     CsvImportFile file,
@@ -25,12 +78,7 @@ class DriftCsvImportStore {
         for (final row in file.rows) _unavailable(row, CsvReviewState.invalid),
       ];
     }
-    final accounts = {
-      for (final row in await _db.select(_db.ledgerAccounts).get()) row.id: row,
-    };
-    final categoryRows = await (_db.select(
-      _db.ledgerCategories,
-    )..where((row) => row.isArchived.equals(false))).get();
+    final data = await _ruleData();
     final activeRows =
         await (_db.select(_db.csvImportRows)..where(
               (row) =>
@@ -75,8 +123,8 @@ class DriftCsvImportStore {
             file: file,
             overrides: overrides,
             rules: rules,
-            accounts: accounts,
-            categories: categoryRows,
+            accounts: data.accounts,
+            categories: data.categories,
             byFile: byFile,
             bySource: bySource,
             sourceSignatures: sourceSignatures,
@@ -119,90 +167,44 @@ class DriftCsvImportStore {
       return _unavailable(row, CsvReviewState.duplicate);
     }
 
-    bool usableAccount(AccountRow? account, {required bool target}) =>
-        account != null &&
-        !account.isArchived &&
-        account.currencyCode == movement.currency &&
-        csvAccountAllowed(
-          movement.type,
-          AccountKind.values.byName(account.kind),
-          target: target,
-        );
-    String? guessAccount(String name, {required bool target}) {
-      if (name.isEmpty) return null;
-      final known = accounts.values
-          .where(
-            (account) =>
-                usableAccount(account, target: target) &&
-                (account.id == name ||
-                    DefaultLedgerNames.accountMatches(
-                      LedgerAccount(
-                        id: account.id,
-                        name: account.name,
-                        kind: AccountKind.values.byName(account.kind),
-                      ),
-                      name,
-                    )),
-          )
-          .toList();
-      return known.length == 1 ? known.single.id : null;
-    }
-
     final hasTarget = csvNeedsTarget(movement.type);
     final hasCategory = csvNeedsCategory(movement.type);
     final override = overrides[row.number];
-    final categoryRows = hasCategory
-        ? categories
-              .where(
-                (category) => category.transactionType == movement.type.name,
-              )
-              .toList()
-        : const <CategoryRow>[];
-    final activeParents = {
-      for (final row in categoryRows)
-        if (row.parentId == null) row.id: row,
-    };
-    final children = categoryRows
-        .where((row) => activeParents.containsKey(row.parentId))
-        .toList();
+    final (activeParents, children) = _eligibleCategories(
+      categories,
+      movement.type,
+    );
     final requestedAccount = override == null
-        ? guessAccount(movement.account, target: false)
+        ? _guessAccount(accounts, movement, movement.account, target: false)
         : override.accountId;
     final requestedTarget = !hasTarget
         ? null
         : override == null
-        ? guessAccount(movement.target, target: true)
+        ? _guessAccount(accounts, movement, movement.target, target: true)
         : override.targetId;
     final explicitCategory = hasCategory
         ? _guessCategory(movement.category, children, activeParents)
         : null;
-    final eligible = children.map((child) => child.id).toSet();
     final suggestion =
         hasCategory && override == null && explicitCategory == null
-        ? suggestImportCategory(
-            rules: rules,
-            fields: {
-              ImportRuleField.merchant: row.raw['merchant'] ?? '',
-              ImportRuleField.description: [
-                ?row.raw['description'],
-                row.raw['备注'] ?? movement.note,
-              ].join('\n'),
-              ImportRuleField.paymentChannel: row.raw['payment_channel'] ?? '',
-              ImportRuleField.account:
-                  accounts[requestedAccount]?.name ?? movement.account,
-              ImportRuleField.source: row.raw['source'] ?? '',
-            },
-            eligibleCategories: eligible,
+        ? _ruleSuggestion(
+            row,
+            movement,
+            accounts[requestedAccount]?.name,
+            children,
+            rules,
           )
         : null;
     final requestedCategory = override == null
         ? explicitCategory ?? suggestion?.categoryId
         : override.categoryId;
     final mapping = (
-      accountId: usableAccount(accounts[requestedAccount], target: false)
+      accountId:
+          _usableAccount(accounts[requestedAccount], movement, target: false)
           ? requestedAccount
           : null,
-      targetId: usableAccount(accounts[requestedTarget], target: true)
+      targetId:
+          _usableAccount(accounts[requestedTarget], movement, target: true)
           ? requestedTarget
           : null,
       categoryId: children.any((row) => row.id == requestedCategory)
@@ -478,6 +480,88 @@ class DriftCsvImportStore {
     if (restoredUndoneEntry != null) throw _conflict;
   }
 }
+
+bool _usableAccount(
+  AccountRow? account,
+  CsvMovement movement, {
+  required bool target,
+}) =>
+    account != null &&
+    !account.isArchived &&
+    account.currencyCode == movement.currency &&
+    csvAccountAllowed(
+      movement.type,
+      AccountKind.values.byName(account.kind),
+      target: target,
+    );
+
+String? _guessAccount(
+  Map<String, AccountRow> accounts,
+  CsvMovement movement,
+  String name, {
+  required bool target,
+}) {
+  if (name.isEmpty) return null;
+  final matched = accounts.values
+      .where(
+        (account) =>
+            _usableAccount(account, movement, target: target) &&
+            (account.id == name ||
+                DefaultLedgerNames.accountMatches(
+                  LedgerAccount(
+                    id: account.id,
+                    name: account.name,
+                    kind: AccountKind.values.byName(account.kind),
+                  ),
+                  name,
+                )),
+      )
+      .toList();
+  return matched.length == 1 ? matched.single.id : null;
+}
+
+(Map<String, CategoryRow>, List<CategoryRow>) _eligibleCategories(
+  List<CategoryRow> categories,
+  LedgerTransactionType type,
+) {
+  if (!csvNeedsCategory(type)) return (const {}, const []);
+  final active = categories.where(
+    (category) => category.transactionType == type.name,
+  );
+  final parents = {
+    for (final row in active)
+      if (row.parentId == null) row.id: row,
+  };
+  return (
+    parents,
+    active.where((row) => parents.containsKey(row.parentId)).toList(),
+  );
+}
+
+ImportCategorySuggestion? _ruleSuggestion(
+  CsvImportRow row,
+  CsvMovement movement,
+  String? accountName,
+  List<CategoryRow> children,
+  List<ImportCategoryRule> rules,
+) => suggestImportCategory(
+  rules: rules,
+  input: (
+    fields: {
+      ImportRuleField.merchant: [row.raw['merchant'] ?? ''],
+      ImportRuleField.description: [
+        ?row.raw['description'],
+        row.raw['备注'] ?? movement.note,
+      ],
+      ImportRuleField.paymentChannel: [row.raw['payment_channel'] ?? ''],
+      ImportRuleField.account: [accountName ?? movement.account],
+      ImportRuleField.source: [row.raw['source'] ?? ''],
+    },
+    amountMinor: movement.amountMinor,
+    currency: movement.currency,
+  ),
+  eligibleCategories: children.map((child) => child.id).toSet(),
+);
 
 String? _guessCategory(
   String name,

@@ -3215,13 +3215,13 @@ abstract class AppLocalizations {
   /// No description provided for @importRuleInstructions.
   ///
   /// In en, this message translates to:
-  /// **'Suggest categories from keywords. Review suggestions before posting.'**
+  /// **'Combine conditions to suggest categories. Review suggestions before posting.'**
   String get importRuleInstructions;
 
   /// No description provided for @importRuleEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No rules yet. Add a keyword and choose a category.'**
+  /// **'No rules yet. Add conditions and choose a category.'**
   String get importRuleEmpty;
 
   /// No description provided for @importRuleAdd.
@@ -3251,7 +3251,7 @@ abstract class AppLocalizations {
   /// No description provided for @importRuleKeyword.
   ///
   /// In en, this message translates to:
-  /// **'Contains keyword'**
+  /// **'Match text'**
   String get importRuleKeyword;
 
   /// No description provided for @importRulePriority.
@@ -3287,7 +3287,7 @@ abstract class AppLocalizations {
   /// No description provided for @importRuleInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Enter a keyword and a priority between 0 and 9999.'**
+  /// **'Check the conditions, currency precision, and priority from 0 to 9999.'**
   String get importRuleInvalid;
 
   /// No description provided for @importRuleUnavailable.
@@ -4741,6 +4741,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Opening {opening} · Closing {closing}'**
   String reportOpeningToClosing(String opening, String closing);
+
+  /// No description provided for @importRuleMatchMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Match mode'**
+  String get importRuleMatchMode;
+
+  /// No description provided for @importRuleMatchAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All conditions'**
+  String get importRuleMatchAll;
+
+  /// No description provided for @importRuleMatchAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any condition'**
+  String get importRuleMatchAny;
+
+  /// No description provided for @importRuleContains.
+  ///
+  /// In en, this message translates to:
+  /// **'Contains'**
+  String get importRuleContains;
+
+  /// No description provided for @importRuleEquals.
+  ///
+  /// In en, this message translates to:
+  /// **'Equals'**
+  String get importRuleEquals;
+
+  /// No description provided for @importRuleStartsWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts with'**
+  String get importRuleStartsWith;
+
+  /// No description provided for @importRuleAtLeast.
+  ///
+  /// In en, this message translates to:
+  /// **'At least'**
+  String get importRuleAtLeast;
+
+  /// No description provided for @importRuleAtMost.
+  ///
+  /// In en, this message translates to:
+  /// **'At most'**
+  String get importRuleAtMost;
+
+  /// No description provided for @importRuleOperator.
+  ///
+  /// In en, this message translates to:
+  /// **'Operator'**
+  String get importRuleOperator;
+
+  /// No description provided for @importRuleAddCondition.
+  ///
+  /// In en, this message translates to:
+  /// **'Add condition'**
+  String get importRuleAddCondition;
+
+  /// No description provided for @importRuleRemoveCondition.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove condition'**
+  String get importRuleRemoveCondition;
+
+  /// No description provided for @importRuleTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'Try rules'**
+  String get importRuleTrial;
+
+  /// No description provided for @importRuleTrialHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose or paste a sample statement to see matching rules and category suggestions.'**
+  String get importRuleTrialHint;
+
+  /// No description provided for @importRuleDraftTrialHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The preview runs your draft alongside the other saved rules.'**
+  String get importRuleDraftTrialHint;
+
+  /// No description provided for @importRuleTrialSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows {rows} · Suggestions {suggested} · Conflicts {conflicts}'**
+  String importRuleTrialSummary(int rows, int suggested, int conflicts);
+
+  /// No description provided for @importRuleTrialExplicit.
+  ///
+  /// In en, this message translates to:
+  /// **'Source category · {category}'**
+  String importRuleTrialExplicit(String category);
+
+  /// No description provided for @importRuleTrialSuggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested category · {category}'**
+  String importRuleTrialSuggested(String category);
+
+  /// No description provided for @importRuleTrialNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No rule matched'**
+  String get importRuleTrialNoMatch;
+
+  /// No description provided for @importRuleTrialUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Category rules apply to income and expense rows.'**
+  String get importRuleTrialUnsupported;
+
+  /// No description provided for @importRuleTopPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest priority'**
+  String get importRuleTopPriority;
+
+  /// No description provided for @importRuleDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get importRuleDraft;
 }
 
 class _AppLocalizationsDelegate

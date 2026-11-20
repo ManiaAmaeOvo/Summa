@@ -30,8 +30,13 @@ void main() {
     ImportRuleField field = ImportRuleField.merchant,
     String keyword = 'SAMPLE',
   }) => repo.saveImportRule(
-    field: field,
-    keyword: keyword,
+    conditions: [
+      ImportRuleCondition(
+        field: field,
+        operator: ImportRuleOperator.contains,
+        value: keyword,
+      ),
+    ],
     categoryId: category,
     priority: priority,
     enabled: enabled,
@@ -54,7 +59,10 @@ void main() {
     final source = file();
     final review = (await repo.previewCsvImport(source)).single;
     expect(review.suggestion?.categoryId, lunch);
-    expect(review.suggestion?.keyword, 'SAMPLE');
+    expect(
+      review.suggestion?.matchedRules.first.conditions.single.value,
+      'SAMPLE',
+    );
     expect(review.mapping.categoryId, lunch);
     expect(await repo.watchTransactions().first, isEmpty);
 
@@ -101,6 +109,177 @@ void main() {
     },
   );
 
+  test('AND and OR use amount currency, keep priority, and share trial and review results', () async {
+    await rule(transport, 30);
+    await repo.saveImportRule(
+      conditions: const [
+        ImportRuleCondition(
+          field: ImportRuleField.merchant,
+          operator: ImportRuleOperator.startsWith,
+          value: 'sample',
+        ),
+        ImportRuleCondition(
+          field: ImportRuleField.description,
+          operator: ImportRuleOperator.equals,
+          value: 'Fresh meal',
+        ),
+        ImportRuleCondition(
+          field: ImportRuleField.amount,
+          operator: ImportRuleOperator.atLeast,
+          value: '2.00',
+          currency: 'CNY',
+        ),
+      ],
+      categoryId: lunch,
+      priority: 5,
+      enabled: true,
+    );
+    await repo.saveImportRule(
+      conditions: const [
+        ImportRuleCondition(
+          field: ImportRuleField.source,
+          operator: ImportRuleOperator.equals,
+          value: 'demo',
+        ),
+        ImportRuleCondition(
+          field: ImportRuleField.paymentChannel,
+          operator: ImportRuleOperator.equals,
+          value: 'wallet',
+        ),
+      ],
+      mode: ImportRuleMode.any,
+      categoryId: transport,
+      priority: 10,
+      enabled: true,
+    );
+    final sample = parseCsvImport(
+      'advanced.csv',
+      utf8.encode(
+        'type,amount,occurred_at,account,category,merchant,description,note,currency_code,source,payment_channel\n'
+        'expense,2,2026-11-20,Cash,,Sample Coffee,Fresh meal,Other note,CNY,unknown,wallet\n'
+        'expense,1.99,2026-11-21,Cash,,Sample Coffee,Fresh meal,Other note,CNY,unknown,\n'
+        'expense,2,2026-11-22,Cash,,Sample Coffee,Fresh meal,Other note,JPY,unknown,\n'
+        'expense,2,2026-11-23,Cash,,Another Store,Book,Office,CNY,demo,\n'
+        'expense,2,2026-11-24,Cash,,Another Store,Book,Office,CNY,unknown,\n'
+        'expense,2,2026-11-25,Cash,Transport/Bus & Metro,Sample Coffee,Fresh meal,Other note,CNY,unknown,wallet\n',
+      ),
+    );
+    final trial = await repo.previewImportRules(sample);
+    final review = await repo.previewCsvImport(sample);
+    expect(trial.map((item) => item.suggestion?.categoryId), [
+      lunch,
+      transport,
+      transport,
+      transport,
+      null,
+      lunch,
+    ]);
+    expect(trial.first.suggestion!.matchedRules.map((rule) => rule.priority), [
+      5,
+      10,
+      30,
+    ]);
+    expect(trial.last.explicitCategoryId, transport);
+    expect(review.map((item) => item.mapping.categoryId), [
+      lunch,
+      transport,
+      transport,
+      transport,
+      null,
+      transport,
+    ]);
+    expect(review.last.suggestion, isNull);
+    expect(await repo.watchTransactions().first, isEmpty);
+
+    final manual = (accountId: cash, targetId: null, categoryId: transport);
+    final assigned = (await repo.previewCsvImport(
+      sample,
+      mappings: {1: manual},
+    )).first;
+    expect(assigned.suggestion, isNull);
+    await repo.commitCsvImport(sample, [CsvSelection(1, assigned.mapping)]);
+    expect((await repo.watchTransactions().first).single.categoryId, transport);
+    expect(
+      (await repo.previewCsvImport(sample)).first.state,
+      CsvReviewState.duplicate,
+    );
+
+    final top = (await repo.watchImportRules().first).first;
+    final savedBefore = _contents(await repo.createFullBackup());
+    final draft = ImportCategoryRule(
+      id: top.id,
+      conditions: top.conditions,
+      categoryId: transport,
+      priority: 5,
+    );
+    final simulated = (await repo.previewImportRules(
+      sample,
+      draft: draft,
+    )).first;
+    expect(simulated.suggestion!.categoryId, transport);
+    expect(simulated.suggestion!.matchedRules.first, same(draft));
+    expect(_contents(await repo.createFullBackup()), savedBefore);
+  });
+
+  test('V13 single conditions and V14 compound conditions restore without changing priority', () async {
+    await rule(transport, 25);
+    final legacy = _contents(await repo.createFullBackup())
+      ..['backup_version'] = 13;
+    // Preserve the top-level timestamp required by the restore protocol.
+    legacy['created_at'] = '2026-11-20T12:00:00Z';
+    await repo.restoreFullBackup(
+      jsonEncode(legacy),
+      mode: BackupRestoreMode.replace,
+    );
+    final simple = (await repo.watchImportRules().first).single;
+    expect(simple.conditions.single.operator, ImportRuleOperator.contains);
+    expect(simple.conditions.single.value, 'SAMPLE');
+
+    await repo.saveImportRule(
+      conditions: const [
+        ImportRuleCondition(
+          field: ImportRuleField.amount,
+          operator: ImportRuleOperator.atMost,
+          value: '2.00',
+          currency: 'CNY',
+        ),
+        ImportRuleCondition(
+          field: ImportRuleField.merchant,
+          operator: ImportRuleOperator.equals,
+          value: 'Other',
+        ),
+      ],
+      mode: ImportRuleMode.any,
+      categoryId: lunch,
+      priority: 4,
+      enabled: true,
+    );
+    final backup = await repo.createFullBackup();
+    await repo.restoreFullBackup(backup, mode: BackupRestoreMode.replace);
+    await repo.restoreFullBackup(backup, mode: BackupRestoreMode.merge);
+    await repo.restoreFullBackup(
+      jsonEncode(legacy),
+      mode: BackupRestoreMode.merge,
+    );
+    expect(_contents(await repo.createFullBackup()), _contents(backup));
+    expect(
+      (await repo.previewCsvImport(file())).single.mapping.categoryId,
+      lunch,
+    );
+
+    final invalid = jsonDecode(backup) as Map<String, dynamic>;
+    final advanced = (invalid['import_category_rules'] as List).first as Map;
+    (advanced['conditions'] as List).first['currency'] = 'INVALID';
+    await expectLater(
+      repo.restoreFullBackup(
+        jsonEncode(invalid),
+        mode: BackupRestoreMode.replace,
+      ),
+      throwsA(isA<LedgerBackupException>()),
+    );
+    expect(_contents(await repo.createFullBackup()), _contents(backup));
+  });
+
   test('rule backup round-trips and old merge preserves rules; invalid restore is atomic', () async {
     final legacy =
         jsonDecode(await repo.createFullBackup()) as Map<String, dynamic>;
@@ -134,4 +313,20 @@ void main() {
     );
     expect(await repo.watchImportRules().first, isEmpty);
   });
+}
+
+Map<String, dynamic> _contents(String backup) {
+  final contents = (jsonDecode(backup) as Map<String, dynamic>)
+    ..remove('created_at');
+  for (final key in [
+    'accounts',
+    'categories',
+    'entries',
+    'import_category_rules',
+  ]) {
+    (contents[key] as List).sort(
+      (a, b) => (a['id'] as String).compareTo(b['id'] as String),
+    );
+  }
+  return contents;
 }

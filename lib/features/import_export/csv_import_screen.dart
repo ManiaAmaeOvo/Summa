@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +7,6 @@ import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
-import 'package:summa/domain/import_export/statement_import.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/l10n.dart';
@@ -18,6 +14,8 @@ import 'package:summa/l10n/l10n.dart';
 import 'csv_import_history_screen.dart';
 import 'csv_import_labels.dart';
 import 'import_category_rules_screen.dart';
+import 'import_rule_labels.dart';
+import 'statement_input.dart';
 
 class CsvImportScreen extends ConsumerStatefulWidget {
   const CsvImportScreen({super.key});
@@ -50,7 +48,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                     await Navigator.push<void>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const ImportCategoryRulesScreen(),
+                        builder: (_) =>
+                            ImportCategoryRulesScreen(sample: _file),
                       ),
                     );
                     if (mounted && _file != null) await _refresh();
@@ -239,7 +238,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
             if (item.suggestion case final suggestion?)
               suggestion.categoryId == null
                   ? labels.importRuleConflict
-                  : labels.importRuleSuggested(suggestion.keyword),
+                  : labels.importRuleSuggested(
+                      importRuleSummary(context, suggestion.matchedRules.first),
+                    ),
             if (movement != null) ...[
               _date(context, movement.occurredAt),
               if (source.isNotEmpty)
@@ -303,30 +304,15 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     ),
   );
 
-  Future<void> _pickFile() => _start(() async {
-    final file = await FilePicker.pickFile(
-      type: FileType.custom,
-      allowedExtensions: ['csv', 'xlsx'],
-    );
-    if (file == null) return;
-    if (await file.length() > maxCsvImportBytes) {
-      throw const CsvImportException(CsvIssue.tooLarge);
-    }
-    await _open(parseStatementImport(file.name, await file.readAsBytes()));
-  });
+  Future<void> _pickFile() => _loadStatement(pickStatementFile);
 
-  Future<void> _paste() async {
-    final source = await showDialog<String>(
-      context: context,
-      builder: (_) => const _PasteCsvDialog(),
-    );
-    if (source == null || !mounted) return;
-    await _start(
-      () => _open(
-        parseStatementImport(context.l10n.csvPastedFile, utf8.encode(source)),
-      ),
-    );
-  }
+  Future<void> _paste() => _loadStatement(() => pasteStatement(context));
+
+  Future<void> _loadStatement(Future<CsvImportFile?> Function() read) =>
+      _start(() async {
+        final file = await read();
+        if (mounted && file != null) await _open(file);
+      });
 
   Future<void> _open(CsvImportFile file) async {
     final rows = await ref
@@ -462,49 +448,6 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       if (mounted) setState(() => _busy = false);
     }
   }
-}
-
-class _PasteCsvDialog extends StatefulWidget {
-  const _PasteCsvDialog();
-
-  @override
-  State<_PasteCsvDialog> createState() => _PasteCsvDialogState();
-}
-
-class _PasteCsvDialogState extends State<_PasteCsvDialog> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(context.l10n.csvPaste),
-    content: SizedBox(
-      width: 540,
-      child: TextField(
-        controller: _controller,
-        maxLines: 8,
-        keyboardType: TextInputType.multiline,
-        decoration: const InputDecoration(
-          hintText: 'type,amount,occurred_at,account',
-        ),
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: Text(context.l10n.cancel),
-      ),
-      FilledButton(
-        onPressed: () => Navigator.pop(context, _controller.text),
-        child: Text(context.l10n.parseAndPreview),
-      ),
-    ],
-  );
 }
 
 class _CsvMappingDialog extends ConsumerStatefulWidget {

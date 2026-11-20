@@ -275,21 +275,27 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
   @override
   Future<void> saveImportRule({
     String? id,
-    required ImportRuleField field,
-    required String keyword,
+    required List<ImportRuleCondition> conditions,
+    ImportRuleMode mode = ImportRuleMode.all,
     required String categoryId,
     required int priority,
     required bool enabled,
   }) => _mutate(
     () => _delegate.saveImportRule(
       id: id,
-      field: field,
-      keyword: keyword,
+      conditions: conditions,
+      mode: mode,
       categoryId: categoryId,
       priority: priority,
       enabled: enabled,
     ),
   );
+
+  @override
+  Future<List<CsvRuleTrialRow>> previewImportRules(
+    CsvImportFile file, {
+    ImportCategoryRule? draft,
+  }) => _delegate.previewImportRules(file, draft: draft);
 
   @override
   Future<void> deleteImportRule(String id) =>

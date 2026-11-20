@@ -131,7 +131,7 @@ void main() {
     expect(await ledger.watchTransactions().first, hasLength(1));
   });
 
-  test('V13 restores legitimate shortfalls and rejects merging two competing reservations', () async {
+  test('Savings backup restores legitimate shortfalls and rejects merging two competing reservations', () async {
     await ledger.setCurrentBalance(accountId: _cash, amountMinor: 10000);
     await ledger.addSavingsGoal(_goal('Travel'));
     final id = (await account()).goals.single.id;
@@ -158,8 +158,8 @@ void main() {
     );
     final backup = await ledger.createFullBackup();
     final json = jsonDecode(backup) as Map<String, dynamic>;
-    expect(json['schema_version'], 19);
-    expect(json['backup_version'], 13);
+    expect(json['schema_version'], 20);
+    expect(json['backup_version'], 14);
     expect(ledger.inspectFullBackup(backup).savingsGoalCount, 1);
     final v12 = jsonEncode(
       {...json, 'backup_version': 12, 'schema_version': 18}

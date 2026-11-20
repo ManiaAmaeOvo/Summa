@@ -165,6 +165,7 @@ class ImportCategoryRules extends Table {
   TextColumn get id => text()();
   TextColumn get field => text()();
   TextColumn get keyword => text()();
+  TextColumn get conditionsJson => text().nullable()();
   TextColumn get categoryId => text().references(LedgerCategories, #id)();
   IntColumn get priority => integer()();
   BoolColumn get enabled => boolean()();
@@ -339,7 +340,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -441,6 +442,12 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(savingsGoals);
           await migrator.createTable(savingsAllocations);
           await _createSavingsIndex();
+        }
+        if (from >= 15 && from < 20) {
+          await migrator.addColumn(
+            importCategoryRules,
+            importCategoryRules.conditionsJson,
+          );
         }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.

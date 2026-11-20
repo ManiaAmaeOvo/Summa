@@ -36,6 +36,7 @@ import 'drift_spending_plan_store.dart';
 import 'drift_valuation_store.dart';
 
 const _backupFormat = 'summa_full_backup';
+const _currentBackupVersion = 14;
 const _legacyBackupFormat = 'ledgerpro_full_backup';
 
 enum _BalanceScope { active, contracts, savings, history }
@@ -1306,8 +1307,8 @@ class DriftExpenseRepository implements ExpenseRepository {
   @override
   Future<void> saveImportRule({
     String? id,
-    required ImportRuleField field,
-    required String keyword,
+    required List<ImportRuleCondition> conditions,
+    ImportRuleMode mode = ImportRuleMode.all,
     required String categoryId,
     required int priority,
     required bool enabled,
@@ -1315,14 +1316,37 @@ class DriftExpenseRepository implements ExpenseRepository {
     () => _importRules.save(
       ImportCategoryRule(
         id: id ?? _uuid.v4(),
-        field: field,
-        keyword: keyword,
+        conditions: [
+          for (final condition in conditions)
+            ImportRuleCondition(
+              field: condition.field,
+              operator: condition.operator,
+              value: condition.value.trim(),
+              currency: condition.currency,
+            ),
+        ],
+        mode: mode,
         categoryId: categoryId,
         priority: priority,
         enabled: enabled,
       ),
     ),
   );
+
+  @override
+  Future<List<CsvRuleTrialRow>> previewImportRules(
+    CsvImportFile file, {
+    ImportCategoryRule? draft,
+  }) => _database.transaction(() async {
+    final saved = await _importRules.read();
+    if (draft == null) return _csv.previewRules(file, saved);
+    if (!draft.isValid) throw ArgumentError('Invalid import rule draft');
+    return _csv.previewRules(file, [
+      for (final rule in saved)
+        if (rule.id != draft.id) rule,
+      draft,
+    ]);
+  });
 
   @override
   Future<void> deleteImportRule(String id) => _importRules.delete(id);
@@ -2711,7 +2735,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 13,
+      'backup_version': _currentBackupVersion,
       'savings_goals': await _savings.backup(),
       'debt_contracts': await _debtContracts.backup(),
       'recurring_plans': await _recurringPlans.backup(),
@@ -2933,7 +2957,10 @@ class DriftExpenseRepository implements ExpenseRepository {
       await _validateRestoredLedger();
       await _reconciliation.restore(payload.checkpoints);
       await _csv.restore(payload.csvBatches, payload.csvRows);
-      await _importRules.restore(payload.importRules);
+      await _importRules.restore(
+        payload.importRules,
+        advanced: payload.version >= 14,
+      );
       await _spendingPlans.restore(payload.spendingPlans);
       await _recurringPlans.restore(payload.recurringPlans);
       await _debtContracts.restore(payload.debtContracts);
@@ -3595,7 +3622,8 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 13) ||
+      !(format == _backupFormat &&
+              (version >= 1 && version <= _currentBackupVersion) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }

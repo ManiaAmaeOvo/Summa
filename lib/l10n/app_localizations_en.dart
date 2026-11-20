@@ -1814,11 +1814,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importRuleInstructions =>
-      'Suggest categories from keywords. Review suggestions before posting.';
+      'Combine conditions to suggest categories. Review suggestions before posting.';
 
   @override
   String get importRuleEmpty =>
-      'No rules yet. Add a keyword and choose a category.';
+      'No rules yet. Add conditions and choose a category.';
 
   @override
   String get importRuleAdd => 'Add rule';
@@ -1833,7 +1833,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importRuleFieldLabel => 'Match field';
 
   @override
-  String get importRuleKeyword => 'Contains keyword';
+  String get importRuleKeyword => 'Match text';
 
   @override
   String get importRulePriority => 'Priority';
@@ -1854,7 +1854,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importRuleInvalid =>
-      'Enter a keyword and a priority between 0 and 9999.';
+      'Check the conditions, currency precision, and priority from 0 to 9999.';
 
   @override
   String get importRuleUnavailable => 'Category unavailable';
@@ -2649,4 +2649,76 @@ class AppLocalizationsEn extends AppLocalizations {
   String reportOpeningToClosing(String opening, String closing) {
     return 'Opening $opening · Closing $closing';
   }
+
+  @override
+  String get importRuleMatchMode => 'Match mode';
+
+  @override
+  String get importRuleMatchAll => 'All conditions';
+
+  @override
+  String get importRuleMatchAny => 'Any condition';
+
+  @override
+  String get importRuleContains => 'Contains';
+
+  @override
+  String get importRuleEquals => 'Equals';
+
+  @override
+  String get importRuleStartsWith => 'Starts with';
+
+  @override
+  String get importRuleAtLeast => 'At least';
+
+  @override
+  String get importRuleAtMost => 'At most';
+
+  @override
+  String get importRuleOperator => 'Operator';
+
+  @override
+  String get importRuleAddCondition => 'Add condition';
+
+  @override
+  String get importRuleRemoveCondition => 'Remove condition';
+
+  @override
+  String get importRuleTrial => 'Try rules';
+
+  @override
+  String get importRuleTrialHint =>
+      'Choose or paste a sample statement to see matching rules and category suggestions.';
+
+  @override
+  String get importRuleDraftTrialHint =>
+      'The preview runs your draft alongside the other saved rules.';
+
+  @override
+  String importRuleTrialSummary(int rows, int suggested, int conflicts) {
+    return 'Rows $rows · Suggestions $suggested · Conflicts $conflicts';
+  }
+
+  @override
+  String importRuleTrialExplicit(String category) {
+    return 'Source category · $category';
+  }
+
+  @override
+  String importRuleTrialSuggested(String category) {
+    return 'Suggested category · $category';
+  }
+
+  @override
+  String get importRuleTrialNoMatch => 'No rule matched';
+
+  @override
+  String get importRuleTrialUnsupported =>
+      'Category rules apply to income and expense rows.';
+
+  @override
+  String get importRuleTopPriority => 'Highest priority';
+
+  @override
+  String get importRuleDraft => 'Draft';
 }

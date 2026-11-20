@@ -134,7 +134,7 @@ void main() {
     );
   });
 
-  test('projects loan and receivable installments from a coherent ledger snapshot and restores V13', () async {
+  test('projects loan and receivable installments from a coherent ledger snapshot and restores a full backup', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
     final ledger = DriftExpenseRepository(db);
@@ -278,7 +278,7 @@ void main() {
     final afterwards =
         (jsonDecode(await ledger.createFullBackup()) as Map<String, dynamic>)
           ..remove('created_at');
-    expect(originalJson['backup_version'], 13);
+    expect(originalJson['backup_version'], 14);
     expect(afterwards, originalJson);
     await ledger.restoreFullBackup(before, mode: BackupRestoreMode.replace);
     final restored = forecastCash(

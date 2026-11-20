@@ -637,13 +637,13 @@
     }
   },
   "importCategoryRules": "Import category rules",
-  "importRuleInstructions": "Suggest categories from keywords. Review suggestions before posting.",
-  "importRuleEmpty": "No rules yet. Add a keyword and choose a category.",
+  "importRuleInstructions": "Combine conditions to suggest categories. Review suggestions before posting.",
+  "importRuleEmpty": "No rules yet. Add conditions and choose a category.",
   "importRuleAdd": "Add rule",
   "importRuleEdit": "Edit rule",
   "importRuleDelete": "Delete this rule?",
   "importRuleFieldLabel": "Match field",
-  "importRuleKeyword": "Contains keyword",
+  "importRuleKeyword": "Match text",
   "importRulePriority": "Priority",
   "importRulePriorityHint": "Smaller numbers take priority.",
   "importRulePriorityValue": "Priority {value}",
@@ -656,7 +656,7 @@
   },
   "importRuleEnabled": "Enabled",
   "importRuleDisabled": "Disabled",
-  "importRuleInvalid": "Enter a keyword and a priority between 0 and 9999.",
+  "importRuleInvalid": "Check the conditions, currency precision, and priority from 0 to 9999.",
   "importRuleUnavailable": "Category unavailable",
   "importRuleMerchant": "Merchant or counterparty",
   "importRuleDescription": "Description or note",
@@ -996,6 +996,54 @@
         "type": "String"
       },
       "closing": {
+        "type": "String"
+      }
+    }
+  },
+  "importRuleMatchMode": "Match mode",
+  "importRuleMatchAll": "All conditions",
+  "importRuleMatchAny": "Any condition",
+  "importRuleContains": "Contains",
+  "importRuleEquals": "Equals",
+  "importRuleStartsWith": "Starts with",
+  "importRuleAtLeast": "At least",
+  "importRuleAtMost": "At most",
+  "importRuleOperator": "Operator",
+  "importRuleAddCondition": "Add condition",
+  "importRuleRemoveCondition": "Remove condition",
+  "importRuleTrial": "Try rules",
+  "importRuleTrialHint": "Choose or paste a sample statement to see matching rules and category suggestions.",
+  "importRuleDraftTrialHint": "The preview runs your draft alongside the other saved rules.",
+  "importRuleTrialSummary": "Rows {rows} · Suggestions {suggested} · Conflicts {conflicts}",
+  "importRuleTrialExplicit": "Source category · {category}",
+  "importRuleTrialSuggested": "Suggested category · {category}",
+  "importRuleTrialNoMatch": "No rule matched",
+  "importRuleTrialUnsupported": "Category rules apply to income and expense rows.",
+  "importRuleTopPriority": "Highest priority",
+  "importRuleDraft": "Draft",
+  "@importRuleTrialSummary": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "suggested": {
+        "type": "int"
+      },
+      "conflicts": {
+        "type": "int"
+      }
+    }
+  },
+  "@importRuleTrialExplicit": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "@importRuleTrialSuggested": {
+    "placeholders": {
+      "category": {
         "type": "String"
       }
     }

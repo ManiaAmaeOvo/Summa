@@ -206,7 +206,7 @@ void main() {
     expect(await repo.watchTransactions().first, hasLength(1));
   });
 
-  test('active source links update live, filter activity, and survive V13 restore', () async {
+  test('active source links update live, filter activity, and survive full backup restore', () async {
     final file = parseCsvImport(
       'wallet.csv',
       utf8.encode(

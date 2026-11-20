@@ -168,11 +168,16 @@ abstract interface class ExpenseRepository {
 
   Future<void> saveImportRule({
     String? id,
-    required ImportRuleField field,
-    required String keyword,
+    required List<ImportRuleCondition> conditions,
+    ImportRuleMode mode = ImportRuleMode.all,
     required String categoryId,
     required int priority,
     required bool enabled,
+  });
+
+  Future<List<CsvRuleTrialRow>> previewImportRules(
+    CsvImportFile file, {
+    ImportCategoryRule? draft,
   });
 
   Future<void> deleteImportRule(String id);

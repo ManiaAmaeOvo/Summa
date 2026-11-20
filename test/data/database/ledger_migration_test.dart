@@ -7,7 +7,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 
 void main() {
-  for (final version in [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]) {
+  for (final version in [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]) {
     test('migrates schema $version to persisted postings and reopens safely', () async {
       final directory = await Directory.systemTemp.createTemp(
         'summa-v$version-',
@@ -71,7 +71,13 @@ void main() {
           final schema = await after
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(schema.read<int>('user_version'), 19);
+          expect(schema.read<int>('user_version'), 20);
+          final rules = await upgraded.watchImportRules().first;
+          expect(rules, hasLength(version >= 15 ? 1 : 0));
+          if (rules.isNotEmpty) {
+            expect(rules.single.conditions.single.value, 'Lunch');
+            expect(rules.single.categoryId, 'expense-child');
+          }
           expect(await upgraded.watchSavingsAllocations().first, isEmpty);
           expect(await upgraded.watchDebtContracts().first, isEmpty);
           expect(await upgraded.watchRecurringPlans().first, isEmpty);
@@ -219,6 +225,10 @@ class _LegacyDatabase extends AppDatabase {
                  ('bank-to-cash', 3, 'JPY', -2000, 'exchange')
         ''');
       }
+      if (schemaVersion >= 19) {
+        await migrator.createTable(savingsGoals);
+        await migrator.createTable(savingsAllocations);
+      }
       if (schemaVersion >= 18) {
         await migrator.createTable(debtContracts);
         await migrator.createTable(debtInstallments);
@@ -232,7 +242,22 @@ class _LegacyDatabase extends AppDatabase {
         await migrator.createTable(spendingPlans);
         await migrator.createTable(spendingPlanLimits);
       }
-      if (schemaVersion >= 15) await migrator.createTable(importCategoryRules);
+      if (schemaVersion >= 15) {
+        await customStatement("""
+          CREATE TABLE import_category_rules (
+            id TEXT NOT NULL PRIMARY KEY,
+            field TEXT NOT NULL,
+            keyword TEXT NOT NULL,
+            category_id TEXT NOT NULL REFERENCES ledger_categories (id),
+            priority INTEGER NOT NULL,
+            enabled INTEGER NOT NULL CHECK (enabled IN (0, 1))
+          )
+        """);
+        await customStatement("""
+          INSERT INTO import_category_rules (id, field, keyword, category_id, priority, enabled)
+          VALUES ('legacy-rule', 'description', 'Lunch', 'expense-child', 25, 1)
+        """);
+      }
       if (schemaVersion >= 14) {
         await migrator.createTable(csvImportBatches);
         await migrator.createTable(csvImportRows);

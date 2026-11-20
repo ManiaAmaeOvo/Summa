@@ -1691,10 +1691,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importCategoryRules => '导入分类规则';
 
   @override
-  String get importRuleInstructions => '按关键词建议分类，入账前仍需复核。';
+  String get importRuleInstructions => '可组合多个条件建议分类，入账前仍需复核。';
 
   @override
-  String get importRuleEmpty => '暂无规则。可添加关键词并选择分类。';
+  String get importRuleEmpty => '暂无规则，可添加条件并选择分类。';
 
   @override
   String get importRuleAdd => '添加规则';
@@ -1709,7 +1709,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importRuleFieldLabel => '匹配字段';
 
   @override
-  String get importRuleKeyword => '包含关键词';
+  String get importRuleKeyword => '匹配文字';
 
   @override
   String get importRulePriority => '优先级';
@@ -1729,7 +1729,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importRuleDisabled => '已停用';
 
   @override
-  String get importRuleInvalid => '请输入关键词以及 0 至 9999 的优先级。';
+  String get importRuleInvalid => '请检查条件、金额精度和 0 至 9999 的优先级。';
 
   @override
   String get importRuleUnavailable => '分类已不可用';
@@ -2487,4 +2487,73 @@ class AppLocalizationsZh extends AppLocalizations {
   String reportOpeningToClosing(String opening, String closing) {
     return '期初 $opening · 期末 $closing';
   }
+
+  @override
+  String get importRuleMatchMode => '条件关系';
+
+  @override
+  String get importRuleMatchAll => '满足全部条件';
+
+  @override
+  String get importRuleMatchAny => '满足任一条件';
+
+  @override
+  String get importRuleContains => '包含';
+
+  @override
+  String get importRuleEquals => '等于';
+
+  @override
+  String get importRuleStartsWith => '开头为';
+
+  @override
+  String get importRuleAtLeast => '大于或等于';
+
+  @override
+  String get importRuleAtMost => '小于或等于';
+
+  @override
+  String get importRuleOperator => '匹配方式';
+
+  @override
+  String get importRuleAddCondition => '添加条件';
+
+  @override
+  String get importRuleRemoveCondition => '移除条件';
+
+  @override
+  String get importRuleTrial => '试跑规则';
+
+  @override
+  String get importRuleTrialHint => '选取或粘贴样本账单，预览命中规则和建议分类。';
+
+  @override
+  String get importRuleDraftTrialHint => '试跑会把当前草稿与其他已保存规则一起计算。';
+
+  @override
+  String importRuleTrialSummary(int rows, int suggested, int conflicts) {
+    return '$rows 行 · $suggested 条建议 · $conflicts 条冲突';
+  }
+
+  @override
+  String importRuleTrialExplicit(String category) {
+    return '账单指定分类 · $category';
+  }
+
+  @override
+  String importRuleTrialSuggested(String category) {
+    return '建议分类 · $category';
+  }
+
+  @override
+  String get importRuleTrialNoMatch => '暂无规则命中';
+
+  @override
+  String get importRuleTrialUnsupported => '分类规则适用于收入和支出行。';
+
+  @override
+  String get importRuleTopPriority => '最高优先级';
+
+  @override
+  String get importRuleDraft => '当前草稿';
 }
