@@ -32,7 +32,39 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-/dist/*.apk
+
+# Local ledger databases, backup folders, and default export names
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+summa_backups/
+ledgerpro_backups/
+summa-full-*.json
+ledgerpro-full-*.json
+summa-report-*.json
+summa-report-*.csv
+summa-report-*.xlsx
+summa-report-*.md
+summa-[0-9][0-9][0-9][0-9]*.json
+summa-[0-9][0-9][0-9][0-9]*.csv
+summa-[0-9][0-9][0-9][0-9]*.md
+
+# Installers and local signing credentials
+*.apk
+*.aab
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.key
+*.pem
+key.properties
+.env
+.env.*
+!.env.example
 
 # Symbolication related
 app.*.symbols
