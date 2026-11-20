@@ -10,6 +10,7 @@ import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/features/accounts/account_overview_screen.dart';
 import 'package:summa/features/import_export/csv_import_screen.dart';
 import 'package:summa/features/import_export/structured_import_screen.dart';
+import 'package:summa/features/planning/debt_contracts_screen.dart';
 import 'package:summa/features/planning/recurring_plans_screen.dart';
 import 'package:summa/features/planning/spending_plans_screen.dart';
 import 'package:summa/features/reports/report_screen.dart';
@@ -40,6 +41,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           _ => l10n.reports,
         }),
         actions: [
+          if (_selectedIndex == 1)
+            IconButton(
+              tooltip: l10n.debtContracts,
+              onPressed: () => Navigator.push<void>(
+                context,
+                MaterialPageRoute(builder: (_) => const DebtContractsScreen()),
+              ),
+              icon: const Icon(Icons.request_quote_outlined),
+            ),
           if (_selectedIndex != 0)
             IconButton(
               tooltip: l10n.recurringPlans,

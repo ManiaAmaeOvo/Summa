@@ -237,6 +237,52 @@ class RecurringOccurrences extends Table {
   Set<Column<Object>> get primaryKey => {planId, cycle};
 }
 
+@DataClassName('DebtContractRow')
+class DebtContracts extends Table {
+  TextColumn get accountId => text().references(LedgerAccounts, #id)();
+  TextColumn get name => text()();
+  TextColumn get counterparty => text()();
+  TextColumn get direction => text()();
+  TextColumn get currency => text()();
+  IntColumn get originalPrincipalMinor => integer()();
+  IntColumn get expectedInterestMinor => integer()();
+  TextColumn get dueOn => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {accountId};
+}
+
+@DataClassName('DebtInstallmentRow')
+class DebtInstallments extends Table {
+  TextColumn get accountId => text().references(
+    DebtContracts,
+    #accountId,
+    onDelete: KeyAction.cascade,
+  )();
+  TextColumn get dueOn => text()();
+  IntColumn get principalMinor => integer()();
+  IntColumn get interestMinor => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {accountId, dueOn};
+}
+
+@DataClassName('DebtSettlementRow')
+class DebtSettlements extends Table {
+  TextColumn get id => text()();
+  TextColumn get accountId => text().references(
+    DebtContracts,
+    #accountId,
+    onDelete: KeyAction.cascade,
+  )();
+  TextColumn get entryId => text().references(LedgerEntries, #id)();
+  TextColumn get kind => text()();
+  BoolColumn get voided => boolean()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     LedgerAccounts,
@@ -253,6 +299,9 @@ class RecurringOccurrences extends Table {
     SpendingPlanLimits,
     RecurringPlans,
     RecurringOccurrences,
+    DebtContracts,
+    DebtInstallments,
+    DebtSettlements,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -261,7 +310,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -272,6 +321,7 @@ class AppDatabase extends _$AppDatabase {
       await _createCheckpointIndex();
       await _createCsvIndexes();
       await _createSpendingPlanIndex();
+      await _createDebtSettlementIndex();
       await _seedDefaults();
       await customStatement('PRAGMA user_version = $schemaVersion');
     }),
@@ -351,6 +401,12 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(recurringPlans);
           await migrator.createTable(recurringOccurrences);
         }
+        if (from < 18) {
+          await migrator.createTable(debtContracts);
+          await migrator.createTable(debtInstallments);
+          await migrator.createTable(debtSettlements);
+          await _createDebtSettlementIndex();
+        }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
         await customStatement('PRAGMA user_version = $to');
@@ -385,6 +441,11 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> _createSpendingPlanIndex() => customStatement('''
     CREATE INDEX spending_plan_limits_plan ON spending_plan_limits (plan_id)
+  ''');
+
+  Future<void> _createDebtSettlementIndex() => customStatement('''
+    CREATE UNIQUE INDEX debt_settlements_active_entry
+      ON debt_settlements (entry_id) WHERE voided = 0
   ''');
 
   Future<void> _createCsvIndexes() async {
@@ -464,6 +525,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(csvImportBatches).go();
       await delete(balanceCheckpoints).go();
       await delete(recurringPlans).go();
+      await delete(debtContracts).go();
       await delete(ledgerEntries).go();
       await (delete(
         spendingPlans,
@@ -488,6 +550,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(csvImportBatches).go();
       await delete(balanceCheckpoints).go();
       await delete(recurringPlans).go();
+      await delete(debtContracts).go();
       await delete(ledgerEntries).go();
       await delete(importCategoryRules).go();
       await delete(spendingPlans).go();

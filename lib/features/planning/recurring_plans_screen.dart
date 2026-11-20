@@ -6,6 +6,7 @@ import 'package:summa/domain/planning/planning_date.dart';
 import 'package:summa/domain/planning/recurring_plan.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
+import 'package:summa/features/planning/ledger_link_picker.dart';
 import 'package:summa/features/planning/recurring_plan_editor.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/l10n.dart';
@@ -281,11 +282,11 @@ class _RecurringDetailsState extends ConsumerState<_RecurringDetails> {
         )
         .toList();
 
-    final chosen = await showModalBottomSheet<String>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      builder: (_) => _LinkSheet(candidates: candidates),
+    final chosen = await pickLedgerLink(
+      context,
+      title: context.l10n.recurringLink,
+      emptyLabel: context.l10n.recurringNoMatches,
+      candidates: candidates,
     );
     if (!mounted || chosen == null) return;
     await _mutate(
@@ -353,7 +354,7 @@ class _HistoryTile extends StatelessWidget {
         [
           '${labels.recurringExpectedAmount}  ${formatMoney(occurrence.expectedMinor, plan.draft.currency)}',
           if (txn != null) ...[
-            _recordTitle(context, txn),
+            linkedTransactionTitle(context, txn),
             '${labels.recurringActualDate}  ${_displayDate(context, txn.occurredAt)}',
             '${labels.recurringActualAmount}  ${formatMoney(txn.amountMinor, txn.currencyCode)}',
           ],
@@ -474,99 +475,6 @@ class _RecurringAmountDialogState extends State<_RecurringAmountDialog> {
     if (mounted && chosen != null) setState(() => _date = chosen);
   }
 }
-
-class _LinkSheet extends StatefulWidget {
-  const _LinkSheet({required this.candidates});
-
-  final List<LedgerRecord> candidates;
-
-  @override
-  State<_LinkSheet> createState() => _LinkSheetState();
-}
-
-class _LinkSheetState extends State<_LinkSheet> {
-  String _search = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final labels = context.l10n;
-    final candidates = widget.candidates
-        .where(
-          (record) =>
-              _recordTitle(context, record).toLowerCase().contains(_search) ||
-              _displayDate(
-                context,
-                record.occurredAt,
-              ).toLowerCase().contains(_search) ||
-              formatMoney(
-                record.amountMinor,
-                record.currencyCode,
-              ).toLowerCase().contains(_search),
-        )
-        .toList();
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: FractionallySizedBox(
-        heightFactor: 0.8,
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                child: Text(
-                  labels.recurringLink,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              if (widget.candidates.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      labelText: labels.recurringSearch,
-                    ),
-                    onChanged: (value) =>
-                        setState(() => _search = value.trim().toLowerCase()),
-                  ),
-                ),
-              if (candidates.isEmpty)
-                Expanded(child: Center(child: Text(labels.recurringNoMatches)))
-              else
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: candidates.length,
-                    itemBuilder: (context, index) {
-                      final record = candidates[index];
-                      return ListTile(
-                        title: Text(_recordTitle(context, record)),
-                        subtitle: Text(
-                          _displayDate(context, record.occurredAt),
-                        ),
-                        trailing: Text(
-                          formatMoney(record.amountMinor, record.currencyCode),
-                        ),
-                        onTap: () => Navigator.pop(context, record.id),
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-String _recordTitle(BuildContext context, LedgerRecord record) =>
-    record.note.trim().isEmpty
-    ? DefaultLedgerLabels.categoryName(
-        Localizations.localeOf(context),
-        record.categoryId,
-        record.categoryName,
-      )
-    : record.note;
 
 String _displayDate(BuildContext context, DateTime value) =>
     MaterialLocalizations.of(context).formatShortDate(value);

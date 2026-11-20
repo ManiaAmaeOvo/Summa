@@ -217,8 +217,12 @@ void main() {
     await ledger.setRecurringPlanPaused(plan.id, true);
     await ledger.setRecurringPlanExpectedAmount(plan.id, 1500);
 
-    final source = await ledger.createFullBackup();
-    final current = jsonDecode(source) as Map<String, dynamic>;
+    final current =
+        (jsonDecode(await ledger.createFullBackup()) as Map<String, dynamic>)
+          ..['backup_version'] = 11
+          ..['schema_version'] = 17
+          ..remove('debt_contracts');
+    final source = jsonEncode(current);
     expect(current['backup_version'], 11);
     expect(ledger.inspectFullBackup(source).recurringPlanCount, 1);
     final older = {...current, 'backup_version': 10, 'schema_version': 16}

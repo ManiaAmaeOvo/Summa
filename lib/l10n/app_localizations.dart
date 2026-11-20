@@ -1871,7 +1871,7 @@ abstract class AppLocalizations {
   /// No description provided for @resetTransactionsAccountsMessage.
   ///
   /// In en, this message translates to:
-  /// **'All transactions, recurring plans, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.'**
+  /// **'All transactions, recurring plans, debt and receivable contracts, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.'**
   String get resetTransactionsAccountsMessage;
 
   /// No description provided for @confirmReset.
@@ -3823,6 +3823,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Subscriptions & recurring plans {count}'**
   String backupRecurringPlanCount(int count);
+
+  /// No description provided for @debtContracts.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt & receivable contracts'**
+  String get debtContracts;
+
+  /// No description provided for @debtAddContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contract'**
+  String get debtAddContract;
+
+  /// No description provided for @debtEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a contract for a debt or receivable account.'**
+  String get debtEmpty;
+
+  /// No description provided for @debtLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load contracts.'**
+  String get debtLoadFailed;
+
+  /// No description provided for @debtCounterparty.
+  ///
+  /// In en, this message translates to:
+  /// **'Counterparty'**
+  String get debtCounterparty;
+
+  /// No description provided for @debtOriginalPrincipal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original principal'**
+  String get debtOriginalPrincipal;
+
+  /// No description provided for @debtOutstandingPrincipal.
+  ///
+  /// In en, this message translates to:
+  /// **'Outstanding principal'**
+  String get debtOutstandingPrincipal;
+
+  /// No description provided for @debtExpectedInterest.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreed interest'**
+  String get debtExpectedInterest;
+
+  /// No description provided for @debtDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract due date'**
+  String get debtDueDate;
+
+  /// No description provided for @debtSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Repayment schedule'**
+  String get debtSchedule;
+
+  /// No description provided for @debtAddInstallment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add installment'**
+  String get debtAddInstallment;
+
+  /// No description provided for @debtInstallment.
+  ///
+  /// In en, this message translates to:
+  /// **'Installment'**
+  String get debtInstallment;
+
+  /// No description provided for @debtInstallmentDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Installment due date'**
+  String get debtInstallmentDate;
+
+  /// No description provided for @debtScheduleDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Without installments, the full amount is due on the contract date.'**
+  String get debtScheduleDefault;
+
+  /// No description provided for @debtScheduleInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Installment dates must be distinct and within the contract term. Totals must match the agreed principal and interest.'**
+  String get debtScheduleInvalid;
+
+  /// No description provided for @debtPrincipal.
+  ///
+  /// In en, this message translates to:
+  /// **'Principal'**
+  String get debtPrincipal;
+
+  /// No description provided for @debtRemainingPrincipal.
+  ///
+  /// In en, this message translates to:
+  /// **'Principal awaiting allocation'**
+  String get debtRemainingPrincipal;
+
+  /// No description provided for @debtRemainingInterest.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest awaiting allocation'**
+  String get debtRemainingInterest;
+
+  /// No description provided for @debtCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Principal cleared'**
+  String get debtCleared;
+
+  /// No description provided for @debtBalanceReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review ledger balance'**
+  String get debtBalanceReview;
+
+  /// No description provided for @debtOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue installment'**
+  String get debtOverdue;
+
+  /// No description provided for @debtAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each contract uses one debt or receivable account to read the outstanding principal.'**
+  String get debtAccountHint;
+
+  /// No description provided for @debtNoAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a debt or receivable account to get started.'**
+  String get debtNoAccounts;
+
+  /// No description provided for @debtAddLiabilityAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add debt account'**
+  String get debtAddLiabilityAccount;
+
+  /// No description provided for @debtAddReceivableAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add receivable account'**
+  String get debtAddReceivableAccount;
+
+  /// No description provided for @debtInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the account, dates, and amounts.'**
+  String get debtInvalid;
+
+  /// No description provided for @debtAccountInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has a contract.'**
+  String get debtAccountInUse;
+
+  /// No description provided for @debtLinkRepayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a repayment'**
+  String get debtLinkRepayment;
+
+  /// No description provided for @debtLinkCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a collection'**
+  String get debtLinkCollection;
+
+  /// No description provided for @debtLinkInterest.
+  ///
+  /// In en, this message translates to:
+  /// **'Link interest income'**
+  String get debtLinkInterest;
+
+  /// No description provided for @debtNoPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'No eligible unlinked payment. Record the actual transaction in Transactions first.'**
+  String get debtNoPayments;
+
+  /// No description provided for @debtHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement history'**
+  String get debtHistory;
+
+  /// No description provided for @debtNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions have been linked.'**
+  String get debtNoHistory;
+
+  /// No description provided for @debtUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo allocation'**
+  String get debtUnlink;
+
+  /// No description provided for @debtUnlinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo this allocation?'**
+  String get debtUnlinkTitle;
+
+  /// No description provided for @debtUnlinkMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction stays in the ledger. The scheduled amounts will be recalculated.'**
+  String get debtUnlinkMessage;
+
+  /// No description provided for @debtVoidedLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Allocation undone'**
+  String get debtVoidedLink;
+
+  /// No description provided for @debtInvalidatedLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction changed, was reversed, or is unavailable'**
+  String get debtInvalidatedLink;
+
+  /// No description provided for @debtIneligible.
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction is unavailable or no longer matches this account and currency.'**
+  String get debtIneligible;
+
+  /// No description provided for @debtConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction is already linked.'**
+  String get debtConflict;
+
+  /// No description provided for @debtUnlinkedPrincipal.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted principal to link'**
+  String get debtUnlinkedPrincipal;
+
+  /// No description provided for @debtBackupConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup has invalid or conflicting debt contracts or settlements.'**
+  String get debtBackupConflict;
+
+  /// No description provided for @backupDebtContractCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt & receivable contracts {count}'**
+  String backupDebtContractCount(int count);
 }
 
 class _AppLocalizationsDelegate

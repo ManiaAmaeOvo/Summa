@@ -1021,7 +1021,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetTransactionsAccountsMessage =>
-      'All transactions, recurring plans, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.';
+      'All transactions, recurring plans, debt and receivable contracts, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.';
 
   @override
   String get confirmReset => 'Confirm reset';
@@ -2143,5 +2143,145 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String backupRecurringPlanCount(int count) {
     return 'Subscriptions & recurring plans $count';
+  }
+
+  @override
+  String get debtContracts => 'Debt & receivable contracts';
+
+  @override
+  String get debtAddContract => 'Add contract';
+
+  @override
+  String get debtEmpty => 'Add a contract for a debt or receivable account.';
+
+  @override
+  String get debtLoadFailed => 'Could not load contracts.';
+
+  @override
+  String get debtCounterparty => 'Counterparty';
+
+  @override
+  String get debtOriginalPrincipal => 'Original principal';
+
+  @override
+  String get debtOutstandingPrincipal => 'Outstanding principal';
+
+  @override
+  String get debtExpectedInterest => 'Agreed interest';
+
+  @override
+  String get debtDueDate => 'Contract due date';
+
+  @override
+  String get debtSchedule => 'Repayment schedule';
+
+  @override
+  String get debtAddInstallment => 'Add installment';
+
+  @override
+  String get debtInstallment => 'Installment';
+
+  @override
+  String get debtInstallmentDate => 'Installment due date';
+
+  @override
+  String get debtScheduleDefault =>
+      'Without installments, the full amount is due on the contract date.';
+
+  @override
+  String get debtScheduleInvalid =>
+      'Installment dates must be distinct and within the contract term. Totals must match the agreed principal and interest.';
+
+  @override
+  String get debtPrincipal => 'Principal';
+
+  @override
+  String get debtRemainingPrincipal => 'Principal awaiting allocation';
+
+  @override
+  String get debtRemainingInterest => 'Interest awaiting allocation';
+
+  @override
+  String get debtCleared => 'Principal cleared';
+
+  @override
+  String get debtBalanceReview => 'Review ledger balance';
+
+  @override
+  String get debtOverdue => 'Overdue installment';
+
+  @override
+  String get debtAccountHint =>
+      'Each contract uses one debt or receivable account to read the outstanding principal.';
+
+  @override
+  String get debtNoAccounts =>
+      'Create a debt or receivable account to get started.';
+
+  @override
+  String get debtAddLiabilityAccount => 'Add debt account';
+
+  @override
+  String get debtAddReceivableAccount => 'Add receivable account';
+
+  @override
+  String get debtInvalid => 'Check the account, dates, and amounts.';
+
+  @override
+  String get debtAccountInUse => 'This account already has a contract.';
+
+  @override
+  String get debtLinkRepayment => 'Link a repayment';
+
+  @override
+  String get debtLinkCollection => 'Link a collection';
+
+  @override
+  String get debtLinkInterest => 'Link interest income';
+
+  @override
+  String get debtNoPayments =>
+      'No eligible unlinked payment. Record the actual transaction in Transactions first.';
+
+  @override
+  String get debtHistory => 'Settlement history';
+
+  @override
+  String get debtNoHistory => 'No transactions have been linked.';
+
+  @override
+  String get debtUnlink => 'Undo allocation';
+
+  @override
+  String get debtUnlinkTitle => 'Undo this allocation?';
+
+  @override
+  String get debtUnlinkMessage =>
+      'The transaction stays in the ledger. The scheduled amounts will be recalculated.';
+
+  @override
+  String get debtVoidedLink => 'Allocation undone';
+
+  @override
+  String get debtInvalidatedLink =>
+      'Transaction changed, was reversed, or is unavailable';
+
+  @override
+  String get debtIneligible =>
+      'The transaction is unavailable or no longer matches this account and currency.';
+
+  @override
+  String get debtConflict => 'This transaction is already linked.';
+
+  @override
+  String get debtUnlinkedPrincipal => 'Posted principal to link';
+
+  @override
+  String get debtBackupConflict =>
+      'The backup has invalid or conflicting debt contracts or settlements.';
+
+  @override
+  String backupDebtContractCount(int count) {
+    return 'Debt & receivable contracts $count';
   }
 }

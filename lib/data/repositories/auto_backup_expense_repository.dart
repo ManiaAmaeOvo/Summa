@@ -6,6 +6,7 @@ import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
+import 'package:summa/domain/planning/debt_contract.dart';
 import 'package:summa/domain/planning/recurring_plan.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
@@ -298,6 +299,25 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
   @override
   Future<void> setSpendingPlanArchived(String id, bool archived) =>
       _mutate(() => _delegate.setSpendingPlanArchived(id, archived));
+
+  @override
+  Stream<List<DebtContract>> watchDebtContracts() =>
+      _delegate.watchDebtContracts();
+
+  @override
+  Future<void> addDebtContract(DebtContractDraft draft) =>
+      _mutate(() => _delegate.addDebtContract(draft));
+
+  @override
+  Future<void> linkDebtSettlement(
+    String accountId,
+    String entryId,
+    DebtLinkKind kind,
+  ) => _mutate(() => _delegate.linkDebtSettlement(accountId, entryId, kind));
+
+  @override
+  Future<void> unlinkDebtSettlement(String linkId) =>
+      _mutate(() => _delegate.unlinkDebtSettlement(linkId));
 
   @override
   Stream<List<RecurringPlan>> watchRecurringPlans() =>

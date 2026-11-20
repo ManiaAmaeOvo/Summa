@@ -5,6 +5,7 @@ import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/planning/debt_contract.dart';
 import 'package:summa/domain/planning/recurring_plan.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
@@ -198,6 +199,18 @@ abstract interface class ExpenseRepository {
     int expectedIndex,
     String entryId,
   );
+
+  Stream<List<DebtContract>> watchDebtContracts();
+
+  Future<void> addDebtContract(DebtContractDraft draft);
+
+  Future<void> linkDebtSettlement(
+    String accountId,
+    String entryId,
+    DebtLinkKind kind,
+  );
+
+  Future<void> unlinkDebtSettlement(String linkId);
 
   Future<List<CsvReviewRow>> previewCsvImport(
     CsvImportFile file, {

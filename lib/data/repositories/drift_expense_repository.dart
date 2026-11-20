@@ -10,6 +10,7 @@ import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/planning/debt_contract.dart';
 import 'package:summa/domain/planning/recurring_plan.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
@@ -22,6 +23,7 @@ import 'package:summa/domain/valuation/net_worth_valuation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'drift_csv_import_store.dart';
+import 'drift_debt_contract_store.dart';
 import 'drift_import_rule_store.dart';
 import 'drift_reconciliation_store.dart';
 import 'drift_recurring_plan_store.dart';
@@ -38,7 +40,8 @@ class DriftExpenseRepository implements ExpenseRepository {
       _csv = DriftCsvImportStore(_database),
       _importRules = DriftImportRuleStore(_database),
       _spendingPlans = DriftSpendingPlanStore(_database),
-      _recurringPlans = DriftRecurringPlanStore(_database);
+      _recurringPlans = DriftRecurringPlanStore(_database),
+      _debtContracts = DriftDebtContractStore(_database);
 
   final AppDatabase _database;
   final DriftValuationStore _valuation;
@@ -47,6 +50,7 @@ class DriftExpenseRepository implements ExpenseRepository {
   final DriftImportRuleStore _importRules;
   final DriftSpendingPlanStore _spendingPlans;
   final DriftRecurringPlanStore _recurringPlans;
+  final DriftDebtContractStore _debtContracts;
   final Uuid _uuid = const Uuid();
 
   @override
@@ -1254,6 +1258,84 @@ class DriftExpenseRepository implements ExpenseRepository {
       _database.transaction(() => _spendingPlans.setArchived(id, archived));
 
   @override
+  Stream<List<DebtContract>> watchDebtContracts() =>
+      _debtContracts.watch(_balanceQuery(contractsOnly: true));
+
+  @override
+  Future<void> addDebtContract(DebtContractDraft draft) =>
+      _database.transaction(() => _debtContracts.add(draft));
+
+  @override
+  Future<void> linkDebtSettlement(
+    String accountId,
+    String entryId,
+    DebtLinkKind kind,
+  ) => _database.transaction(() async {
+    final contract = await _debtContracts.byAccount(accountId);
+    if (contract == null) {
+      throw const DebtContractException(DebtContractError.unavailable);
+    }
+    final entry = await (_database.select(
+      _database.ledgerEntries,
+    )..where((row) => row.id.equals(entryId))).getSingleOrNull();
+    if (entry == null ||
+        entry.isDeleted ||
+        entry.refundOfId != null ||
+        entry.status != LedgerPostingStatus.posted.name ||
+        entry.currencyCode != contract.currency ||
+        await _hasActiveReversal(entryId)) {
+      throw const DebtContractException(DebtContractError.ineligible);
+    }
+    final terms = _decodeTerms(entry.termsJson);
+    final postings = await _accountPostings(entryId);
+    if (terms.reversalOfId != null || postings.any((row) => row.needsReview)) {
+      throw const DebtContractException(DebtContractError.ineligible);
+    }
+    final debit =
+        postings
+            .where(
+              (row) =>
+                  row.accountId == accountId &&
+                  row.currencyCode == contract.currency,
+            )
+            .firstOrNull
+            ?.debitMinor ??
+        0;
+    bool personalCash = false;
+    if (kind == DebtLinkKind.interest) {
+      final account = await (_database.select(
+        _database.ledgerAccounts,
+      )..where((row) => row.id.equals(entry.accountId))).getSingle();
+      personalCash =
+          AccountKind.values.byName(account.kind).isPersonalCash &&
+          postings.any(
+            (row) =>
+                row.accountId == account.id &&
+                row.currencyCode == contract.currency &&
+                row.debitMinor > 0,
+          );
+    }
+    if (debtPaymentAmounts(
+          DebtDirection.values.byName(contract.direction),
+          kind,
+          type: LedgerTransactionType.values.byName(entry.transactionType),
+          debitMinor: debit,
+          amountMinor: entry.amountMinor,
+          interestMinor: terms.interestMinor,
+          feeMinor: terms.feeMinor,
+          incomeToPersonalCash: personalCash,
+        ) ==
+        null) {
+      throw const DebtContractException(DebtContractError.ineligible);
+    }
+    await _debtContracts.link(_uuid.v4(), accountId, entryId, kind);
+  });
+
+  @override
+  Future<void> unlinkDebtSettlement(String linkId) =>
+      _debtContracts.unlink(linkId);
+
+  @override
   Stream<List<RecurringPlan>> watchRecurringPlans() => _recurringPlans.watch();
 
   @override
@@ -1974,15 +2056,18 @@ class DriftExpenseRepository implements ExpenseRepository {
     String? accountId,
     String? excludingEntryId,
     DateTime? asOf,
+    bool contractsOnly = false,
   }) {
     final postingAccount = accountId == null ? '' : 'AND leg.account_id = ?';
     final exclusion = excludingEntryId == null
         ? ''
         : 'AND leg.transaction_id != ?';
     final cutoff = asOf == null ? '' : 'AND entry.occurred_at <= ?';
-    final selection = accountId == null
-        ? "a.is_archived = 0 AND a.kind <> 'familyDirect'"
-        : 'a.id = ?';
+    final selection = accountId != null
+        ? 'a.id = ?'
+        : contractsOnly
+        ? 'a.id IN (SELECT account_id FROM debt_contracts)'
+        : "a.is_archived = 0 AND a.kind <> 'familyDirect'";
     return _database.customSelect(
       """
       SELECT a.id, a.name, a.kind, a.currency_code, a.opening_balance_minor, a.is_archived,
@@ -2011,6 +2096,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         _database.ledgerAccounts,
         _database.ledgerEntries,
         _database.ledgerPostings,
+        if (contractsOnly) _database.debtContracts,
       },
     );
   }
@@ -2508,7 +2594,8 @@ class DriftExpenseRepository implements ExpenseRepository {
     final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 11,
+      'backup_version': 12,
+      'debt_contracts': await _debtContracts.backup(),
       'recurring_plans': await _recurringPlans.backup(),
       'spending_plans': await _spendingPlans.backup(),
       'import_category_rules': await _importRules.backup(),
@@ -2548,6 +2635,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       importBatchCount: payload.csvBatches.length,
       spendingPlanCount: payload.spendingPlans.length,
       recurringPlanCount: payload.recurringPlans.length,
+      debtContractCount: payload.debtContracts.length,
       categoryCount: payload.categories.length,
       entryCount: entries.length,
       deletedEntryCount: entries
@@ -2567,6 +2655,7 @@ class DriftExpenseRepository implements ExpenseRepository {
         await _database.delete(_database.csvImportBatches).go();
         await _database.delete(_database.balanceCheckpoints).go();
         await _database.delete(_database.recurringPlans).go();
+        await _database.delete(_database.debtContracts).go();
         await _database.delete(_database.ledgerEntries).go();
         await _database.delete(_database.importCategoryRules).go();
         await _database.delete(_database.spendingPlans).go();
@@ -2727,6 +2816,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       await _importRules.restore(payload.importRules);
       await _spendingPlans.restore(payload.spendingPlans);
       await _recurringPlans.restore(payload.recurringPlans);
+      await _debtContracts.restore(payload.debtContracts);
       try {
         await _checkReceivableBalances();
       } on TransactionRuleException {
@@ -3364,6 +3454,7 @@ Map<String, Object?> _backupPosting(PostingRow posting) => {
   List<Map<String, dynamic>> importRules,
   List<Map<String, dynamic>> spendingPlans,
   List<Map<String, dynamic>> recurringPlans,
+  List<Map<String, dynamic>> debtContracts,
 })
 _parseBackup(String source) {
   dynamic decoded;
@@ -3378,7 +3469,7 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 11) ||
+      !(format == _backupFormat && (version >= 1 && version <= 12) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
@@ -3396,6 +3487,9 @@ _parseBackup(String source) {
     accounts: _requiredObjectList(decoded, 'accounts'),
     categories: _requiredObjectList(decoded, 'categories'),
     entries: _requiredObjectList(decoded, 'entries'),
+    debtContracts: version >= 12
+        ? _requiredObjectList(decoded, 'debt_contracts')
+        : const [],
     recurringPlans: version >= 11
         ? _requiredObjectList(decoded, 'recurring_plans')
         : const [],

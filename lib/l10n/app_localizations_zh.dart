@@ -953,7 +953,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resetTransactionsAccountsMessage =>
-      '将清除所有交易、周期计划及关联账户的预算和外部额度，删除自定义账户，并将默认账户余额归零。分类、其他预算和备份会保留。';
+      '将清除所有交易、周期计划、债务与应收款合同及关联账户的预算和外部额度，删除自定义账户，并将默认账户余额归零。分类、其他预算和备份会保留。';
 
   @override
   String get confirmReset => '确认重置';
@@ -2003,5 +2003,136 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String backupRecurringPlanCount(int count) {
     return '订阅与周期计划 $count';
+  }
+
+  @override
+  String get debtContracts => '债务与应收款合同';
+
+  @override
+  String get debtAddContract => '新建合同';
+
+  @override
+  String get debtEmpty => '可为债务或应收款账户建立合同。';
+
+  @override
+  String get debtLoadFailed => '无法加载合同。';
+
+  @override
+  String get debtCounterparty => '债权人或欠款人';
+
+  @override
+  String get debtOriginalPrincipal => '合同本金';
+
+  @override
+  String get debtOutstandingPrincipal => '未结清本金';
+
+  @override
+  String get debtExpectedInterest => '约定利息';
+
+  @override
+  String get debtDueDate => '合同到期日';
+
+  @override
+  String get debtSchedule => '还款计划';
+
+  @override
+  String get debtAddInstallment => '添加期款';
+
+  @override
+  String get debtInstallment => '期款';
+
+  @override
+  String get debtInstallmentDate => '期款到期日';
+
+  @override
+  String get debtScheduleDefault => '未添加期款时，全额在合同到期日到期。';
+
+  @override
+  String get debtScheduleInvalid => '请使用不同的期款日期且不得晚于合同到期日。期款本金和利息须分别与合同总额相符。';
+
+  @override
+  String get debtPrincipal => '本金';
+
+  @override
+  String get debtRemainingPrincipal => '待核销本金';
+
+  @override
+  String get debtRemainingInterest => '待核销利息';
+
+  @override
+  String get debtCleared => '本金已结清';
+
+  @override
+  String get debtBalanceReview => '账本余额待核对';
+
+  @override
+  String get debtOverdue => '期款逾期';
+
+  @override
+  String get debtAccountHint => '每份合同关联一个债务或应收款账户，并从该账户读取未结清本金。';
+
+  @override
+  String get debtNoAccounts => '请先建立债务或应收款账户。';
+
+  @override
+  String get debtAddLiabilityAccount => '新建债务账户';
+
+  @override
+  String get debtAddReceivableAccount => '新建应收款账户';
+
+  @override
+  String get debtInvalid => '请检查账户、日期和金额。';
+
+  @override
+  String get debtAccountInUse => '此账户已有合同。';
+
+  @override
+  String get debtLinkRepayment => '关联还款';
+
+  @override
+  String get debtLinkCollection => '关联回款';
+
+  @override
+  String get debtLinkInterest => '关联利息收入';
+
+  @override
+  String get debtNoPayments => '没有可关联的交易。请先在「交易」中记录实际还款、回款或利息收入。';
+
+  @override
+  String get debtHistory => '核销历史';
+
+  @override
+  String get debtNoHistory => '尚无已关联交易。';
+
+  @override
+  String get debtUnlink => '撤销核销';
+
+  @override
+  String get debtUnlinkTitle => '撤销这笔核销？';
+
+  @override
+  String get debtUnlinkMessage => '实际交易仍保留在账本中，期款将重新计算。';
+
+  @override
+  String get debtVoidedLink => '核销已撤销';
+
+  @override
+  String get debtInvalidatedLink => '交易已变更、冲销或不可用';
+
+  @override
+  String get debtIneligible => '交易不可用，或已不匹配该账户与币种。';
+
+  @override
+  String get debtConflict => '此交易已关联核销。';
+
+  @override
+  String get debtUnlinkedPrincipal => '已入账但未关联的本金';
+
+  @override
+  String get debtBackupConflict => '备份中的债务合同或核销关联无效或存在冲突。';
+
+  @override
+  String backupDebtContractCount(int count) {
+    return '债务与应收款合同 $count';
   }
 }
