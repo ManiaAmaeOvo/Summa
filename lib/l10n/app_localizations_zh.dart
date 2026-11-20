@@ -2455,4 +2455,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String historyPreviousDifference(String amount) {
     return '较上期 $amount';
   }
+
+  @override
+  String get exportFinancialReport => '导出财务报告';
+
+  @override
+  String get reportIncludeTransactions => '包含匹配流水';
+
+  @override
+  String get reportIncludeSensitive => '包含备注、支付渠道和交易对方';
+
+  @override
+  String get reportExportFailed => '无法保存报告，请重试。';
+
+  @override
+  String get reportExportSaved => '财务报告已保存';
+
+  @override
+  String get reportFinancialPosition => '资产负债';
+
+  @override
+  String get reportAssets => '资产';
+
+  @override
+  String get reportLiabilities => '负债';
+
+  @override
+  String get reportNetWorth => '净资产';
+
+  @override
+  String reportOpeningToClosing(String opening, String closing) {
+    return '期初 $opening · 期末 $closing';
+  }
 }

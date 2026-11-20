@@ -979,5 +979,25 @@
         "type": "String"
       }
     }
+  },
+  "exportFinancialReport": "Export financial report",
+  "reportIncludeTransactions": "Include matching transactions",
+  "reportIncludeSensitive": "Include notes, payment channels and counterparties",
+  "reportExportFailed": "Could not save the report. Try again.",
+  "reportExportSaved": "Financial report saved",
+  "reportFinancialPosition": "Assets and liabilities",
+  "reportAssets": "Assets",
+  "reportLiabilities": "Liabilities",
+  "reportNetWorth": "Net worth",
+  "reportOpeningToClosing": "Opening {opening} · Closing {closing}",
+  "@reportOpeningToClosing": {
+    "placeholders": {
+      "opening": {
+        "type": "String"
+      },
+      "closing": {
+        "type": "String"
+      }
+    }
   }
 }

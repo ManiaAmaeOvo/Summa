@@ -14,6 +14,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/cash_forecast.dart';
+import 'package:summa/domain/analytics/ledger_history.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
@@ -866,6 +867,14 @@ Widget _testApp({
   Stream<ValuationSettings>? valuation,
 }) => ProviderScope(
   overrides: [
+    ledgerHistoryInputsProvider.overrideWith((ref) async* {
+      final balances = ref.watch(accountBalancesProvider.future);
+      final transactions = ref.watch(transactionsProvider.future);
+      yield LedgerHistoryInputs(
+        balances: await balances,
+        transactions: await transactions,
+      );
+    }),
     cashForecastInputsProvider.overrideWith(
       (ref) => Stream.value(
         CashForecastInputs(

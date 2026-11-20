@@ -2616,4 +2616,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String historyPreviousDifference(String amount) {
     return 'Vs previous period $amount';
   }
+
+  @override
+  String get exportFinancialReport => 'Export financial report';
+
+  @override
+  String get reportIncludeTransactions => 'Include matching transactions';
+
+  @override
+  String get reportIncludeSensitive =>
+      'Include notes, payment channels and counterparties';
+
+  @override
+  String get reportExportFailed => 'Could not save the report. Try again.';
+
+  @override
+  String get reportExportSaved => 'Financial report saved';
+
+  @override
+  String get reportFinancialPosition => 'Assets and liabilities';
+
+  @override
+  String get reportAssets => 'Assets';
+
+  @override
+  String get reportLiabilities => 'Liabilities';
+
+  @override
+  String get reportNetWorth => 'Net worth';
+
+  @override
+  String reportOpeningToClosing(String opening, String closing) {
+    return 'Opening $opening · Closing $closing';
+  }
 }

@@ -4681,6 +4681,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Vs previous period {amount}'**
   String historyPreviousDifference(String amount);
+
+  /// No description provided for @exportFinancialReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export financial report'**
+  String get exportFinancialReport;
+
+  /// No description provided for @reportIncludeTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Include matching transactions'**
+  String get reportIncludeTransactions;
+
+  /// No description provided for @reportIncludeSensitive.
+  ///
+  /// In en, this message translates to:
+  /// **'Include notes, payment channels and counterparties'**
+  String get reportIncludeSensitive;
+
+  /// No description provided for @reportExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the report. Try again.'**
+  String get reportExportFailed;
+
+  /// No description provided for @reportExportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial report saved'**
+  String get reportExportSaved;
+
+  /// No description provided for @reportFinancialPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Assets and liabilities'**
+  String get reportFinancialPosition;
+
+  /// No description provided for @reportAssets.
+  ///
+  /// In en, this message translates to:
+  /// **'Assets'**
+  String get reportAssets;
+
+  /// No description provided for @reportLiabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Liabilities'**
+  String get reportLiabilities;
+
+  /// No description provided for @reportNetWorth.
+  ///
+  /// In en, this message translates to:
+  /// **'Net worth'**
+  String get reportNetWorth;
+
+  /// No description provided for @reportOpeningToClosing.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening {opening} · Closing {closing}'**
+  String reportOpeningToClosing(String opening, String closing);
 }
 
 class _AppLocalizationsDelegate

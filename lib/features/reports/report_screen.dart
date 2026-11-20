@@ -8,13 +8,14 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
-import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/analytics/financial_report.dart';
 import 'package:summa/domain/analytics/financial_activity.dart';
 import 'package:summa/domain/analytics/ledger_analysis.dart';
 import 'package:summa/domain/import_export/ledger_export.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/features/analysis/ledger_filter_control.dart';
 import 'package:summa/features/dashboard/transaction_browser.dart';
+import 'package:summa/features/reports/financial_report_export_dialog.dart';
 import 'package:summa/features/reports/historical_analysis_screen.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/l10n.dart';
@@ -39,20 +40,28 @@ class ReportScreen extends ConsumerStatefulWidget {
 class _ReportScreenState extends ConsumerState<ReportScreen> {
   _ReportPeriod _period = _ReportPeriod.month;
   DateTime _anchor = DateTime.now();
-  late String? _currency = widget.initialCurrency;
+  late String? _currency =
+      widget.initialCurrency ?? widget.initialFilter.currency;
   late LedgerFilter _filter = widget.initialFilter;
 
   @override
   Widget build(BuildContext context) {
-    final records = ref.watch(transactionsProvider);
-    final balances = ref.watch(accountBalancesProvider).asData?.value;
-    return records.when(
+    final inputs = ref.watch(ledgerHistoryInputsProvider);
+    return inputs.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, _) => Center(child: Text(context.l10n.reportReadFailed)),
-      data: (all) {
-        if (balances == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      error: (_, _) => Center(
+        child: TextButton(
+          onPressed: () => ref.invalidate(ledgerHistoryInputsProvider),
+          child: Text(
+            '${context.l10n.reportReadFailed} · ${context.l10n.retry}',
+          ),
+        ),
+      ),
+      data: (input) {
+        final all = input.transactions;
+        final balances = input.balances
+            .where((account) => account.archivedAt == null)
+            .toList(growable: false);
         final custom = _filter.range;
         final range = custom == null
             ? _rangeFor(_period, _anchor)
@@ -67,24 +76,22 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
         final currency = currencies.contains(_currency)
             ? _currency!
             : currencies.first;
-        final filter = _filter.scoped(
+        final report = FinancialReport(
+          records: posted,
+          balances: balances,
           range: (start: range.start, endExclusive: range.end),
           currency: currency,
+          filter: _filter,
+          monthlyTimeline: custom == null && _period == _ReportPeriod.year,
         );
+        final filter = report.filter;
+        final analysis = report.analysis;
         void openTransactions(LedgerFilter selected) => Navigator.push<void>(
           context,
           MaterialPageRoute(
             builder: (_) => LedgerDrilldownScreen(filter: selected),
           ),
         );
-        final periodRecords = posted
-            .where(
-              (item) =>
-                  !item.occurredAt.isBefore(range.start) &&
-                  item.occurredAt.isBefore(range.end),
-            )
-            .toList(growable: false);
-        final analysis = analyzeLedger(posted, currency, filter);
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
           children: [
@@ -173,6 +180,14 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                   icon: const Icon(Icons.history),
                   label: Text(context.l10n.historicalAnalysis),
                 ),
+                TextButton.icon(
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => FinancialReportExportDialog(report: report),
+                  ),
+                  icon: const Icon(Icons.file_download_outlined),
+                  label: Text(context.l10n.exportFinancialReport),
+                ),
               ],
             ),
             _SummaryGrid(analysis: analysis, currency: currency),
@@ -192,8 +207,8 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               ),
             const SizedBox(height: 16),
             _TrendCard(
-              points: analysis.spending,
-              period: _period,
+              timeline: report.spendingTimeline,
+              monthly: report.monthlyTimeline,
               currency: currency,
             ),
             const SizedBox(height: 16),
@@ -212,23 +227,13 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               currency: currency,
               onOpen: (id) => openTransactions(filter.scoped(categoryId: id)),
             ),
-            if (_filter.categoryId == null &&
-                _filter.funding == null &&
-                !_filter.hasSourceDimensions) ...[
+            if (report.position case final position?) ...[
               const SizedBox(height: 16),
+              _PositionCard(position: position, currency: currency),
               _DebtTrendCard(
-                allRecords: posted,
-                selectedRecords: periodRecords,
-                balances: balances
-                    .where(
-                      (item) =>
-                          item.currencyCode == currency &&
-                          (_filter.accountId == null ||
-                              _filter.accountId == item.id),
-                    )
-                    .toList(),
+                position: position,
+                useMonths: range.end.difference(range.start).inDays > 200,
                 currency: currency,
-                range: range,
               ),
             ],
             const SizedBox(height: 16),
@@ -247,8 +252,8 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   }
 
   DateTime _shift(int amount) => switch (_period) {
-    _ReportPeriod.day => _anchor.add(Duration(days: amount)),
-    _ReportPeriod.week => _anchor.add(Duration(days: 7 * amount)),
+    _ReportPeriod.day => _calendarOffset(_anchor, amount),
+    _ReportPeriod.week => _calendarOffset(_anchor, 7 * amount),
     _ReportPeriod.month => DateTime(_anchor.year, _anchor.month + amount, 1),
     _ReportPeriod.year => DateTime(_anchor.year + amount, 1, 1),
   };
@@ -428,31 +433,17 @@ class _Metric extends StatelessWidget {
 
 class _TrendCard extends StatelessWidget {
   const _TrendCard({
-    required this.points,
+    required this.timeline,
     required this.currency,
-    required this.period,
+    required this.monthly,
   });
 
-  final List<AnalysisSpendingPoint> points;
-  final _ReportPeriod period;
+  final List<AnalysisSpendingPoint> timeline;
+  final bool monthly;
   final String currency;
 
   @override
   Widget build(BuildContext context) {
-    final buckets = <DateTime, BigInt>{};
-    for (final item in points) {
-      final date = item.date;
-      final key = period == _ReportPeriod.year
-          ? DateTime(date.year, date.month)
-          : DateTime(date.year, date.month, date.day);
-      buckets.update(
-        key,
-        (sum) => sum + item.amountMinor,
-        ifAbsent: () => item.amountMinor,
-      );
-    }
-    final timeline = buckets.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -473,12 +464,12 @@ class _TrendCard extends StatelessWidget {
                       painter: _TrendPainter(
                         currency: currency,
                         values: timeline
-                            .map((e) => e.value.toDouble())
+                            .map((e) => e.amountMinor.toDouble())
                             .toList(),
                         xLabels: _axisDateLabels(
-                          timeline.map((e) => e.key).toList(),
+                          timeline.map((e) => e.date).toList(),
                           context,
-                          useMonths: period == _ReportPeriod.year,
+                          useMonths: monthly,
                         ),
                         lineColor: Theme.of(context).colorScheme.primary,
                         gridColor: Theme.of(context).colorScheme.outlineVariant,
@@ -785,61 +776,71 @@ class _PiePainter extends CustomPainter {
       oldDelegate.values != values || oldDelegate.colors != colors;
 }
 
-class _DebtTrendCard extends StatelessWidget {
-  const _DebtTrendCard({
-    required this.allRecords,
-    required this.selectedRecords,
-    required this.balances,
-    required this.range,
-    required this.currency,
-  });
+class _PositionCard extends StatelessWidget {
+  const _PositionCard({required this.position, required this.currency});
 
-  final List<LedgerRecord> allRecords;
-  final List<LedgerRecord> selectedRecords;
-  final List<AccountBalance> balances;
-  final _DateRange range;
-
+  final ReportPosition position;
   final String currency;
 
   @override
   Widget build(BuildContext context) {
-    final liabilityIds = balances
-        .where((item) => item.group == AccountGroup.liability)
-        .map((item) => item.id)
-        .toSet();
-    final current = balances
-        .where((item) => item.group == AccountGroup.liability)
-        .fold<int>(0, (sum, item) => sum + item.currentBalanceMinor);
-    final opening = allRecords
-        .where((record) => !record.occurredAt.isBefore(range.start))
-        .fold(
-          current,
-          (balance, record) =>
-              balance - _liabilityDelta(record, liabilityIds, currency),
-        );
-    final ordered =
-        selectedRecords
-            .where((item) => _liabilityDelta(item, liabilityIds, currency) != 0)
-            .toList()
-          ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
-    final values = <int>[opening];
-    final dates = <DateTime>[range.start];
-    var running = opening;
-    for (final record in ordered) {
-      running += _liabilityDelta(record, liabilityIds, currency);
-      values.add(running);
-      dates.add(record.occurredAt);
-    }
-    final closingDate = range.end.subtract(const Duration(milliseconds: 1));
-    if (dates.last != closingDate) {
-      values.add(running);
-      dates.add(closingDate);
-    }
-    final hasLiabilityData =
-        liabilityIds.isNotEmpty ||
-        ordered.any(
-          (item) => _liabilityDelta(item, liabilityIds, currency) != 0,
-        );
+    final labels = context.l10n;
+    final opening = position.opening;
+    final closing = position.closing;
+    return Card(
+      child: ExpansionTile(
+        title: Text(labels.reportFinancialPosition),
+        subtitle: Text(
+          labels.closingAmount(
+            formatMoneyTotal(closing.netWorthMinor, currency),
+          ),
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        children: [
+          for (final (label, start, end) in [
+            (labels.reportAssets, opening.assetsMinor, closing.assetsMinor),
+            (
+              labels.reportLiabilities,
+              opening.liabilitiesMinor,
+              closing.liabilitiesMinor,
+            ),
+            (
+              labels.reportNetWorth,
+              opening.netWorthMinor,
+              closing.netWorthMinor,
+            ),
+          ])
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(label),
+              subtitle: Text(
+                labels.reportOpeningToClosing(
+                  formatMoneyTotal(start, currency),
+                  formatMoneyTotal(end, currency),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DebtTrendCard extends StatelessWidget {
+  const _DebtTrendCard({
+    required this.position,
+    required this.currency,
+    required this.useMonths,
+  });
+
+  final ReportPosition position;
+  final String currency;
+  final bool useMonths;
+
+  @override
+  Widget build(BuildContext context) {
+    final points = position.liabilityTrend;
+    final hasLiabilityData = position.hasLiabilities;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -855,7 +856,12 @@ class _DebtTrendCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  context.l10n.closingAmount(formatMoney(running, currency)),
+                  context.l10n.closingAmount(
+                    formatMoneyTotal(
+                      position.closing.liabilitiesMinor,
+                      currency,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -868,12 +874,13 @@ class _DebtTrendCard extends StatelessWidget {
                   : CustomPaint(
                       painter: _TrendPainter(
                         currency: currency,
-                        values: values,
+                        values: points
+                            .map((point) => point.amountMinor.toDouble())
+                            .toList(),
                         xLabels: _axisDateLabels(
-                          dates,
+                          points.map((point) => point.date).toList(),
                           context,
-                          useMonths:
-                              range.end.difference(range.start).inDays > 200,
+                          useMonths: useMonths,
                         ),
                         lineColor: Theme.of(context).colorScheme.error,
                         gridColor: Theme.of(context).colorScheme.outlineVariant,
@@ -887,8 +894,8 @@ class _DebtTrendCard extends StatelessWidget {
             if (hasLiabilityData)
               Text(
                 context.l10n.liabilityRangeSummary(
-                  formatMoney(opening, currency),
-                  formatMoney(current, currency),
+                  formatMoneyTotal(position.opening.liabilitiesMinor, currency),
+                  formatMoneyTotal(position.currentLiabilitiesMinor, currency),
                 ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -898,18 +905,6 @@ class _DebtTrendCard extends StatelessWidget {
     );
   }
 }
-
-int _liabilityDelta(
-  LedgerRecord record,
-  Set<String> liabilityIds,
-  String currency,
-) => record.accountPostings
-    .where(
-      (posting) =>
-          posting.currencyCode == currency &&
-          liabilityIds.contains(posting.accountId),
-    )
-    .fold(0, (balance, posting) => balance - posting.debitMinor);
 
 enum _ExportRange { week, month, year, all, custom }
 
@@ -1016,7 +1011,7 @@ class _ExportDialogState extends State<_ExportDialog> {
       _ExportRange.all => null,
       _ExportRange.custom => _DateRange(
         _custom!.start,
-        _custom!.end.add(const Duration(days: 1)),
+        _calendarOffset(_custom!.end, 1),
       ),
     };
     final selected = range == null
@@ -1068,12 +1063,10 @@ class _DateRange {
 _DateRange _rangeFor(_ReportPeriod period, DateTime anchor) {
   final day = DateTime(anchor.year, anchor.month, anchor.day);
   return switch (period) {
-    _ReportPeriod.day => _DateRange(day, day.add(const Duration(days: 1))),
+    _ReportPeriod.day => _DateRange(day, _calendarOffset(day, 1)),
     _ReportPeriod.week => _DateRange(
-      day.subtract(Duration(days: anchor.weekday - 1)),
-      day
-          .subtract(Duration(days: anchor.weekday - 1))
-          .add(const Duration(days: 7)),
+      _calendarOffset(day, 1 - anchor.weekday),
+      _calendarOffset(day, 8 - anchor.weekday),
     ),
     _ReportPeriod.month => _DateRange(
       DateTime(anchor.year, anchor.month),
@@ -1086,6 +1079,9 @@ _DateRange _rangeFor(_ReportPeriod period, DateTime anchor) {
   };
 }
 
+DateTime _calendarOffset(DateTime date, int days) =>
+    DateTime(date.year, date.month, date.day + days);
+
 String _rangeLabel(
   BuildContext context,
   _ReportPeriod period,
@@ -1096,7 +1092,7 @@ String _rangeLabel(
     _ReportPeriod.day => DateFormat.yMMMMd(locale).format(range.start),
     _ReportPeriod.week =>
       '${DateFormat.MMMd(locale).format(range.start)} – '
-          '${DateFormat.MMMd(locale).format(range.end.subtract(const Duration(days: 1)))}',
+          '${DateFormat.MMMd(locale).format(range.end.subtract(const Duration(microseconds: 1)))}',
     _ReportPeriod.month => DateFormat.yMMMM(locale).format(range.start),
     _ReportPeriod.year => DateFormat.y(locale).format(range.start),
   };

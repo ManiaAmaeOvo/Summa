@@ -809,5 +809,15 @@
   "historyMethod": "期末净资产按原币统计。本期截至今日。",
   "historyNetWorth": "期末净资产",
   "historyThroughDate": "截至 {date}",
-  "historyPreviousDifference": "较上期 {amount}"
+  "historyPreviousDifference": "较上期 {amount}",
+  "exportFinancialReport": "导出财务报告",
+  "reportIncludeTransactions": "包含匹配流水",
+  "reportIncludeSensitive": "包含备注、支付渠道和交易对方",
+  "reportExportFailed": "无法保存报告，请重试。",
+  "reportExportSaved": "财务报告已保存",
+  "reportFinancialPosition": "资产负债",
+  "reportAssets": "资产",
+  "reportLiabilities": "负债",
+  "reportNetWorth": "净资产",
+  "reportOpeningToClosing": "期初 {opening} · 期末 {closing}"
 }
