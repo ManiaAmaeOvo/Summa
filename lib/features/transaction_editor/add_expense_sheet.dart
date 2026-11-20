@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
+import 'package:summa/app/widgets/ledger_surfaces.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
@@ -245,17 +246,18 @@ class _TransactionEditorSheetState
             children: [
               Row(
                 children: [
-                  Text(
-                    _isRefund
-                        ? (_isEditing
-                              ? context.l10n.editRefund
-                              : context.l10n.recordRefund)
-                        : (_isEditing
-                              ? context.l10n.editTransaction
-                              : context.l10n.addTransaction),
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  Expanded(
+                    child: Text(
+                      _isRefund
+                          ? (_isEditing
+                                ? context.l10n.editRefund
+                                : context.l10n.recordRefund)
+                          : (_isEditing
+                                ? context.l10n.editTransaction
+                                : context.l10n.addTransaction),
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                   ),
-                  const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
@@ -265,52 +267,21 @@ class _TransactionEditorSheetState
               ),
               const SizedBox(height: 12),
               if (!_isRefund)
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SegmentedButton<LedgerTransactionType>(
-                    segments: [
-                      ButtonSegment(
-                        value: LedgerTransactionType.expense,
-                        label: Text(context.l10n.expense),
-                      ),
-                      ButtonSegment(
-                        value: LedgerTransactionType.income,
-                        label: Text(context.l10n.income),
-                      ),
-                      ButtonSegment(
-                        value: LedgerTransactionType.transfer,
-                        label: Text(context.l10n.transfer),
-                      ),
-                      ButtonSegment(
-                        value: LedgerTransactionType.borrowing,
-                        label: Text(context.l10n.borrowing),
-                      ),
-                      ButtonSegment(
-                        value: LedgerTransactionType.repayment,
-                        label: Text(context.l10n.repayment),
-                      ),
-                      ButtonSegment(
-                        value: LedgerTransactionType.lending,
-                        label: Text(context.l10n.lending),
-                      ),
-                      ButtonSegment(
-                        value: LedgerTransactionType.advance,
-                        label: Text(context.l10n.advance),
-                      ),
-                      ButtonSegment(
-                        value: LedgerTransactionType.collection,
-                        label: Text(context.l10n.collection),
-                      ),
-                      ButtonSegment(
-                        value: LedgerTransactionType.reimbursement,
-                        label: Text(context.l10n.reimbursement),
-                      ),
-                    ],
-                    selected: {_type},
-                    onSelectionChanged: _isSaving
-                        ? null
-                        : (selection) => _changeType(selection.single),
-                  ),
+                LedgerChoiceBar<LedgerTransactionType>(
+                  options: {
+                    LedgerTransactionType.expense: context.l10n.expense,
+                    LedgerTransactionType.income: context.l10n.income,
+                    LedgerTransactionType.transfer: context.l10n.transfer,
+                    LedgerTransactionType.borrowing: context.l10n.borrowing,
+                    LedgerTransactionType.repayment: context.l10n.repayment,
+                    LedgerTransactionType.lending: context.l10n.lending,
+                    LedgerTransactionType.advance: context.l10n.advance,
+                    LedgerTransactionType.collection: context.l10n.collection,
+                    LedgerTransactionType.reimbursement:
+                        context.l10n.reimbursement,
+                  },
+                  selected: _type,
+                  onChanged: _isSaving ? null : _changeType,
                 ),
               const SizedBox(height: 16),
               TextFormField(
@@ -551,50 +522,60 @@ class _TransactionEditorSheetState
     _parentCategoryId = parentId;
     _categoryId = categoryId;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            key: ValueKey('parent-${_type.name}'),
-            initialValue: parentId,
-            decoration: InputDecoration(
-              labelText: context.l10n.primaryCategory,
-            ),
-            items: [
-              for (final parent in parents)
-                DropdownMenuItem(
-                  value: parent.id,
-                  child: Text(DefaultLedgerLabels.category(context, parent)),
-                ),
-            ],
-            onChanged: (value) => setState(() {
-              _parentCategoryId = value;
-              _categoryId = null;
-            }),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            key: ValueKey('$parentId-${_type.name}'),
-            initialValue: categoryId,
-            decoration: InputDecoration(
-              labelText: context.l10n.secondaryCategory,
-            ),
-            items: [
-              for (final child in children)
-                DropdownMenuItem(
-                  value: child.id,
-                  child: Text(DefaultLedgerLabels.category(context, child)),
-                ),
-            ],
-            onChanged: (value) => setState(() => _categoryId = value),
-          ),
-        ),
-      ],
+    final primary = DropdownButtonFormField<String>(
+      key: ValueKey('parent-${_type.name}'),
+      initialValue: parentId,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: context.l10n.primaryCategory),
+      items: _categoryOptions(parents),
+      onChanged: (value) => setState(() {
+        _parentCategoryId = value;
+        _categoryId = null;
+      }),
+    );
+    final secondary = DropdownButtonFormField<String>(
+      key: ValueKey('$parentId-${_type.name}'),
+      initialValue: categoryId,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: context.l10n.secondaryCategory),
+      items: _categoryOptions(children),
+      onChanged: (value) => setState(() => _categoryId = value),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minFieldWidth = MediaQuery.textScalerOf(context).scale(16) * 10;
+        if (constraints.maxWidth < 2 * minFieldWidth + 12) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [primary, const SizedBox(height: 12), secondary],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: primary),
+            const SizedBox(width: 12),
+            Expanded(child: secondary),
+          ],
+        );
+      },
     );
   }
+
+  List<DropdownMenuItem<String>> _categoryOptions(
+    List<LedgerCategory> categories,
+  ) => [
+    for (final category in categories)
+      DropdownMenuItem(
+        value: category.id,
+        child: Text(
+          DefaultLedgerLabels.category(context, category),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+  ];
 
   Widget _buildAccountFields(List<LedgerAccount> accounts) {
     final selectable = _withOriginalArchivedAccounts(accounts);

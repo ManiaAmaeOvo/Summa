@@ -16,6 +16,7 @@ class CurrencySelector extends StatelessWidget {
     required this.value,
     required this.label,
     required this.onChanged,
+    this.compact = false,
   });
 
   final List<String> currencies;
@@ -23,13 +24,14 @@ class CurrencySelector extends StatelessWidget {
   final String label;
   final ValueChanged<String>? onChanged;
 
+  final bool compact;
+
   @override
-  Widget build(BuildContext context) => InputDecorator(
-    decoration: InputDecoration(labelText: label),
-    child: DropdownButtonHideUnderline(
+  Widget build(BuildContext context) {
+    final control = DropdownButtonHideUnderline(
       child: DropdownButton<String>(
         value: value,
-        isExpanded: true,
+        isExpanded: !compact,
         isDense: true,
         items: [
           for (final code in currencies)
@@ -41,6 +43,17 @@ class CurrencySelector extends StatelessWidget {
                 if (code != null) onChanged!(code);
               },
       ),
-    ),
-  );
+    );
+    if (compact) {
+      return Tooltip(
+        message: label,
+        excludeFromSemantics: true,
+        child: Semantics(label: label, child: control),
+      );
+    }
+    return InputDecorator(
+      decoration: InputDecoration(labelText: label),
+      child: control,
+    );
+  }
 }

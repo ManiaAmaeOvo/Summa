@@ -3,87 +3,131 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
+import 'package:summa/app/widgets/ledger_surfaces.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/valuation/net_worth_valuation.dart';
 import 'package:summa/l10n/l10n.dart';
 
 class NetWorthValuationCard extends ConsumerWidget {
-  const NetWorthValuationCard({super.key, required this.balances});
+  const NetWorthValuationCard({
+    super.key,
+    required this.balances,
+    this.highlighted = false,
+    this.action,
+  });
 
   final List<AccountBalance> balances;
+  final bool highlighted;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ref
-        .watch(valuationSettingsProvider)
-        .when(
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => Text(context.l10n.valuationReadFailed),
-          data: (settings) {
-            final result = estimateNetWorth(balances, settings);
-            final total = result.totalMinor;
-            return Card.filled(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
+    final labels = context.l10n;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final foreground = highlighted
+        ? colors.onPrimaryContainer
+        : colors.onSurface;
+    final settings = ref.watch(valuationSettingsProvider);
+
+    return Card(
+      color: highlighted ? colors.primaryContainer : colors.surfaceContainer,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              labels.estimatedNetWorth,
+              style: theme.textTheme.titleMedium?.copyWith(color: foreground),
+            ),
+            const SizedBox(height: 4),
+            settings.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: LinearProgressIndicator(),
+              ),
+              error: (_, _) => Text(labels.valuationReadFailed),
+              data: (settings) {
+                final result = estimateNetWorth(balances, settings);
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      context.l10n.estimatedNetWorth,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      context.l10n.valuationBaseDescription(
-                        settings.baseCurrency,
-                      ),
-                    ),
-                    if (total != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        formatMoneyTotal(total, settings.baseCurrency),
-                        key: const ValueKey('estimated-net-worth-amount'),
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                    ],
-                    if (result.missingCurrencies.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        context.l10n.missingValuationRates(
-                          result.missingCurrencies.join(', '),
-                        ),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ],
-                    if (result.unsupportedCurrencies.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        context.l10n.unsupportedValuationCurrencies(
-                          result.unsupportedCurrencies.join(', '),
-                        ),
-                      ),
-                    ],
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: TextButton.icon(
-                        onPressed: () => Navigator.push<void>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const _ValuationScreen(),
+                    if (result.totalMinor case final total?)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          formatMoneyTotal(total, settings.baseCurrency),
+                          key: const ValueKey('estimated-net-worth-amount'),
+                          style: ledgerAmountStyle(
+                            highlighted
+                                ? theme.textTheme.displaySmall
+                                : theme.textTheme.headlineSmall,
+                            color: foreground,
                           ),
                         ),
-                        icon: const Icon(Icons.currency_exchange),
-                        label: Text(context.l10n.valuationSettings),
                       ),
-                    ),
+                    if (result.totalMinor == null ||
+                        settings.baseCurrency == defaultCurrency)
+                      Text(
+                        labels.valuationBaseDescription(settings.baseCurrency),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: foreground,
+                        ),
+                      ),
+                    if (result.missingCurrencies.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          labels.missingValuationRates(
+                            result.missingCurrencies.join(', '),
+                          ),
+                          style: TextStyle(
+                            color: highlighted ? foreground : colors.error,
+                          ),
+                        ),
+                      ),
+                    if (result.unsupportedCurrencies.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          labels.unsupportedValuationCurrencies(
+                            result.unsupportedCurrencies.join(', '),
+                          ),
+                          style: TextStyle(
+                            color: highlighted ? foreground : colors.error,
+                          ),
+                        ),
+                      ),
                   ],
+                );
+              },
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                ?action,
+                TextButton.icon(
+                  style: highlighted
+                      ? TextButton.styleFrom(foregroundColor: foreground)
+                      : null,
+                  onPressed: () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(builder: (_) => const _ValuationScreen()),
+                  ),
+                  icon: const Icon(Icons.currency_exchange),
+                  label: Text(labels.valuationSettings),
                 ),
-              ),
-            );
-          },
-        );
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

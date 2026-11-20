@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
+import 'package:summa/app/widgets/ledger_surfaces.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/cash_forecast.dart';
@@ -18,7 +19,9 @@ import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/l10n.dart';
 
 class FinancialHome extends ConsumerStatefulWidget {
-  const FinancialHome({super.key});
+  const FinancialHome({super.key, required this.onAddTransaction});
+
+  final VoidCallback onAddTransaction;
 
   @override
   ConsumerState<FinancialHome> createState() => _FinancialHomeState();
@@ -95,22 +98,30 @@ class _FinancialHomeState extends ConsumerState<FinancialHome> {
     ];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       children: [
-        NetWorthValuationCard(balances: balances),
-        if (currencies.length > 1)
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 4),
-            child: CurrencySelector(
-              currencies: currencies,
-              value: currency,
-              label: labels.summaryCurrency,
-              onChanged: (value) => setState(() => _currency = value),
-            ),
+        NetWorthValuationCard(
+          balances: balances,
+          highlighted: true,
+          action: FilledButton.icon(
+            onPressed: widget.onAddTransaction,
+            icon: const Icon(Icons.add),
+            label: Text(labels.addTransaction),
           ),
+        ),
+        const SizedBox(height: 4),
         _HomeSection(
           title: labels.availableFunds,
           icon: Icons.account_balance_wallet_outlined,
+          trailing: currencies.length > 1
+              ? CurrencySelector(
+                  currencies: currencies,
+                  value: currency,
+                  label: labels.summaryCurrency,
+                  compact: true,
+                  onChanged: (value) => setState(() => _currency = value),
+                )
+              : null,
           children: [
             savings.when(
               loading: () => const LinearProgressIndicator(),
@@ -123,10 +134,15 @@ class _FinancialHomeState extends ConsumerState<FinancialHome> {
                   availablePersonalCash(balances, allocations, currency),
                   currency,
                 ),
-                style: theme.textTheme.headlineSmall,
+                style: ledgerAmountStyle(theme.textTheme.headlineSmall),
               ),
             ),
-            Text(labels.availableFundsHint, style: theme.textTheme.bodySmall),
+            Text(
+              labels.availableFundsHint,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
         _HomeSection(
@@ -297,11 +313,13 @@ class _HomeSection extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.children,
+    this.trailing,
   });
 
   final String title;
   final IconData icon;
   final List<Widget> children;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -325,6 +343,10 @@ class _HomeSection extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
+              if (trailing case final control?) ...[
+                const SizedBox(width: 8),
+                control,
+              ],
             ],
           ),
           const SizedBox(height: 8),
@@ -350,33 +372,14 @@ class _HomeAmount extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label),
-              if (detail case final value?)
-                Text(value, style: Theme.of(context).textTheme.bodySmall),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            formatMoneyTotal(value, currency),
-            textAlign: TextAlign.end,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: value.isNegative
-                  ? Theme.of(context).colorScheme.error
-                  : null,
-            ),
-          ),
-        ),
-      ],
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: LedgerValueRow(
+      label: label,
+      value: formatMoneyTotal(value, currency),
+      detail: detail,
+      valueStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
+        color: value.isNegative ? Theme.of(context).colorScheme.error : null,
+      ),
     ),
   );
 }

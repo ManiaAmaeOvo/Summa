@@ -31,9 +31,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final narrow =
-        MediaQuery.sizeOf(context).width < 360 ||
-        MediaQuery.textScalerOf(context).scale(12) > 15;
     final tabs = _Destination.values;
     final labels = [
       l10n.homeTab,
@@ -42,6 +39,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
       l10n.planningTab,
       l10n.reports,
     ];
+    final navigationLabels = [...labels]..[1] = l10n.transactionTab;
+    final safeScreenWidth =
+        MediaQuery.sizeOf(context).width -
+        MediaQuery.paddingOf(context).horizontal;
+    final textScale = MediaQuery.textScalerOf(context);
+    final labelsFit = navigationLabels.every(
+      (label) =>
+          TextPainter.computeWidth(
+            text: TextSpan(
+              text: label,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            textDirection: Directionality.of(context),
+            textScaler: textScale,
+          ) <=
+          safeScreenWidth / tabs.length - 8,
+    );
     const icons = [
       (Icons.home_outlined, Icons.home),
       (Icons.receipt_long_outlined, Icons.receipt_long),
@@ -76,55 +90,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _selected.index,
-        children: [
-          for (final tab in tabs)
-            if (_visited.contains(tab))
-              switch (tab) {
-                _Destination.home => const FinancialHome(),
-                _Destination.transactions => TransactionBrowser(
-                  onOpenAccounts: () => _select(_Destination.accounts),
-                ),
-                _Destination.accounts => const AccountOverviewScreen(),
-                _Destination.planning => const PlanningHub(),
-                _Destination.reports => const ReportScreen(),
-              }
-            else
-              const SizedBox.shrink(),
-        ],
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 860),
+            child: IndexedStack(
+              index: _selected.index,
+              children: [
+                for (final tab in tabs)
+                  if (_visited.contains(tab))
+                    switch (tab) {
+                      _Destination.home => FinancialHome(
+                        onAddTransaction: _addTransaction,
+                      ),
+                      _Destination.transactions => TransactionBrowser(
+                        onOpenAccounts: () => _select(_Destination.accounts),
+                      ),
+                      _Destination.accounts => const AccountOverviewScreen(),
+                      _Destination.planning => const PlanningHub(),
+                      _Destination.reports => const ReportScreen(),
+                    }
+                  else
+                    const SizedBox.shrink(),
+              ],
+            ),
+          ),
+        ),
       ),
-      floatingActionButton:
-          _selected == _Destination.home ||
-              _selected == _Destination.transactions
-          ? FloatingActionButton.extended(
-              onPressed: () => showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                useSafeArea: true,
-                builder: (_) => const TransactionEditorSheet(),
-              ),
-              icon: const Icon(Icons.add),
-              label: Text(l10n.addTransaction),
+      floatingActionButton: _selected == _Destination.transactions
+          ? FloatingActionButton(
+              onPressed: _addTransaction,
+              tooltip: l10n.addTransaction,
+              child: const Icon(Icons.add),
             )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selected.index,
-        labelBehavior: narrow
-            ? NavigationDestinationLabelBehavior.onlyShowSelected
-            : NavigationDestinationLabelBehavior.alwaysShow,
+        labelBehavior: labelsFit
+            ? NavigationDestinationLabelBehavior.alwaysShow
+            : textScale.scale(12) >= 21
+            ? NavigationDestinationLabelBehavior.alwaysHide
+            : NavigationDestinationLabelBehavior.onlyShowSelected,
         onDestinationSelected: (index) => _select(tabs[index]),
         destinations: [
           for (final tab in tabs)
             NavigationDestination(
               icon: Icon(icons[tab.index].$1),
               selectedIcon: Icon(icons[tab.index].$2),
-              label: labels[tab.index],
+              label: navigationLabels[tab.index],
             ),
         ],
       ),
     );
   }
+
+  void _addTransaction() => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) => const TransactionEditorSheet(),
+  );
 
   void _open(Widget screen) =>
       Navigator.push<void>(context, MaterialPageRoute(builder: (_) => screen));

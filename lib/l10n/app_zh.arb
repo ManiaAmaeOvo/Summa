@@ -840,5 +840,8 @@
   "importRuleTrialNoMatch": "暂无规则命中",
   "importRuleTrialUnsupported": "分类规则适用于收入和支出行。",
   "importRuleTopPriority": "最高优先级",
-  "importRuleDraft": "当前草稿"
+  "importRuleDraft": "当前草稿",
+  "transactionTab": "账单",
+  "previousReportPeriod": "上一期",
+  "nextReportPeriod": "下一期"
 }

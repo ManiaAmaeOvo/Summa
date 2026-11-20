@@ -10,6 +10,7 @@ import 'package:summa/app/locale_controller.dart';
 import 'package:summa/app/providers.dart';
 import 'package:summa/app/text_scale_controller.dart';
 import 'package:summa/app/theme/ledger_scroll_behavior.dart';
+import 'package:summa/core/money/money.dart';
 import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
@@ -104,6 +105,86 @@ void main() {
     expect(find.text('Expense this month'), findsOneWidget);
     expect(find.text('Accounts'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('fits all main pages on a narrow dark phone with large text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 760);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    LocaleController.instance.value = AppLanguage.english;
+
+    const balance = AccountBalance(
+      id: 'test-bank',
+      name: 'Personal checking and savings account',
+      kind: AccountKind.bank,
+      openingBalanceMinor: 1234567890123456,
+      currentBalanceMinor: 1234567890123456,
+    );
+    final expense = LedgerRecord(
+      id: 'narrow-ledger-row',
+      type: LedgerTransactionType.expense,
+      amountMinor: 987654321098765,
+      occurredAt: DateTime.now(),
+      parentCategoryId: 'food',
+      parentCategoryName: 'Food and household expenses',
+      categoryId: 'lunch',
+      categoryName: 'Meals with friends and family',
+      accountId: balance.id,
+      accountName: balance.name,
+      accountKind: 'bank',
+      note: 'A deliberately long note for wrap and truncation testing.',
+    );
+    await tester.pumpWidget(
+      _testApp(
+        homeInput: CashForecastInputs(
+          balances: const [balance],
+          transactions: [expense],
+          recurringPlans: const [],
+          contracts: const [],
+        ),
+        overrides: [
+          transactionsProvider.overrideWith((ref) => Stream.value([expense])),
+          accountBalancesProvider.overrideWith(
+            (ref) => Stream.value([balance]),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Add transaction'), findsOneWidget);
+    expect(
+      Theme.of(tester.element(find.text('Add transaction'))).brightness,
+      Brightness.dark,
+    );
+    expect(tester.takeException(), isNull);
+
+    for (var index = 1; index < 5; index++) {
+      await tester.tap(find.byType(NavigationDestination).at(index));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull, reason: 'Navigation tab $index');
+      if (index == 1) {
+        final amount = find.text('-${formatMoney(expense.amountMinor, 'CNY')}');
+        await tester.scrollUntilVisible(amount, 200);
+        await tester.pumpAndSettle();
+        expect(amount, findsOneWidget);
+      }
+      if (index == 2) {
+        await tester.scrollUntilVisible(find.text(balance.name), 200);
+        await tester.pumpAndSettle();
+      }
+      if (index == 4) {
+        await tester.scrollUntilVisible(find.text('Expense trend'), 200);
+        await tester.pumpAndSettle();
+      }
+      expect(tester.takeException(), isNull, reason: 'Scrolled tab $index');
+    }
   });
 
   testWidgets('opens Accounts from the liquid net worth card', (tester) async {
@@ -440,7 +521,8 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('现金'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('现金').hitTestable());
     await tester.pumpAndSettle();
 
     expect(find.text('校准现金当前余额'), findsOneWidget);
@@ -865,6 +947,7 @@ Future<void> _openTransactions(WidgetTester tester) async {
 Widget _testApp({
   required List<Override> overrides,
   Stream<ValuationSettings>? valuation,
+  CashForecastInputs? homeInput,
 }) => ProviderScope(
   overrides: [
     ledgerHistoryInputsProvider.overrideWith((ref) async* {
@@ -877,12 +960,13 @@ Widget _testApp({
     }),
     cashForecastInputsProvider.overrideWith(
       (ref) => Stream.value(
-        CashForecastInputs(
-          balances: const [],
-          transactions: const [],
-          recurringPlans: const [],
-          contracts: const [],
-        ),
+        homeInput ??
+            const CashForecastInputs(
+              balances: [],
+              transactions: [],
+              recurringPlans: [],
+              contracts: [],
+            ),
       ),
     ),
     spendingPlansProvider.overrideWith((ref) => Stream.value(const [])),

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
+import 'package:summa/app/widgets/ledger_surfaces.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/analytics/financial_report.dart';
 import 'package:summa/domain/analytics/financial_activity.dart';
@@ -95,69 +96,82 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
           children: [
-            if (currencies.length > 1) ...[
-              CurrencySelector(
-                currencies: currencies,
-                value: currency,
-                label: context.l10n.summaryCurrency,
-                onChanged: (code) => setState(() => _currency = code),
-              ),
-              const SizedBox(height: 12),
-            ],
-            LedgerFilterControl(
-              filter: _filter,
-              records: posted,
-              balances: balances,
-              forReport: true,
-              onChanged: (value) => setState(() => _filter = value),
-            ),
-            if (custom == null) ...[
-              SegmentedButton<_ReportPeriod>(
-                segments: [
-                  ButtonSegment(
-                    value: _ReportPeriod.day,
-                    label: Text(context.l10n.periodDay),
-                  ),
-                  ButtonSegment(
-                    value: _ReportPeriod.week,
-                    label: Text(context.l10n.periodWeek),
-                  ),
-                  ButtonSegment(
-                    value: _ReportPeriod.month,
-                    label: Text(context.l10n.periodMonth),
-                  ),
-                  ButtonSegment(
-                    value: _ReportPeriod.year,
-                    label: Text(context.l10n.periodYear),
-                  ),
-                ],
-                selected: {_period},
-                onSelectionChanged: (value) => setState(() {
-                  _period = value.single;
-                  _anchor = DateTime.now();
-                }),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => setState(() => _anchor = _shift(-1)),
-                    icon: const Icon(Icons.chevron_left),
-                  ),
-                  Expanded(
-                    child: Text(
-                      _rangeLabel(context, _period, range),
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium,
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (custom == null) ...[
+                      LedgerChoiceBar<_ReportPeriod>(
+                        options: {
+                          _ReportPeriod.day: context.l10n.periodDay,
+                          _ReportPeriod.week: context.l10n.periodWeek,
+                          _ReportPeriod.month: context.l10n.periodMonth,
+                          _ReportPeriod.year: context.l10n.periodYear,
+                        },
+                        selected: _period,
+                        onChanged: (value) => setState(() {
+                          _period = value;
+                          _anchor = DateTime.now();
+                        }),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            tooltip: context.l10n.previousReportPeriod,
+                            onPressed: () =>
+                                setState(() => _anchor = _shift(-1)),
+                            icon: const Icon(Icons.chevron_left),
+                          ),
+                          Expanded(
+                            child: Text(
+                              _rangeLabel(context, _period, range),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: context.l10n.nextReportPeriod,
+                            onPressed: () =>
+                                setState(() => _anchor = _shift(1)),
+                            icon: const Icon(Icons.chevron_right),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (currencies.length > 1)
+                      CurrencySelector(
+                        currencies: currencies,
+                        value: currency,
+                        label: context.l10n.summaryCurrency,
+                        onChanged: (code) => setState(() => _currency = code),
+                      ),
+                    LedgerFilterControl(
+                      filter: _filter,
+                      records: posted,
+                      balances: balances,
+                      forReport: true,
+                      onChanged: (value) => setState(() => _filter = value),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => setState(() => _anchor = _shift(1)),
-                    icon: const Icon(Icons.chevron_right),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: FilledButton.tonalIcon(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => FinancialReportExportDialog(report: report),
+                ),
+                icon: const Icon(Icons.file_download_outlined),
+                label: Text(context.l10n.exportFinancialReport),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _SummaryGrid(analysis: analysis, currency: currency),
             const SizedBox(height: 8),
             Wrap(
               spacing: 4,
@@ -180,25 +194,18 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                   icon: const Icon(Icons.history),
                   label: Text(context.l10n.historicalAnalysis),
                 ),
-                TextButton.icon(
-                  onPressed: () => showDialog<void>(
-                    context: context,
-                    builder: (_) => FinancialReportExportDialog(report: report),
-                  ),
-                  icon: const Icon(Icons.file_download_outlined),
-                  label: Text(context.l10n.exportFinancialReport),
-                ),
               ],
             ),
-            _SummaryGrid(analysis: analysis, currency: currency),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _FundingSummary(currency: currency, activity: analysis.activity),
-            if (analysis.accountFlows.isNotEmpty)
+            if (analysis.accountFlows.isNotEmpty) ...[
+              const SizedBox(height: 10),
               _AccountFlowCard(
                 flows: analysis.accountFlows,
                 currency: currency,
                 onOpen: (id) => openTransactions(filter.scoped(accountId: id)),
               ),
+            ],
             if (_filter.hasDimensions)
               ExpansionTile(
                 title: Text(context.l10n.ledgerFiltersActive),
@@ -230,6 +237,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             if (report.position case final position?) ...[
               const SizedBox(height: 16),
               _PositionCard(position: position, currency: currency),
+              const SizedBox(height: 10),
               _DebtTrendCard(
                 position: position,
                 useMonths: range.end.difference(range.start).inDays > 200,
@@ -268,32 +276,26 @@ class _SummaryGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activity = analysis.activity;
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      mainAxisExtent: 104,
+    return LedgerMetricGrid(
       children: [
-        _Metric(
+        LedgerMetricCard(
           label: context.l10n.income,
-          text: formatMoneyTotal(analysis.incomeMinor, currency),
+          value: formatMoneyTotal(analysis.incomeMinor, currency),
         ),
-        _Metric(
+        LedgerMetricCard(
           label: context.l10n.grossSpending,
-          text: formatMoneyTotal(activity.grossSpending, currency),
+          value: formatMoneyTotal(activity.grossSpending, currency),
         ),
-        _Metric(
+        LedgerMetricCard(
           label: context.l10n.personalCashFlowNet,
-          text: formatMoneyTotal(
+          value: formatMoneyTotal(
             activity.personalCashInflow - activity.personalCashOutflow,
             currency,
           ),
         ),
-        _Metric(
+        LedgerMetricCard(
           label: context.l10n.borrowingRepayment,
-          text:
+          value:
               '${formatMoneyTotal(analysis.borrowingMinor, currency)} / ${formatMoneyTotal(analysis.repaymentMinor, currency)}',
         ),
       ],
@@ -337,12 +339,9 @@ class _FundingSummary extends StatelessWidget {
             for (final (label, amount) in lines)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(label)),
-                    const SizedBox(width: 8),
-                    Text(formatMoneyTotal(amount, currency)),
-                  ],
+                child: LedgerValueRow(
+                  label: label,
+                  value: formatMoneyTotal(amount, currency),
                 ),
               ),
           ],
@@ -395,42 +394,6 @@ class _AccountFlowCard extends StatelessWidget {
   }
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.text});
-  final String label;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Card.filled(
-    child: Padding(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Flexible(
-            child: Align(
-              alignment: Alignment.bottomLeft,
-              child: Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(text, style: Theme.of(context).textTheme.titleLarge),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
 class _TrendCard extends StatelessWidget {
   const _TrendCard({
     required this.timeline,
@@ -477,6 +440,7 @@ class _TrendCard extends StatelessWidget {
                             .colorScheme
                             .onSurfaceVariant,
                         textDirection: Directionality.of(context),
+                        textScaler: MediaQuery.textScalerOf(context),
                       ),
                     ),
             ),
@@ -496,6 +460,7 @@ class _TrendPainter extends CustomPainter {
     required this.gridColor,
     required this.labelColor,
     required this.textDirection,
+    required this.textScaler,
   });
 
   final List<num> values;
@@ -505,12 +470,16 @@ class _TrendPainter extends CustomPainter {
   final Color gridColor;
   final Color labelColor;
   final TextDirection textDirection;
+  final TextScaler textScaler;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const leftAxisWidth = 52.0;
-    const bottomAxisHeight = 26.0;
-    const topPadding = 8.0;
+    final leftAxisWidth = math.min(
+      size.width * .35,
+      45 * textScaler.scale(10) / 10,
+    );
+    final bottomAxisHeight = textScaler.scale(13) + 10;
+    final topPadding = textScaler.scale(11) / 2 + 3;
     const rightPadding = 8.0;
     final plot = Rect.fromLTRB(
       leftAxisWidth,
@@ -613,6 +582,7 @@ class _TrendPainter extends CustomPainter {
         style: TextStyle(color: labelColor, fontSize: 10),
       ),
       textDirection: textDirection,
+      textScaler: textScaler,
       maxLines: 1,
     )..layout();
     var dx = anchor.dx;
@@ -623,6 +593,7 @@ class _TrendPainter extends CustomPainter {
     final maxWidth = canvas.getLocalClipBounds().width;
     dx = dx.clamp(0.0, math.max(0.0, maxWidth - painter.width)).toDouble();
     painter.paint(canvas, Offset(dx, dy));
+    painter.dispose();
   }
 
   @override
@@ -633,7 +604,8 @@ class _TrendPainter extends CustomPainter {
       oldDelegate.lineColor != lineColor ||
       oldDelegate.gridColor != gridColor ||
       oldDelegate.labelColor != labelColor ||
-      oldDelegate.textDirection != textDirection;
+      oldDelegate.textDirection != textDirection ||
+      oldDelegate.textScaler != textScaler;
 }
 
 List<String> _axisDateLabels(
@@ -847,23 +819,12 @@ class _DebtTrendCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    context.l10n.liabilityTrend,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                Text(
-                  context.l10n.closingAmount(
-                    formatMoneyTotal(
-                      position.closing.liabilitiesMinor,
-                      currency,
-                    ),
-                  ),
-                ),
-              ],
+            LedgerValueRow(
+              label: context.l10n.liabilityTrend,
+              value: context.l10n.closingAmount(
+                formatMoneyTotal(position.closing.liabilitiesMinor, currency),
+              ),
+              labelStyle: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -888,6 +849,7 @@ class _DebtTrendCard extends StatelessWidget {
                             .colorScheme
                             .onSurfaceVariant,
                         textDirection: Directionality.of(context),
+                        textScaler: MediaQuery.textScalerOf(context),
                       ),
                     ),
             ),

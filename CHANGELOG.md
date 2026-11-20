@@ -5,6 +5,18 @@
 This project follows semantic versioning. The Android build number appears
 after `+` in the Flutter version.
 
+## [2.0.0-rc.2] - 2026-11-20
+
+### Changed
+
+- Moved quick entry into the net worth card on Home, with a compact selector
+  next to available funds.
+- Grouped transactions by day and adjusted amount, account, and status
+  layouts to wrap on narrow screens and at larger text sizes.
+- Simplified the planning list and report controls. Transaction types wrap,
+  and category fields stack when space is tight. Updated the light and dark
+  palettes.
+
 ## [2.0.0-rc.1] - 2026-11-20
 
 ### Added

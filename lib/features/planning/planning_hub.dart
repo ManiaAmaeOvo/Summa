@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:summa/app/widgets/ledger_surfaces.dart';
 import 'package:summa/features/planning/debt_contracts_screen.dart';
 import 'package:summa/features/planning/recurring_plans_screen.dart';
 import 'package:summa/features/planning/savings_goals_screen.dart';
@@ -25,31 +26,45 @@ class PlanningHub extends StatelessWidget {
         const DebtContractsScreen(),
       ),
       (labels.savingsGoals, Icons.savings_outlined, const SavingsGoalsScreen()),
-      (
-        labels.cashForecast,
-        Icons.timeline_outlined,
-        const CashForecastScreen(),
-      ),
     ];
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: destinations.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 6),
-      itemBuilder: (context, index) {
-        final (label, icon, destination) = destinations[index];
-        return Card(
-          margin: EdgeInsets.zero,
+    void open(Widget screen) => Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      children: [
+        Card(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          clipBehavior: Clip.antiAlias,
           child: ListTile(
-            leading: Icon(icon),
+            leading: const LedgerIconMark(icon: Icons.timeline_outlined),
             trailing: const Icon(Icons.chevron_right),
-            title: Text(label),
-            onTap: () => Navigator.push<void>(
-              context,
-              MaterialPageRoute(builder: (_) => destination),
-            ),
+            title: Text(labels.cashForecast),
+            onTap: () => open(const CashForecastScreen()),
           ),
-        );
-      },
+        ),
+        const SizedBox(height: 12),
+        Card(
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (final (index, (label, icon, screen))
+                  in destinations.indexed) ...[
+                if (index > 0)
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading: LedgerIconMark(icon: icon),
+                  trailing: const Icon(Icons.chevron_right),
+                  title: Text(label),
+                  onTap: () => open(screen),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

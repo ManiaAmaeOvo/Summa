@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
+import 'package:summa/app/widgets/ledger_surfaces.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/analytics/ledger_analysis.dart';
 import 'package:summa/domain/analytics/ledger_history.dart';
@@ -78,20 +79,13 @@ class _HistoricalAnalysisScreenState
           ),
           const SizedBox(height: 8),
         ],
-        SegmentedButton<LedgerHistoryInterval>(
-          segments: [
-            ButtonSegment(
-              value: LedgerHistoryInterval.month,
-              label: Text(labels.periodMonth),
-            ),
-            ButtonSegment(
-              value: LedgerHistoryInterval.year,
-              label: Text(labels.periodYear),
-            ),
-          ],
-          selected: {_interval},
-          onSelectionChanged: (values) =>
-              setState(() => _interval = values.single),
+        LedgerChoiceBar<LedgerHistoryInterval>(
+          options: {
+            LedgerHistoryInterval.month: labels.periodMonth,
+            LedgerHistoryInterval.year: labels.periodYear,
+          },
+          selected: _interval,
+          onChanged: (value) => setState(() => _interval = value),
         ),
         if (filter.isActive)
           Padding(
@@ -201,30 +195,10 @@ class _PeriodCard extends StatelessWidget {
           ])
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: Text(label)),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          formatMoneyTotal(value, currency),
-                          textAlign: TextAlign.end,
-                        ),
-                        Text(
-                          labels.historyPreviousDifference(
-                            _signed(value - old),
-                          ),
-                          textAlign: TextAlign.end,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: LedgerValueRow(
+                label: label,
+                value: formatMoneyTotal(value, currency),
+                detail: labels.historyPreviousDifference(_signed(value - old)),
               ),
             ),
           TextButton.icon(

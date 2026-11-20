@@ -2721,4 +2721,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importRuleDraft => 'Draft';
+
+  @override
+  String get transactionTab => 'Ledger';
+
+  @override
+  String get previousReportPeriod => 'Previous period';
+
+  @override
+  String get nextReportPeriod => 'Next period';
 }

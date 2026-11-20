@@ -231,27 +231,56 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
               ? labels.csvLine(row.line)
               : '${csvTypeLabel(context, movement.type)} ${formatMoney(movement.amountMinor, movement.currency)}',
         ),
-        subtitle: Text(
-          [
-            if (movement != null) labels.csvLine(row.line),
-            status,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              [
+                if (movement != null) labels.csvLine(row.line),
+                status,
+              ].join(' · '),
+            ),
             if (item.suggestion case final suggestion?)
-              suggestion.categoryId == null
-                  ? labels.importRuleConflict
-                  : labels.importRuleSuggested(
-                      importRuleSummary(context, suggestion.matchedRules.first),
-                    ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  suggestion.categoryId == null
+                      ? labels.importRuleConflict
+                      : labels.importRuleSuggested(
+                          importRuleSummary(
+                            context,
+                            suggestion.matchedRules.first,
+                          ),
+                        ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: suggestion.categoryId == null
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
             if (movement != null) ...[
-              _date(context, movement.occurredAt),
-              if (source.isNotEmpty)
-                destination.isEmpty ? source : '$source → $destination',
-              if (category.isNotEmpty) category,
-              if (movement.note.isNotEmpty) movement.note,
+              const SizedBox(height: 4),
+              Text(
+                [
+                  _date(context, movement.occurredAt),
+                  if (source.isNotEmpty)
+                    destination.isEmpty ? source : '$source → $destination',
+                  if (category.isNotEmpty) category,
+                ].join(' · '),
+              ),
+              if (movement.note.isNotEmpty)
+                Text(
+                  movement.note,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
             ],
-            if (row.issue case final issue?) csvIssueLabel(context, issue),
-          ].join(' · '),
-          maxLines: 4,
-          overflow: TextOverflow.ellipsis,
+            if (row.issue case final issue?)
+              Text(csvIssueLabel(context, issue)),
+          ],
         ),
         trailing: state == CsvReviewState.ready || choice != null
             ? Checkbox(

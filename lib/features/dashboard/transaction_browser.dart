@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
+import 'package:summa/app/widgets/ledger_surfaces.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/ledger_analysis.dart';
@@ -146,9 +147,9 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
         .fold<int>(0, (sum, account) => sum + account.currentBalanceMinor);
     final netAssets = personalAssets - liabilities;
 
-    final recordsById = {for (final record in items) record.id: record};
+    final recordsById = {for (final record in widget.items) record.id: record};
     final refundsByOriginal = <String, List<LedgerRecord>>{};
-    for (final record in items) {
+    for (final record in widget.items) {
       final originalId = record.refundOfId;
       if (originalId != null) {
         (refundsByOriginal[originalId] ??= []).add(record);
@@ -209,36 +210,26 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             sliver: SliverToBoxAdapter(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                mainAxisExtent: 104,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+              child: LedgerMetricGrid(
                 children: [
-                  _DashboardSummaryCard(
+                  LedgerMetricCard(
                     label: context.l10n.expenseThisMonth,
-                    amount: monthTotal,
-                    currency: currency,
+                    value: formatMoney(monthTotal, currency),
                     icon: Icons.calendar_month_outlined,
                   ),
-                  _DashboardSummaryCard(
+                  LedgerMetricCard(
                     label: context.l10n.expenseThisWeek,
-                    amount: weekTotal,
-                    currency: currency,
+                    value: formatMoney(weekTotal, currency),
                     icon: Icons.date_range_outlined,
                   ),
-                  _DashboardSummaryCard(
+                  LedgerMetricCard(
                     label: context.l10n.expenseAllTime,
-                    amount: total,
-                    currency: currency,
+                    value: formatMoney(total, currency),
                     icon: Icons.receipt_long_outlined,
                   ),
-                  _DashboardSummaryCard(
+                  LedgerMetricCard(
                     label: context.l10n.liquidNetWorth,
-                    amount: netAssets,
-                    currency: currency,
+                    value: formatMoney(netAssets, currency),
                     icon: Icons.account_balance_wallet_outlined,
                     onTap: widget.onOpenAccounts,
                   ),
@@ -302,153 +293,200 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
                 final canReverse =
                     item.canReverse &&
                     (refundsByOriginal[item.id]?.isEmpty ?? true);
-                return Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      child: Icon(
-                        item.isPending
+                final day = item.occurredAt.toLocal();
+                final newDay =
+                    index == 0 ||
+                    !DateUtils.isSameDay(
+                      visibleItems[index - 1].occurredAt.toLocal(),
+                      day,
+                    );
+                final locale = Localizations.localeOf(context).toLanguageTag();
+                final labels = context.l10n;
+                final theme = Theme.of(context);
+                final detail = [
+                  DateFormat.Hm(locale).format(day),
+                  _accountDescription(context, item),
+                  if (settlement != null) ...[
+                    labels.effectiveExchangeRateLabel(
+                      item.currencyCode,
+                      effectiveExchangeRate(
+                        sourceMinor: item.amountMinor,
+                        sourceCurrency: item.currencyCode,
+                        settlementMinor: settlement.amountMinor,
+                        settlementCurrency: settlement.currencyCode,
+                      ),
+                      settlement.currencyCode,
+                    ),
+                    if (settlement.quotedRate case final quote?)
+                      labels.quotedExchangeRateLabel(
+                        item.currencyCode,
+                        quote,
+                        settlement.currencyCode,
+                      ),
+                  ],
+                  if (price != null)
+                    '${labels.originalPrice} ${formatMoney(price.amountMinor, price.currencyCode)}',
+                  if (item.terms.feeMinor > 0)
+                    '${labels.feeAmount} ${formatMoney(item.terms.feeMinor, item.currencyCode)}',
+                  if (item.terms.interestMinor > 0)
+                    '${labels.interestAmount} ${formatMoney(item.terms.interestMinor, item.currencyCode)}',
+                  if (item.note.isNotEmpty) item.note,
+                ];
+                final statuses = [
+                  if (item.isPending) labels.pendingPosting,
+                  if (item.needsReview) labels.fundingReviewBadge,
+                  if (item.hasReversal) labels.reversedPosting,
+                  if (item.isReversal) labels.reversalPosting,
+                ];
+                final menu = !readOnly || canReverse || item.sources.isNotEmpty
+                    ? PopupMenuButton<_RecordAction>(
+                        tooltip: context.l10n.transactionActions,
+                        onSelected: (action) {
+                          switch (action) {
+                            case _RecordAction.source:
+                              Navigator.push<void>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => TransactionSourceScreen(
+                                    sources: item.sources,
+                                  ),
+                                ),
+                              );
+                            case _RecordAction.edit:
+                              openEditor(record: item);
+                            case _RecordAction.delete:
+                              _confirmDeleteRecord(context, ref, item);
+                            case _RecordAction.refund:
+                              openEditor(refundFor: item);
+                            case _RecordAction.post:
+                              _postRecord(context, ref, item);
+                            case _RecordAction.reverse:
+                              _confirmReversal(context, ref, item);
+                          }
+                        },
+                        itemBuilder: (_) => [
+                          if (item.sources.isNotEmpty)
+                            PopupMenuItem(
+                              value: _RecordAction.source,
+                              child: Text(context.l10n.transactionSources),
+                            ),
+                          if (!readOnly)
+                            PopupMenuItem(
+                              value: _RecordAction.edit,
+                              child: Text(context.l10n.edit),
+                            ),
+                          if (item.isPending)
+                            PopupMenuItem(
+                              value: _RecordAction.post,
+                              child: Text(context.l10n.postTransactionAction),
+                            ),
+                          if (item.canRefund &&
+                              refundableAmounts(item).values
+                                  .any((amount) => amount > 0))
+                            PopupMenuItem(
+                              value: _RecordAction.refund,
+                              child: Text(context.l10n.recordRefund),
+                            ),
+                          if (canReverse)
+                            PopupMenuItem(
+                              value: _RecordAction.reverse,
+                              child: Text(context.l10n.reverseTransaction),
+                            ),
+                          if (!readOnly)
+                            PopupMenuItem(
+                              value: _RecordAction.delete,
+                              child: Text(context.l10n.delete),
+                            ),
+                        ],
+                      )
+                    : null;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (newDay)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(3, 5, 3, 7),
+                        child: Text(
+                          DateFormat.yMMMd(locale).format(day),
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: LedgerEntryTile(
+                        label: _titleForRecord(context, item),
+                        value: _amountForRecord(item),
+                        icon: item.isPending
                             ? Icons.schedule
                             : item.isRefund
                             ? Icons.undo
                             : _iconForType(item.type),
-                      ),
-                    ),
-                    title: Text(_titleForRecord(context, item)),
-                    subtitle: Text(
-                      [
-                        DateFormat.MMMd(
-                          Localizations.localeOf(context).toLanguageTag(),
-                        ).add_Hm().format(item.occurredAt),
-                        if (item.isPending) context.l10n.pendingPosting,
-                        if (item.needsReview) context.l10n.fundingReviewBadge,
-                        if (item.hasReversal) context.l10n.reversedPosting,
-                        if (item.isReversal) context.l10n.reversalPosting,
-                        _accountDescription(context, item),
-                        if (settlement != null) ...[
-                          context.l10n.effectiveExchangeRateLabel(
-                            item.currencyCode,
-                            effectiveExchangeRate(
-                              sourceMinor: item.amountMinor,
-                              sourceCurrency: item.currencyCode,
-                              settlementMinor: settlement.amountMinor,
-                              settlementCurrency: settlement.currencyCode,
-                            ),
-                            settlement.currencyCode,
-                          ),
-                          if (settlement.quotedRate case final quote?)
-                            context.l10n.quotedExchangeRateLabel(
-                              item.currencyCode,
-                              quote,
-                              settlement.currencyCode,
-                            ),
-                        ],
-                        if (price != null)
-                          '${context.l10n.originalPrice} ${formatMoney(price.amountMinor, price.currencyCode)}',
-                        if (item.terms.feeMinor > 0)
-                          '${context.l10n.feeAmount} ${formatMoney(item.terms.feeMinor, item.currencyCode)}',
-                        if (item.terms.interestMinor > 0)
-                          '${context.l10n.interestAmount} ${formatMoney(item.terms.interestMinor, item.currencyCode)}',
-                        if (item.note.isNotEmpty) item.note,
-                      ].join(' · '),
-                      maxLines: settlement == null && item.terms.isEmpty
-                          ? 2
-                          : 4,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 124),
-                          child: Text(
-                            textAlign: TextAlign.end,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            _amountForRecord(item),
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: _colorForType(
-                                    context,
-                                    item.isRefund
-                                        ? LedgerTransactionType.income
-                                        : item.type,
-                                  ),
-                                ),
-                          ),
+                        valueColor: _colorForType(
+                          context,
+                          item.isRefund
+                              ? LedgerTransactionType.income
+                              : item.type,
                         ),
-                        if (!readOnly || canReverse || item.sources.isNotEmpty)
-                          PopupMenuButton<_RecordAction>(
-                            tooltip: context.l10n.transactionActions,
-                            onSelected: (action) {
-                              switch (action) {
-                                case _RecordAction.source:
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => TransactionSourceScreen(
-                                        sources: item.sources,
+                        trailing: menu,
+                        details: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (statuses.isNotEmpty) ...[
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 5,
+                                children: [
+                                  for (final status in statuses)
+                                    DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color:
+                                            theme.colorScheme.tertiaryContainer,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 7,
+                                          vertical: 3,
+                                        ),
+                                        child: Text(
+                                          status,
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                                color: theme
+                                                    .colorScheme
+                                                    .onTertiaryContainer,
+                                              ),
+                                        ),
                                       ),
                                     ),
-                                  );
-                                case _RecordAction.edit:
-                                  openEditor(record: item);
-                                case _RecordAction.delete:
-                                  _confirmDeleteRecord(context, ref, item);
-                                case _RecordAction.refund:
-                                  openEditor(refundFor: item);
-                                case _RecordAction.post:
-                                  _postRecord(context, ref, item);
-                                case _RecordAction.reverse:
-                                  _confirmReversal(context, ref, item);
-                              }
-                            },
-                            itemBuilder: (_) => [
-                              if (item.sources.isNotEmpty)
-                                PopupMenuItem(
-                                  value: _RecordAction.source,
-                                  child: Text(context.l10n.transactionSources),
-                                ),
-                              if (!readOnly)
-                                PopupMenuItem(
-                                  value: _RecordAction.edit,
-                                  child: Text(context.l10n.edit),
-                                ),
-                              if (item.isPending)
-                                PopupMenuItem(
-                                  value: _RecordAction.post,
-                                  child: Text(
-                                    context.l10n.postTransactionAction,
-                                  ),
-                                ),
-                              if (item.canRefund &&
-                                  refundableAmounts(item).values
-                                      .any((amount) => amount > 0))
-                                PopupMenuItem(
-                                  value: _RecordAction.refund,
-                                  child: Text(context.l10n.recordRefund),
-                                ),
-                              if (canReverse)
-                                PopupMenuItem(
-                                  value: _RecordAction.reverse,
-                                  child: Text(context.l10n.reverseTransaction),
-                                ),
-                              if (!readOnly)
-                                PopupMenuItem(
-                                  value: _RecordAction.delete,
-                                  child: Text(context.l10n.delete),
-                                ),
+                                ],
+                              ),
+                              const SizedBox(height: 5),
                             ],
-                          ),
-                      ],
+                            Text(
+                              detail.join(' · '),
+                              maxLines: settlement == null && item.terms.isEmpty
+                                  ? 3
+                                  : 5,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: readOnly
+                            ? () => _showPostingDetails(
+                                context,
+                                item,
+                                recordsById[item.terms.reversalOfId],
+                              )
+                            : () => openEditor(record: item),
+                      ),
                     ),
-                    onTap: readOnly
-                        ? () => _showPostingDetails(
-                            context,
-                            item,
-                            recordsById[item.terms.reversalOfId],
-                          )
-                        : () => openEditor(record: item),
-                  ),
+                  ],
                 );
               },
             ),
@@ -498,70 +536,14 @@ class _FilteredTotals extends StatelessWidget {
                 activity.personalCashInflow - activity.personalCashOutflow,
               ),
             ])
-              Text('$label  ${formatMoneyTotal(amount, currency)}'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DashboardSummaryCard extends StatelessWidget {
-  const _DashboardSummaryCard({
-    required this.label,
-    required this.amount,
-    required this.currency,
-    required this.icon,
-    this.onTap,
-  });
-
-  final String label;
-  final int amount;
-  final String currency;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card.filled(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    icon,
-                    size: 17,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  formatMoney(amount, currency),
-                  style: Theme.of(context).textTheme.titleLarge,
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: LedgerValueRow(
+                  label: label,
+                  value: formatMoneyTotal(amount, currency),
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );

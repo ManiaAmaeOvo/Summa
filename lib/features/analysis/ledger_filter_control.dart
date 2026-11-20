@@ -36,30 +36,64 @@ class LedgerFilterControl extends StatelessWidget {
       if (filter.categoryId case final id?) options.categories[id] ?? id,
       if (filter.funding case final funding?) _fundingLabel(context, funding),
     ];
+    final icon = Icon(
+      filter.isActive ? Icons.filter_alt : Icons.filter_alt_outlined,
+    );
+    Future<void> edit() async {
+      final changed = await showDialog<LedgerFilter>(
+        context: context,
+        builder: (_) => _FilterDialog(
+          filter: filter,
+          options: options,
+          forReport: forReport,
+        ),
+      );
+      if (context.mounted && changed != null) onChanged(changed);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextButton.icon(
-          icon: Icon(
-            filter.isActive ? Icons.filter_alt : Icons.filter_alt_outlined,
+        if (filter.isActive)
+          FilledButton.tonalIcon(
+            icon: icon,
+            label: Text(labels.ledgerFilters),
+            onPressed: edit,
+          )
+        else
+          TextButton.icon(
+            icon: icon,
+            label: Text(labels.ledgerFilters),
+            onPressed: edit,
           ),
-          label: Text(labels.ledgerFilters),
-          onPressed: () async {
-            final changed = await showDialog<LedgerFilter>(
-              context: context,
-              builder: (_) => _FilterDialog(
-                filter: filter,
-                options: options,
-                forReport: forReport,
-              ),
-            );
-            if (context.mounted && changed != null) onChanged(changed);
-          },
-        ),
         if (selection.isNotEmpty)
-          Text(
-            selection.join(' · '),
-            style: Theme.of(context).textTheme.bodySmall,
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 5),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final label in selection)
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      child: Text(
+                        label,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
       ],
     );

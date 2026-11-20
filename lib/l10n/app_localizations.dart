@@ -4867,6 +4867,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Draft'**
   String get importRuleDraft;
+
+  /// No description provided for @transactionTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger'**
+  String get transactionTab;
+
+  /// No description provided for @previousReportPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous period'**
+  String get previousReportPeriod;
+
+  /// No description provided for @nextReportPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Next period'**
+  String get nextReportPeriod;
 }
 
 class _AppLocalizationsDelegate

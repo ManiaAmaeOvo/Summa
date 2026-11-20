@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
+import 'package:summa/app/widgets/ledger_surfaces.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/ledger_analysis.dart';
@@ -142,53 +143,40 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
           ),
           const SizedBox(height: 8),
         ],
-        GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          mainAxisExtent: 104,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+        LedgerMetricGrid(
           children: [
-            _SummaryCard(
+            LedgerMetricCard(
               label: context.l10n.personalLiquidAssets,
-              amountMinor: personalAssets,
-              currency: currency,
+              value: formatMoney(personalAssets, currency),
             ),
-            _SummaryCard(
+            LedgerMetricCard(
               label: context.l10n.outstandingLiabilities,
-              amountMinor: liabilities,
-              currency: currency,
+              value: formatMoney(liabilities, currency),
             ),
-            _SummaryCard(
+            LedgerMetricCard(
               label: context.l10n.liquidNetWorth,
-              amountMinor: netAssets,
-              currency: currency,
+              value: formatMoney(netAssets, currency),
             ),
-            _SummaryCard(
+            LedgerMetricCard(
               label: context.l10n.entrustedFunds,
-              amountMinor: entrustedFunds,
-              currency: currency,
+              value: formatMoney(entrustedFunds, currency),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: addAccount,
-                icon: const Icon(Icons.add),
-                label: Text(context.l10n.addAccount),
-              ),
+            FilledButton.tonalIcon(
+              onPressed: addAccount,
+              icon: const Icon(Icons.add),
+              label: Text(context.l10n.addAccount),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextButton.icon(
-                onPressed: restoreDefaults,
-                icon: const Icon(Icons.restore),
-                label: Text(context.l10n.restoreDefaults),
-              ),
+            TextButton.icon(
+              onPressed: restoreDefaults,
+              icon: const Icon(Icons.restore),
+              label: Text(context.l10n.restoreDefaults),
             ),
           ],
         ),
@@ -617,53 +605,6 @@ class _BalanceDialogState extends ConsumerState<_BalanceDialog> {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.label,
-    required this.amountMinor,
-    required this.currency,
-  });
-
-  final String label;
-  final int amountMinor;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card.filled(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                formatMoney(amountMinor, currency),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _AccountGroup extends StatelessWidget {
   const _AccountGroup({
     required this.title,
@@ -694,88 +635,74 @@ class _AccountGroup extends StatelessWidget {
             children: [
               for (var index = 0; index < items.length; index++) ...[
                 if (index > 0) const Divider(height: 1),
-                ListTile(
-                  title: Text(
-                    DefaultLedgerLabels.balance(context, items[index]),
+                LedgerEntryTile(
+                  label: DefaultLedgerLabels.balance(context, items[index]),
+                  value: formatMoney(
+                    items[index].currentBalanceMinor,
+                    items[index].currencyCode,
                   ),
-                  subtitle: Text(switch (items[index].kind) {
+                  caption: switch (items[index].kind) {
                     AccountKind.thirdPartyPayable =>
                       context.l10n.accountKindThirdPartyPayable,
                     AccountKind.receivable =>
                       context.l10n.accountKindReceivable,
                     AccountKind.creditLine => context.l10n.liability,
                     _ => context.l10n.balance,
-                  }),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        formatMoney(
-                          items[index].currentBalanceMinor,
-                          items[index].currencyCode,
-                        ),
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      PopupMenuButton<_AccountAction>(
-                        tooltip: context.l10n.accountActions,
-                        onSelected: (action) {
-                          final account = items[index];
-                          switch (action) {
-                            case _AccountAction.analyze:
-                              Navigator.push<void>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Scaffold(
-                                    appBar: AppBar(
-                                      title: Text(
-                                        context
-                                            .l10n
-                                            .ledgerFilterAccountAnalysis,
-                                      ),
-                                    ),
-                                    body: ReportScreen(
-                                      initialFilter: LedgerFilter(
-                                        accountId: account.id,
-                                      ),
-                                      initialCurrency: account.currencyCode,
-                                    ),
+                  },
+                  trailing: PopupMenuButton<_AccountAction>(
+                    tooltip: context.l10n.accountActions,
+                    onSelected: (action) {
+                      final account = items[index];
+                      switch (action) {
+                        case _AccountAction.analyze:
+                          Navigator.push<void>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => Scaffold(
+                                appBar: AppBar(
+                                  title: Text(
+                                    context.l10n.ledgerFilterAccountAnalysis,
                                   ),
                                 ),
-                              );
-                            case _AccountAction.reconcile:
-                              Navigator.push<void>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      ReconciliationScreen(account: account),
+                                body: ReportScreen(
+                                  initialFilter: LedgerFilter(
+                                    accountId: account.id,
+                                  ),
+                                  initialCurrency: account.currencyCode,
                                 ),
-                              );
-                            case _AccountAction.editBalance:
-                              onEdit(account);
-                            case _AccountAction.delete:
-                              onDelete(account);
-                          }
-                        },
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: _AccountAction.analyze,
-                            child: Text(
-                              context.l10n.ledgerFilterAccountAnalysis,
+                              ),
                             ),
-                          ),
-                          PopupMenuItem(
-                            value: _AccountAction.reconcile,
-                            child: Text(context.l10n.reconciliation),
-                          ),
-                          PopupMenuItem(
-                            value: _AccountAction.editBalance,
-                            child: Text(context.l10n.calibrateBalanceAction),
-                          ),
-                          PopupMenuItem(
-                            value: _AccountAction.delete,
-                            child: Text(context.l10n.archiveAccount),
-                          ),
-                        ],
+                          );
+                        case _AccountAction.reconcile:
+                          Navigator.push<void>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ReconciliationScreen(account: account),
+                            ),
+                          );
+                        case _AccountAction.editBalance:
+                          onEdit(account);
+                        case _AccountAction.delete:
+                          onDelete(account);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: _AccountAction.analyze,
+                        child: Text(context.l10n.ledgerFilterAccountAnalysis),
+                      ),
+                      PopupMenuItem(
+                        value: _AccountAction.reconcile,
+                        child: Text(context.l10n.reconciliation),
+                      ),
+                      PopupMenuItem(
+                        value: _AccountAction.editBalance,
+                        child: Text(context.l10n.calibrateBalanceAction),
+                      ),
+                      PopupMenuItem(
+                        value: _AccountAction.delete,
+                        child: Text(context.l10n.archiveAccount),
                       ),
                     ],
                   ),

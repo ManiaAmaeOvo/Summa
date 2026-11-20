@@ -2556,4 +2556,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get importRuleDraft => '当前草稿';
+
+  @override
+  String get transactionTab => '账单';
+
+  @override
+  String get previousReportPeriod => '上一期';
+
+  @override
+  String get nextReportPeriod => '下一期';
 }

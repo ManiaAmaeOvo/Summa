@@ -1047,5 +1047,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "transactionTab": "Ledger",
+  "previousReportPeriod": "Previous period",
+  "nextReportPeriod": "Next period"
 }
