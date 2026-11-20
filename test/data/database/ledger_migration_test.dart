@@ -7,7 +7,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 
 void main() {
-  for (final version in [6, 7, 8, 9, 10, 11, 12, 13, 14]) {
+  for (final version in [6, 7, 8, 9, 10, 11, 12, 13, 14, 15]) {
     test('migrates schema $version to persisted postings and reopens safely', () async {
       final directory = await Directory.systemTemp.createTemp(
         'summa-v$version-',
@@ -71,7 +71,8 @@ void main() {
           final schema = await after
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(schema.read<int>('user_version'), 15);
+          expect(schema.read<int>('user_version'), 16);
+          expect(await upgraded.watchSpendingPlans().first, isEmpty);
           final checkpoints = await upgraded
               .watchBalanceCheckpoints('bank')
               .first;
@@ -215,6 +216,7 @@ class _LegacyDatabase extends AppDatabase {
                  ('bank-to-cash', 3, 'JPY', -2000, 'exchange')
         ''');
       }
+      if (schemaVersion >= 15) await migrator.createTable(importCategoryRules);
       if (schemaVersion >= 14) {
         await migrator.createTable(csvImportBatches);
         await migrator.createTable(csvImportRows);

@@ -10,6 +10,7 @@ import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/features/accounts/account_overview_screen.dart';
 import 'package:summa/features/import_export/csv_import_screen.dart';
 import 'package:summa/features/import_export/structured_import_screen.dart';
+import 'package:summa/features/planning/spending_plans_screen.dart';
 import 'package:summa/features/reports/report_screen.dart';
 import 'package:summa/features/settings/settings_screen.dart';
 import 'package:summa/features/transaction_editor/add_expense_sheet.dart';
@@ -38,6 +39,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           _ => l10n.reports,
         }),
         actions: [
+          if (_selectedIndex != 0)
+            IconButton(
+              tooltip: l10n.spendingPlans,
+              onPressed: () => Navigator.push<void>(
+                context,
+                MaterialPageRoute(builder: (_) => const SpendingPlansScreen()),
+              ),
+              icon: const Icon(Icons.pie_chart_outline),
+            ),
           if (_selectedIndex == 0)
             IconButton(
               tooltip: l10n.csvImport,

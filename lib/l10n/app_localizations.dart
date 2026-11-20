@@ -1703,7 +1703,7 @@ abstract class AppLocalizations {
   /// No description provided for @resetTransactionsAccountsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Clear transactions, restore zero-balance default accounts, and preserve categories and backups'**
+  /// **'Clear transactions and account-linked plans, then restore zero-balance default accounts'**
   String get resetTransactionsAccountsSubtitle;
 
   /// No description provided for @factoryReset.
@@ -1871,7 +1871,7 @@ abstract class AppLocalizations {
   /// No description provided for @resetTransactionsAccountsMessage.
   ///
   /// In en, this message translates to:
-  /// **'All transactions will be permanently cleared, custom accounts deleted, and default account balances set to zero. Categories and all backups will be preserved.'**
+  /// **'All transactions and account-linked budgets and allowances will be cleared, custom accounts deleted, and default balances set to zero. Categories, other budgets, and backups will be preserved.'**
   String get resetTransactionsAccountsMessage;
 
   /// No description provided for @confirmReset.
@@ -3367,6 +3367,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transcribe only clearly visible completed income and expense entries from my screenshots. Return CSV only, without a Markdown fence. Use this header verbatim:\ntype,amount,occurred_at,account,category,note,currency_code,merchant,description,payment_channel,source,external_id\nUse expense or income, a positive amount, and an ISO 8601 date or timestamp. Leave unknown fields blank. Do not infer dates, totals, or transaction IDs. Only include an external ID if the screenshot shows the actual transaction ID and its source. Keep refunds, transfers, repayments, and pending items separate from ordinary income and expenses. Omit names of private individuals, account numbers, and card numbers. Quote fields containing commas, double quotes, or line breaks and escape double quotes by doubling them.'**
   String get csvScreenshotPrompt;
+
+  /// No description provided for @spendingPlanBackupConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup has invalid or conflicting budgets or allowances.'**
+  String get spendingPlanBackupConflict;
+
+  /// No description provided for @spendingPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Budgets & allowances'**
+  String get spendingPlans;
+
+  /// No description provided for @addBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Add budget'**
+  String get addBudget;
+
+  /// No description provided for @addAllowance.
+  ///
+  /// In en, this message translates to:
+  /// **'Add allowance'**
+  String get addAllowance;
+
+  /// No description provided for @spendingPlansEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a budget or track an allowance for an entrusted account.'**
+  String get spendingPlansEmpty;
+
+  /// No description provided for @spendingPlansLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load budgets and allowances.'**
+  String get spendingPlansLoadFailed;
+
+  /// No description provided for @spendingPlanScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Spending scope'**
+  String get spendingPlanScope;
+
+  /// No description provided for @spendingPlanAllowance.
+  ///
+  /// In en, this message translates to:
+  /// **'External allowance'**
+  String get spendingPlanAllowance;
+
+  /// No description provided for @spendingPlanNoAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'No eligible account is available.'**
+  String get spendingPlanNoAccounts;
+
+  /// No description provided for @spendingPlanNoCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'No expense category is available.'**
+  String get spendingPlanNoCategories;
+
+  /// No description provided for @spendingPlanMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get spendingPlanMonthly;
+
+  /// No description provided for @spendingPlanFixedPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed date range'**
+  String get spendingPlanFixedPeriod;
+
+  /// No description provided for @spendingPlanStart.
+  ///
+  /// In en, this message translates to:
+  /// **'First day'**
+  String get spendingPlanStart;
+
+  /// No description provided for @spendingPlanEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Last day'**
+  String get spendingPlanEnd;
+
+  /// No description provided for @spendingPlanMonthlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each month resets on the first cycle’s day, or the last day of a shorter month.'**
+  String get spendingPlanMonthlyHint;
+
+  /// No description provided for @spendingPlanRollover.
+  ///
+  /// In en, this message translates to:
+  /// **'Carry over unused amount'**
+  String get spendingPlanRollover;
+
+  /// No description provided for @spendingPlanLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Period limit'**
+  String get spendingPlanLimit;
+
+  /// No description provided for @spendingPlanCarried.
+  ///
+  /// In en, this message translates to:
+  /// **'Carried over'**
+  String get spendingPlanCarried;
+
+  /// No description provided for @spendingPlanUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get spendingPlanUsed;
+
+  /// No description provided for @spendingPlanRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get spendingPlanRemaining;
+
+  /// No description provided for @spendingPlanProjected.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected spending at current pace'**
+  String get spendingPlanProjected;
+
+  /// No description provided for @spendingPlanOverLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Over limit'**
+  String get spendingPlanOverLimit;
+
+  /// No description provided for @spendingPlanChangeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Change period limit'**
+  String get spendingPlanChangeLimit;
+
+  /// No description provided for @spendingPlanOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to this and later months'**
+  String get spendingPlanOngoing;
+
+  /// No description provided for @spendingPlanLimitHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit changes'**
+  String get spendingPlanLimitHistory;
+
+  /// No description provided for @spendingPlanSinglePeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'This period only'**
+  String get spendingPlanSinglePeriod;
+
+  /// No description provided for @spendingPlanFromPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'This period onward'**
+  String get spendingPlanFromPeriod;
+
+  /// No description provided for @spendingPlanPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous period'**
+  String get spendingPlanPrevious;
+
+  /// No description provided for @spendingPlanNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next period'**
+  String get spendingPlanNext;
+
+  /// No description provided for @spendingPlanNoActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'No posted spending in this period.'**
+  String get spendingPlanNoActivity;
+
+  /// No description provided for @spendingPlanArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get spendingPlanArchived;
+
+  /// No description provided for @spendingPlanReactivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivate'**
+  String get spendingPlanReactivate;
+
+  /// No description provided for @spendingPlanInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the dates, amount, and selected category or account. An entrusted account can have one active allowance.'**
+  String get spendingPlanInvalid;
+
+  /// No description provided for @backupSpendingPlanCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Budgets & allowances {count}'**
+  String backupSpendingPlanCount(int count);
 }
 
 class _AppLocalizationsDelegate

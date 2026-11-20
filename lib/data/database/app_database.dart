@@ -173,6 +173,40 @@ class ImportCategoryRules extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+@DataClassName('SpendingPlanRow')
+class SpendingPlans extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get currency => text()();
+  TextColumn get scope => text()();
+  IntColumn get limitMinor => integer()();
+  TextColumn get startsOn => text()();
+  TextColumn get endsOn => text().nullable()();
+  BoolColumn get rollover => boolean()();
+  BoolColumn get archived => boolean()();
+  TextColumn get accountId =>
+      text().nullable().references(LedgerAccounts, #id)();
+  TextColumn get categoryId =>
+      text().nullable().references(LedgerCategories, #id)();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DataClassName('SpendingPlanLimitRow')
+class SpendingPlanLimits extends Table {
+  TextColumn get id => text()();
+  TextColumn get planId =>
+      text().references(SpendingPlans, #id, onDelete: KeyAction.cascade)();
+  TextColumn get periodStart => text()();
+  IntColumn get limitMinor => integer()();
+  BoolColumn get ongoing => boolean()();
+  IntColumn get savedAtMicros => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     LedgerAccounts,
@@ -185,6 +219,8 @@ class ImportCategoryRules extends Table {
     CsvImportBatches,
     CsvImportRows,
     ImportCategoryRules,
+    SpendingPlans,
+    SpendingPlanLimits,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -193,7 +229,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -203,6 +239,7 @@ class AppDatabase extends _$AppDatabase {
       await _createReversalIndex();
       await _createCheckpointIndex();
       await _createCsvIndexes();
+      await _createSpendingPlanIndex();
       await _seedDefaults();
       await customStatement('PRAGMA user_version = $schemaVersion');
     }),
@@ -273,6 +310,11 @@ class AppDatabase extends _$AppDatabase {
         if (from < 15) {
           await migrator.createTable(importCategoryRules);
         }
+        if (from < 16) {
+          await migrator.createTable(spendingPlans);
+          await migrator.createTable(spendingPlanLimits);
+          await _createSpendingPlanIndex();
+        }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
         await customStatement('PRAGMA user_version = $to');
@@ -303,6 +345,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _createCheckpointIndex() => customStatement('''
     CREATE INDEX balance_checkpoints_account_date
     ON balance_checkpoints (account_id, observed_at DESC)
+  ''');
+
+  Future<void> _createSpendingPlanIndex() => customStatement('''
+    CREATE INDEX spending_plan_limits_plan ON spending_plan_limits (plan_id)
   ''');
 
   Future<void> _createCsvIndexes() async {
@@ -382,6 +428,9 @@ class AppDatabase extends _$AppDatabase {
       await delete(csvImportBatches).go();
       await delete(balanceCheckpoints).go();
       await delete(ledgerEntries).go();
+      await (delete(
+        spendingPlans,
+      )..where((row) => row.accountId.isNotNull())).go();
       await delete(ledgerAccounts).go();
       final now = DateTime.now();
       await batch((batch) {
@@ -403,6 +452,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(balanceCheckpoints).go();
       await delete(ledgerEntries).go();
       await delete(importCategoryRules).go();
+      await delete(spendingPlans).go();
       await delete(ledgerCategories).go();
       await delete(ledgerAccounts).go();
       await _seedDefaults();

@@ -5,6 +5,7 @@ import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/transaction_terms.dart';
@@ -166,6 +167,14 @@ abstract interface class ExpenseRepository {
   });
 
   Future<void> deleteImportRule(String id);
+
+  Stream<List<SpendingPlan>> watchSpendingPlans();
+
+  Future<void> addSpendingPlan(SpendingPlanDraft draft);
+
+  Future<void> setSpendingPlanLimit(String id, SpendingPlanLimit limit);
+
+  Future<void> setSpendingPlanArchived(String id, bool archived);
 
   Future<List<CsvReviewRow>> previewCsvImport(
     CsvImportFile file, {

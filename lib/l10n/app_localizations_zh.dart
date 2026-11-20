@@ -866,7 +866,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resetTransactionsAccounts => '重置账单与账户';
 
   @override
-  String get resetTransactionsAccountsSubtitle => '清空账单，账户恢复默认且余额归零；保留分类和备份';
+  String get resetTransactionsAccountsSubtitle => '清除交易及关联账户的计划，并恢复零余额默认账户';
 
   @override
   String get factoryReset => '恢复出厂设置';
@@ -953,7 +953,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resetTransactionsAccountsMessage =>
-      '全部账单将被永久清除，自定义账户将删除，默认账户余额归零。分类和所有备份会保留。';
+      '将清除所有交易及关联账户的预算和外部额度，删除自定义账户，并将默认账户余额归零。分类、其他预算和备份会保留。';
 
   @override
   String get confirmReset => '确认重置';
@@ -1772,4 +1772,108 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get csvScreenshotPrompt =>
       '只转录截图中清晰可见且已完成的普通支出和收入。仅输出 CSV，不加 Markdown 代码块。首行原样使用：\ntype,amount,occurred_at,account,category,note,currency_code,merchant,description,payment_channel,source,external_id\n类型填写 expense 或 income，金额使用正数，日期或时间使用 ISO 8601。不确定的字段留空，不猜日期、金额或交易号。仅当截图明确显示实际交易编号和来源时填写外部编号。退款、转账、还款和待入账项目不作为普通收支输出。省略私人姓名、账号和卡号。包含逗号、双引号或换行的字段用双引号括起来，并把字段内的双引号写成两个。';
+
+  @override
+  String get spendingPlanBackupConflict => '备份中的预算或外部额度无效或存在冲突。';
+
+  @override
+  String get spendingPlans => '预算与外部额度';
+
+  @override
+  String get addBudget => '新建预算';
+
+  @override
+  String get addAllowance => '新建外部额度';
+
+  @override
+  String get spendingPlansEmpty => '可以新建预算，也可以为受托账户记录外部额度。';
+
+  @override
+  String get spendingPlansLoadFailed => '无法加载预算和外部额度。';
+
+  @override
+  String get spendingPlanScope => '统计范围';
+
+  @override
+  String get spendingPlanAllowance => '外部额度';
+
+  @override
+  String get spendingPlanNoAccounts => '当前没有可选账户。';
+
+  @override
+  String get spendingPlanNoCategories => '当前没有可选支出分类。';
+
+  @override
+  String get spendingPlanMonthly => '每月';
+
+  @override
+  String get spendingPlanFixedPeriod => '固定日期范围';
+
+  @override
+  String get spendingPlanStart => '起始日期';
+
+  @override
+  String get spendingPlanEnd => '结束日期';
+
+  @override
+  String get spendingPlanMonthlyHint => '以后每月按首期起始日重置。月份较短时，在当月最后一天重置。';
+
+  @override
+  String get spendingPlanRollover => '结转未使用金额';
+
+  @override
+  String get spendingPlanLimit => '本期上限';
+
+  @override
+  String get spendingPlanCarried => '上期结转';
+
+  @override
+  String get spendingPlanUsed => '已使用';
+
+  @override
+  String get spendingPlanRemaining => '剩余';
+
+  @override
+  String get spendingPlanProjected => '按当前速度预计支出';
+
+  @override
+  String get spendingPlanOverLimit => '已超出上限';
+
+  @override
+  String get spendingPlanChangeLimit => '调整周期上限';
+
+  @override
+  String get spendingPlanOngoing => '应用于本期及以后';
+
+  @override
+  String get spendingPlanLimitHistory => '上限调整记录';
+
+  @override
+  String get spendingPlanSinglePeriod => '仅此周期';
+
+  @override
+  String get spendingPlanFromPeriod => '从该周期起生效';
+
+  @override
+  String get spendingPlanPrevious => '上一期';
+
+  @override
+  String get spendingPlanNext => '下一期';
+
+  @override
+  String get spendingPlanNoActivity => '本期没有已入账支出。';
+
+  @override
+  String get spendingPlanArchived => '已归档';
+
+  @override
+  String get spendingPlanReactivate => '恢复使用';
+
+  @override
+  String get spendingPlanInvalid => '请检查日期、金额和所选分类或账户。每个受托账户只能有一项使用中的外部额度。';
+
+  @override
+  String backupSpendingPlanCount(int count) {
+    return '预算与外部额度 $count';
+  }
 }

@@ -115,8 +115,11 @@ void main() {
       expect((linked.added, linked.matched), (0, 1));
       expect(await cash(), 7505);
 
-      final backup = await ledger.createFullBackup();
-      expect(jsonDecode(backup)['backup_version'], 9);
+      final phase2 =
+          (jsonDecode(await ledger.createFullBackup()) as Map<String, dynamic>)
+            ..['backup_version'] = 9
+            ..remove('spending_plans');
+      final backup = jsonEncode(phase2);
       final preview = ledger.inspectFullBackup(backup);
       expect(preview.checkpointCount, 1);
       expect(preview.importBatchCount, 2);

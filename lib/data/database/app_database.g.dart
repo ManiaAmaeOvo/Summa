@@ -5345,6 +5345,1103 @@ class ImportCategoryRulesCompanion
   }
 }
 
+class $SpendingPlansTable extends SpendingPlans
+    with TableInfo<$SpendingPlansTable, SpendingPlanRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SpendingPlansTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currencyMeta = const VerificationMeta(
+    'currency',
+  );
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+    'currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scopeMeta = const VerificationMeta('scope');
+  @override
+  late final GeneratedColumn<String> scope = GeneratedColumn<String>(
+    'scope',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _limitMinorMeta = const VerificationMeta(
+    'limitMinor',
+  );
+  @override
+  late final GeneratedColumn<int> limitMinor = GeneratedColumn<int>(
+    'limit_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startsOnMeta = const VerificationMeta(
+    'startsOn',
+  );
+  @override
+  late final GeneratedColumn<String> startsOn = GeneratedColumn<String>(
+    'starts_on',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endsOnMeta = const VerificationMeta('endsOn');
+  @override
+  late final GeneratedColumn<String> endsOn = GeneratedColumn<String>(
+    'ends_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rolloverMeta = const VerificationMeta(
+    'rollover',
+  );
+  @override
+  late final GeneratedColumn<bool> rollover = GeneratedColumn<bool>(
+    'rollover',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("rollover" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _archivedMeta = const VerificationMeta(
+    'archived',
+  );
+  @override
+  late final GeneratedColumn<bool> archived = GeneratedColumn<bool>(
+    'archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("archived" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_accounts (id)',
+    ),
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_categories (id)',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    currency,
+    scope,
+    limitMinor,
+    startsOn,
+    endsOn,
+    rollover,
+    archived,
+    accountId,
+    categoryId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'spending_plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SpendingPlanRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('currency')) {
+      context.handle(
+        _currencyMeta,
+        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyMeta);
+    }
+    if (data.containsKey('scope')) {
+      context.handle(
+        _scopeMeta,
+        scope.isAcceptableOrUnknown(data['scope']!, _scopeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scopeMeta);
+    }
+    if (data.containsKey('limit_minor')) {
+      context.handle(
+        _limitMinorMeta,
+        limitMinor.isAcceptableOrUnknown(data['limit_minor']!, _limitMinorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_limitMinorMeta);
+    }
+    if (data.containsKey('starts_on')) {
+      context.handle(
+        _startsOnMeta,
+        startsOn.isAcceptableOrUnknown(data['starts_on']!, _startsOnMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startsOnMeta);
+    }
+    if (data.containsKey('ends_on')) {
+      context.handle(
+        _endsOnMeta,
+        endsOn.isAcceptableOrUnknown(data['ends_on']!, _endsOnMeta),
+      );
+    }
+    if (data.containsKey('rollover')) {
+      context.handle(
+        _rolloverMeta,
+        rollover.isAcceptableOrUnknown(data['rollover']!, _rolloverMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rolloverMeta);
+    }
+    if (data.containsKey('archived')) {
+      context.handle(
+        _archivedMeta,
+        archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_archivedMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SpendingPlanRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SpendingPlanRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      currency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency'],
+      )!,
+      scope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scope'],
+      )!,
+      limitMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}limit_minor'],
+      )!,
+      startsOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}starts_on'],
+      )!,
+      endsOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ends_on'],
+      ),
+      rollover: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}rollover'],
+      )!,
+      archived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}archived'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      ),
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      ),
+    );
+  }
+
+  @override
+  $SpendingPlansTable createAlias(String alias) {
+    return $SpendingPlansTable(attachedDatabase, alias);
+  }
+}
+
+class SpendingPlanRow extends DataClass implements Insertable<SpendingPlanRow> {
+  final String id;
+  final String name;
+  final String currency;
+  final String scope;
+  final int limitMinor;
+  final String startsOn;
+  final String? endsOn;
+  final bool rollover;
+  final bool archived;
+  final String? accountId;
+  final String? categoryId;
+  const SpendingPlanRow({
+    required this.id,
+    required this.name,
+    required this.currency,
+    required this.scope,
+    required this.limitMinor,
+    required this.startsOn,
+    this.endsOn,
+    required this.rollover,
+    required this.archived,
+    this.accountId,
+    this.categoryId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['currency'] = Variable<String>(currency);
+    map['scope'] = Variable<String>(scope);
+    map['limit_minor'] = Variable<int>(limitMinor);
+    map['starts_on'] = Variable<String>(startsOn);
+    if (!nullToAbsent || endsOn != null) {
+      map['ends_on'] = Variable<String>(endsOn);
+    }
+    map['rollover'] = Variable<bool>(rollover);
+    map['archived'] = Variable<bool>(archived);
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<String>(accountId);
+    }
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<String>(categoryId);
+    }
+    return map;
+  }
+
+  SpendingPlansCompanion toCompanion(bool nullToAbsent) {
+    return SpendingPlansCompanion(
+      id: Value(id),
+      name: Value(name),
+      currency: Value(currency),
+      scope: Value(scope),
+      limitMinor: Value(limitMinor),
+      startsOn: Value(startsOn),
+      endsOn: endsOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endsOn),
+      rollover: Value(rollover),
+      archived: Value(archived),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
+      categoryId: categoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryId),
+    );
+  }
+
+  factory SpendingPlanRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SpendingPlanRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      currency: serializer.fromJson<String>(json['currency']),
+      scope: serializer.fromJson<String>(json['scope']),
+      limitMinor: serializer.fromJson<int>(json['limitMinor']),
+      startsOn: serializer.fromJson<String>(json['startsOn']),
+      endsOn: serializer.fromJson<String?>(json['endsOn']),
+      rollover: serializer.fromJson<bool>(json['rollover']),
+      archived: serializer.fromJson<bool>(json['archived']),
+      accountId: serializer.fromJson<String?>(json['accountId']),
+      categoryId: serializer.fromJson<String?>(json['categoryId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'currency': serializer.toJson<String>(currency),
+      'scope': serializer.toJson<String>(scope),
+      'limitMinor': serializer.toJson<int>(limitMinor),
+      'startsOn': serializer.toJson<String>(startsOn),
+      'endsOn': serializer.toJson<String?>(endsOn),
+      'rollover': serializer.toJson<bool>(rollover),
+      'archived': serializer.toJson<bool>(archived),
+      'accountId': serializer.toJson<String?>(accountId),
+      'categoryId': serializer.toJson<String?>(categoryId),
+    };
+  }
+
+  SpendingPlanRow copyWith({
+    String? id,
+    String? name,
+    String? currency,
+    String? scope,
+    int? limitMinor,
+    String? startsOn,
+    Value<String?> endsOn = const Value.absent(),
+    bool? rollover,
+    bool? archived,
+    Value<String?> accountId = const Value.absent(),
+    Value<String?> categoryId = const Value.absent(),
+  }) => SpendingPlanRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    currency: currency ?? this.currency,
+    scope: scope ?? this.scope,
+    limitMinor: limitMinor ?? this.limitMinor,
+    startsOn: startsOn ?? this.startsOn,
+    endsOn: endsOn.present ? endsOn.value : this.endsOn,
+    rollover: rollover ?? this.rollover,
+    archived: archived ?? this.archived,
+    accountId: accountId.present ? accountId.value : this.accountId,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
+  );
+  SpendingPlanRow copyWithCompanion(SpendingPlansCompanion data) {
+    return SpendingPlanRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      scope: data.scope.present ? data.scope.value : this.scope,
+      limitMinor: data.limitMinor.present
+          ? data.limitMinor.value
+          : this.limitMinor,
+      startsOn: data.startsOn.present ? data.startsOn.value : this.startsOn,
+      endsOn: data.endsOn.present ? data.endsOn.value : this.endsOn,
+      rollover: data.rollover.present ? data.rollover.value : this.rollover,
+      archived: data.archived.present ? data.archived.value : this.archived,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SpendingPlanRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('currency: $currency, ')
+          ..write('scope: $scope, ')
+          ..write('limitMinor: $limitMinor, ')
+          ..write('startsOn: $startsOn, ')
+          ..write('endsOn: $endsOn, ')
+          ..write('rollover: $rollover, ')
+          ..write('archived: $archived, ')
+          ..write('accountId: $accountId, ')
+          ..write('categoryId: $categoryId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    currency,
+    scope,
+    limitMinor,
+    startsOn,
+    endsOn,
+    rollover,
+    archived,
+    accountId,
+    categoryId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SpendingPlanRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.currency == this.currency &&
+          other.scope == this.scope &&
+          other.limitMinor == this.limitMinor &&
+          other.startsOn == this.startsOn &&
+          other.endsOn == this.endsOn &&
+          other.rollover == this.rollover &&
+          other.archived == this.archived &&
+          other.accountId == this.accountId &&
+          other.categoryId == this.categoryId);
+}
+
+class SpendingPlansCompanion extends UpdateCompanion<SpendingPlanRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> currency;
+  final Value<String> scope;
+  final Value<int> limitMinor;
+  final Value<String> startsOn;
+  final Value<String?> endsOn;
+  final Value<bool> rollover;
+  final Value<bool> archived;
+  final Value<String?> accountId;
+  final Value<String?> categoryId;
+  final Value<int> rowid;
+  const SpendingPlansCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.scope = const Value.absent(),
+    this.limitMinor = const Value.absent(),
+    this.startsOn = const Value.absent(),
+    this.endsOn = const Value.absent(),
+    this.rollover = const Value.absent(),
+    this.archived = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SpendingPlansCompanion.insert({
+    required String id,
+    required String name,
+    required String currency,
+    required String scope,
+    required int limitMinor,
+    required String startsOn,
+    this.endsOn = const Value.absent(),
+    required bool rollover,
+    required bool archived,
+    this.accountId = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       currency = Value(currency),
+       scope = Value(scope),
+       limitMinor = Value(limitMinor),
+       startsOn = Value(startsOn),
+       rollover = Value(rollover),
+       archived = Value(archived);
+  static Insertable<SpendingPlanRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? currency,
+    Expression<String>? scope,
+    Expression<int>? limitMinor,
+    Expression<String>? startsOn,
+    Expression<String>? endsOn,
+    Expression<bool>? rollover,
+    Expression<bool>? archived,
+    Expression<String>? accountId,
+    Expression<String>? categoryId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (currency != null) 'currency': currency,
+      if (scope != null) 'scope': scope,
+      if (limitMinor != null) 'limit_minor': limitMinor,
+      if (startsOn != null) 'starts_on': startsOn,
+      if (endsOn != null) 'ends_on': endsOn,
+      if (rollover != null) 'rollover': rollover,
+      if (archived != null) 'archived': archived,
+      if (accountId != null) 'account_id': accountId,
+      if (categoryId != null) 'category_id': categoryId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SpendingPlansCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? currency,
+    Value<String>? scope,
+    Value<int>? limitMinor,
+    Value<String>? startsOn,
+    Value<String?>? endsOn,
+    Value<bool>? rollover,
+    Value<bool>? archived,
+    Value<String?>? accountId,
+    Value<String?>? categoryId,
+    Value<int>? rowid,
+  }) {
+    return SpendingPlansCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      currency: currency ?? this.currency,
+      scope: scope ?? this.scope,
+      limitMinor: limitMinor ?? this.limitMinor,
+      startsOn: startsOn ?? this.startsOn,
+      endsOn: endsOn ?? this.endsOn,
+      rollover: rollover ?? this.rollover,
+      archived: archived ?? this.archived,
+      accountId: accountId ?? this.accountId,
+      categoryId: categoryId ?? this.categoryId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (scope.present) {
+      map['scope'] = Variable<String>(scope.value);
+    }
+    if (limitMinor.present) {
+      map['limit_minor'] = Variable<int>(limitMinor.value);
+    }
+    if (startsOn.present) {
+      map['starts_on'] = Variable<String>(startsOn.value);
+    }
+    if (endsOn.present) {
+      map['ends_on'] = Variable<String>(endsOn.value);
+    }
+    if (rollover.present) {
+      map['rollover'] = Variable<bool>(rollover.value);
+    }
+    if (archived.present) {
+      map['archived'] = Variable<bool>(archived.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SpendingPlansCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('currency: $currency, ')
+          ..write('scope: $scope, ')
+          ..write('limitMinor: $limitMinor, ')
+          ..write('startsOn: $startsOn, ')
+          ..write('endsOn: $endsOn, ')
+          ..write('rollover: $rollover, ')
+          ..write('archived: $archived, ')
+          ..write('accountId: $accountId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SpendingPlanLimitsTable extends SpendingPlanLimits
+    with TableInfo<$SpendingPlanLimitsTable, SpendingPlanLimitRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SpendingPlanLimitsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES spending_plans (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _periodStartMeta = const VerificationMeta(
+    'periodStart',
+  );
+  @override
+  late final GeneratedColumn<String> periodStart = GeneratedColumn<String>(
+    'period_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _limitMinorMeta = const VerificationMeta(
+    'limitMinor',
+  );
+  @override
+  late final GeneratedColumn<int> limitMinor = GeneratedColumn<int>(
+    'limit_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ongoingMeta = const VerificationMeta(
+    'ongoing',
+  );
+  @override
+  late final GeneratedColumn<bool> ongoing = GeneratedColumn<bool>(
+    'ongoing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("ongoing" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _savedAtMicrosMeta = const VerificationMeta(
+    'savedAtMicros',
+  );
+  @override
+  late final GeneratedColumn<int> savedAtMicros = GeneratedColumn<int>(
+    'saved_at_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    planId,
+    periodStart,
+    limitMinor,
+    ongoing,
+    savedAtMicros,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'spending_plan_limits';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SpendingPlanLimitRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planIdMeta);
+    }
+    if (data.containsKey('period_start')) {
+      context.handle(
+        _periodStartMeta,
+        periodStart.isAcceptableOrUnknown(
+          data['period_start']!,
+          _periodStartMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_periodStartMeta);
+    }
+    if (data.containsKey('limit_minor')) {
+      context.handle(
+        _limitMinorMeta,
+        limitMinor.isAcceptableOrUnknown(data['limit_minor']!, _limitMinorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_limitMinorMeta);
+    }
+    if (data.containsKey('ongoing')) {
+      context.handle(
+        _ongoingMeta,
+        ongoing.isAcceptableOrUnknown(data['ongoing']!, _ongoingMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ongoingMeta);
+    }
+    if (data.containsKey('saved_at_micros')) {
+      context.handle(
+        _savedAtMicrosMeta,
+        savedAtMicros.isAcceptableOrUnknown(
+          data['saved_at_micros']!,
+          _savedAtMicrosMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_savedAtMicrosMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SpendingPlanLimitRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SpendingPlanLimitRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      )!,
+      periodStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_start'],
+      )!,
+      limitMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}limit_minor'],
+      )!,
+      ongoing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}ongoing'],
+      )!,
+      savedAtMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}saved_at_micros'],
+      )!,
+    );
+  }
+
+  @override
+  $SpendingPlanLimitsTable createAlias(String alias) {
+    return $SpendingPlanLimitsTable(attachedDatabase, alias);
+  }
+}
+
+class SpendingPlanLimitRow extends DataClass
+    implements Insertable<SpendingPlanLimitRow> {
+  final String id;
+  final String planId;
+  final String periodStart;
+  final int limitMinor;
+  final bool ongoing;
+  final int savedAtMicros;
+  const SpendingPlanLimitRow({
+    required this.id,
+    required this.planId,
+    required this.periodStart,
+    required this.limitMinor,
+    required this.ongoing,
+    required this.savedAtMicros,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['plan_id'] = Variable<String>(planId);
+    map['period_start'] = Variable<String>(periodStart);
+    map['limit_minor'] = Variable<int>(limitMinor);
+    map['ongoing'] = Variable<bool>(ongoing);
+    map['saved_at_micros'] = Variable<int>(savedAtMicros);
+    return map;
+  }
+
+  SpendingPlanLimitsCompanion toCompanion(bool nullToAbsent) {
+    return SpendingPlanLimitsCompanion(
+      id: Value(id),
+      planId: Value(planId),
+      periodStart: Value(periodStart),
+      limitMinor: Value(limitMinor),
+      ongoing: Value(ongoing),
+      savedAtMicros: Value(savedAtMicros),
+    );
+  }
+
+  factory SpendingPlanLimitRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SpendingPlanLimitRow(
+      id: serializer.fromJson<String>(json['id']),
+      planId: serializer.fromJson<String>(json['planId']),
+      periodStart: serializer.fromJson<String>(json['periodStart']),
+      limitMinor: serializer.fromJson<int>(json['limitMinor']),
+      ongoing: serializer.fromJson<bool>(json['ongoing']),
+      savedAtMicros: serializer.fromJson<int>(json['savedAtMicros']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'planId': serializer.toJson<String>(planId),
+      'periodStart': serializer.toJson<String>(periodStart),
+      'limitMinor': serializer.toJson<int>(limitMinor),
+      'ongoing': serializer.toJson<bool>(ongoing),
+      'savedAtMicros': serializer.toJson<int>(savedAtMicros),
+    };
+  }
+
+  SpendingPlanLimitRow copyWith({
+    String? id,
+    String? planId,
+    String? periodStart,
+    int? limitMinor,
+    bool? ongoing,
+    int? savedAtMicros,
+  }) => SpendingPlanLimitRow(
+    id: id ?? this.id,
+    planId: planId ?? this.planId,
+    periodStart: periodStart ?? this.periodStart,
+    limitMinor: limitMinor ?? this.limitMinor,
+    ongoing: ongoing ?? this.ongoing,
+    savedAtMicros: savedAtMicros ?? this.savedAtMicros,
+  );
+  SpendingPlanLimitRow copyWithCompanion(SpendingPlanLimitsCompanion data) {
+    return SpendingPlanLimitRow(
+      id: data.id.present ? data.id.value : this.id,
+      planId: data.planId.present ? data.planId.value : this.planId,
+      periodStart: data.periodStart.present
+          ? data.periodStart.value
+          : this.periodStart,
+      limitMinor: data.limitMinor.present
+          ? data.limitMinor.value
+          : this.limitMinor,
+      ongoing: data.ongoing.present ? data.ongoing.value : this.ongoing,
+      savedAtMicros: data.savedAtMicros.present
+          ? data.savedAtMicros.value
+          : this.savedAtMicros,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SpendingPlanLimitRow(')
+          ..write('id: $id, ')
+          ..write('planId: $planId, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('limitMinor: $limitMinor, ')
+          ..write('ongoing: $ongoing, ')
+          ..write('savedAtMicros: $savedAtMicros')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, planId, periodStart, limitMinor, ongoing, savedAtMicros);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SpendingPlanLimitRow &&
+          other.id == this.id &&
+          other.planId == this.planId &&
+          other.periodStart == this.periodStart &&
+          other.limitMinor == this.limitMinor &&
+          other.ongoing == this.ongoing &&
+          other.savedAtMicros == this.savedAtMicros);
+}
+
+class SpendingPlanLimitsCompanion
+    extends UpdateCompanion<SpendingPlanLimitRow> {
+  final Value<String> id;
+  final Value<String> planId;
+  final Value<String> periodStart;
+  final Value<int> limitMinor;
+  final Value<bool> ongoing;
+  final Value<int> savedAtMicros;
+  final Value<int> rowid;
+  const SpendingPlanLimitsCompanion({
+    this.id = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.periodStart = const Value.absent(),
+    this.limitMinor = const Value.absent(),
+    this.ongoing = const Value.absent(),
+    this.savedAtMicros = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SpendingPlanLimitsCompanion.insert({
+    required String id,
+    required String planId,
+    required String periodStart,
+    required int limitMinor,
+    required bool ongoing,
+    required int savedAtMicros,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       planId = Value(planId),
+       periodStart = Value(periodStart),
+       limitMinor = Value(limitMinor),
+       ongoing = Value(ongoing),
+       savedAtMicros = Value(savedAtMicros);
+  static Insertable<SpendingPlanLimitRow> custom({
+    Expression<String>? id,
+    Expression<String>? planId,
+    Expression<String>? periodStart,
+    Expression<int>? limitMinor,
+    Expression<bool>? ongoing,
+    Expression<int>? savedAtMicros,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (planId != null) 'plan_id': planId,
+      if (periodStart != null) 'period_start': periodStart,
+      if (limitMinor != null) 'limit_minor': limitMinor,
+      if (ongoing != null) 'ongoing': ongoing,
+      if (savedAtMicros != null) 'saved_at_micros': savedAtMicros,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SpendingPlanLimitsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? planId,
+    Value<String>? periodStart,
+    Value<int>? limitMinor,
+    Value<bool>? ongoing,
+    Value<int>? savedAtMicros,
+    Value<int>? rowid,
+  }) {
+    return SpendingPlanLimitsCompanion(
+      id: id ?? this.id,
+      planId: planId ?? this.planId,
+      periodStart: periodStart ?? this.periodStart,
+      limitMinor: limitMinor ?? this.limitMinor,
+      ongoing: ongoing ?? this.ongoing,
+      savedAtMicros: savedAtMicros ?? this.savedAtMicros,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
+    if (periodStart.present) {
+      map['period_start'] = Variable<String>(periodStart.value);
+    }
+    if (limitMinor.present) {
+      map['limit_minor'] = Variable<int>(limitMinor.value);
+    }
+    if (ongoing.present) {
+      map['ongoing'] = Variable<bool>(ongoing.value);
+    }
+    if (savedAtMicros.present) {
+      map['saved_at_micros'] = Variable<int>(savedAtMicros.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SpendingPlanLimitsCompanion(')
+          ..write('id: $id, ')
+          ..write('planId: $planId, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('limitMinor: $limitMinor, ')
+          ..write('ongoing: $ongoing, ')
+          ..write('savedAtMicros: $savedAtMicros, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5365,6 +6462,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CsvImportRowsTable csvImportRows = $CsvImportRowsTable(this);
   late final $ImportCategoryRulesTable importCategoryRules =
       $ImportCategoryRulesTable(this);
+  late final $SpendingPlansTable spendingPlans = $SpendingPlansTable(this);
+  late final $SpendingPlanLimitsTable spendingPlanLimits =
+      $SpendingPlanLimitsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5380,6 +6480,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     csvImportBatches,
     csvImportRows,
     importCategoryRules,
+    spendingPlans,
+    spendingPlanLimits,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5396,6 +6498,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('csv_import_rows', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'spending_plans',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('spending_plan_limits', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -5507,6 +6616,24 @@ final class $$LedgerAccountsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _balanceCheckpointsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SpendingPlansTable, List<SpendingPlanRow>>
+  _spendingPlansRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.spendingPlans,
+    aliasName: 'ledger_accounts__id__spending_plans__account_id',
+  );
+
+  $$SpendingPlansTableProcessedTableManager get spendingPlansRefs {
+    final manager = $$SpendingPlansTableTableManager(
+      $_db,
+      $_db.spendingPlans,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_spendingPlansRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -5658,6 +6785,31 @@ class $$LedgerAccountsTableFilterComposer
           }) => $$BalanceCheckpointsTableFilterComposer(
             $db: $db,
             $table: $db.balanceCheckpoints,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> spendingPlansRefs(
+    Expression<bool> Function($$SpendingPlansTableFilterComposer f) f,
+  ) {
+    final $$SpendingPlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.spendingPlans,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpendingPlansTableFilterComposer(
+            $db: $db,
+            $table: $db.spendingPlans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5865,6 +7017,31 @@ class $$LedgerAccountsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> spendingPlansRefs<T extends Object>(
+    Expression<T> Function($$SpendingPlansTableAnnotationComposer a) f,
+  ) {
+    final $$SpendingPlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.spendingPlans,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpendingPlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.spendingPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LedgerAccountsTableTableManager
@@ -5885,6 +7062,7 @@ class $$LedgerAccountsTableTableManager
             bool targetLedgerEntries,
             bool ledgerPostingsRefs,
             bool balanceCheckpointsRefs,
+            bool spendingPlansRefs,
           })
         > {
   $$LedgerAccountsTableTableManager(
@@ -5962,6 +7140,7 @@ class $$LedgerAccountsTableTableManager
                 targetLedgerEntries = false,
                 ledgerPostingsRefs = false,
                 balanceCheckpointsRefs = false,
+                spendingPlansRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -5970,6 +7149,7 @@ class $$LedgerAccountsTableTableManager
                     if (targetLedgerEntries) db.ledgerEntries,
                     if (ledgerPostingsRefs) db.ledgerPostings,
                     if (balanceCheckpointsRefs) db.balanceCheckpoints,
+                    if (spendingPlansRefs) db.spendingPlans,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -6058,6 +7238,27 @@ class $$LedgerAccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (spendingPlansRefs)
+                        await $_getPrefetchedData<
+                          AccountRow,
+                          $LedgerAccountsTable,
+                          SpendingPlanRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerAccountsTableReferences
+                              ._spendingPlansRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerAccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).spendingPlansRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -6083,6 +7284,7 @@ typedef $$LedgerAccountsTableProcessedTableManager =
         bool targetLedgerEntries,
         bool ledgerPostingsRefs,
         bool balanceCheckpointsRefs,
+        bool spendingPlansRefs,
       })
     >;
 typedef $$LedgerCategoriesTableCreateCompanionBuilder =
@@ -6173,6 +7375,24 @@ final class $$LedgerCategoriesTableReferences
     final cache = $_typedResult.readTableOrNull(
       _importCategoryRulesRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SpendingPlansTable, List<SpendingPlanRow>>
+  _spendingPlansRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.spendingPlans,
+    aliasName: 'ledger_categories__id__spending_plans__category_id',
+  );
+
+  $$SpendingPlansTableProcessedTableManager get spendingPlansRefs {
+    final manager = $$SpendingPlansTableTableManager(
+      $_db,
+      $_db.spendingPlans,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_spendingPlansRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -6287,6 +7507,31 @@ class $$LedgerCategoriesTableFilterComposer
           }) => $$ImportCategoryRulesTableFilterComposer(
             $db: $db,
             $table: $db.importCategoryRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> spendingPlansRefs(
+    Expression<bool> Function($$SpendingPlansTableFilterComposer f) f,
+  ) {
+    final $$SpendingPlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.spendingPlans,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpendingPlansTableFilterComposer(
+            $db: $db,
+            $table: $db.spendingPlans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -6472,6 +7717,31 @@ class $$LedgerCategoriesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> spendingPlansRefs<T extends Object>(
+    Expression<T> Function($$SpendingPlansTableAnnotationComposer a) f,
+  ) {
+    final $$SpendingPlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.spendingPlans,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpendingPlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.spendingPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LedgerCategoriesTableTableManager
@@ -6491,6 +7761,7 @@ class $$LedgerCategoriesTableTableManager
             bool parentId,
             bool ledgerEntriesRefs,
             bool importCategoryRulesRefs,
+            bool spendingPlansRefs,
           })
         > {
   $$LedgerCategoriesTableTableManager(
@@ -6563,12 +7834,14 @@ class $$LedgerCategoriesTableTableManager
                 parentId = false,
                 ledgerEntriesRefs = false,
                 importCategoryRulesRefs = false,
+                spendingPlansRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (ledgerEntriesRefs) db.ledgerEntries,
                     if (importCategoryRulesRefs) db.importCategoryRules,
+                    if (spendingPlansRefs) db.spendingPlans,
                   ],
                   addJoins:
                       <
@@ -6644,6 +7917,27 @@ class $$LedgerCategoriesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (spendingPlansRefs)
+                        await $_getPrefetchedData<
+                          CategoryRow,
+                          $LedgerCategoriesTable,
+                          SpendingPlanRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerCategoriesTableReferences
+                              ._spendingPlansRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerCategoriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).spendingPlansRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -6668,6 +7962,7 @@ typedef $$LedgerCategoriesTableProcessedTableManager =
         bool parentId,
         bool ledgerEntriesRefs,
         bool importCategoryRulesRefs,
+        bool spendingPlansRefs,
       })
     >;
 typedef $$LedgerEntriesTableCreateCompanionBuilder =
@@ -10348,6 +11643,996 @@ typedef $$ImportCategoryRulesTableProcessedTableManager =
       ImportCategoryRuleRow,
       PrefetchHooks Function({bool categoryId})
     >;
+typedef $$SpendingPlansTableCreateCompanionBuilder =
+    SpendingPlansCompanion Function({
+      required String id,
+      required String name,
+      required String currency,
+      required String scope,
+      required int limitMinor,
+      required String startsOn,
+      Value<String?> endsOn,
+      required bool rollover,
+      required bool archived,
+      Value<String?> accountId,
+      Value<String?> categoryId,
+      Value<int> rowid,
+    });
+typedef $$SpendingPlansTableUpdateCompanionBuilder =
+    SpendingPlansCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> currency,
+      Value<String> scope,
+      Value<int> limitMinor,
+      Value<String> startsOn,
+      Value<String?> endsOn,
+      Value<bool> rollover,
+      Value<bool> archived,
+      Value<String?> accountId,
+      Value<String?> categoryId,
+      Value<int> rowid,
+    });
+
+final class $$SpendingPlansTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $SpendingPlansTable, SpendingPlanRow> {
+  $$SpendingPlansTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LedgerAccountsTable _accountIdTable(_$AppDatabase db) => db
+      .ledgerAccounts
+      .createAlias('spending_plans__account_id__ledger_accounts__id');
+
+  $$LedgerAccountsTableProcessedTableManager? get accountId {
+    final $_column = $_itemColumn<String>('account_id');
+    if ($_column == null) return null;
+    final manager = $$LedgerAccountsTableTableManager(
+      $_db,
+      $_db.ledgerAccounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LedgerCategoriesTable _categoryIdTable(_$AppDatabase db) => db
+      .ledgerCategories
+      .createAlias('spending_plans__category_id__ledger_categories__id');
+
+  $$LedgerCategoriesTableProcessedTableManager? get categoryId {
+    final $_column = $_itemColumn<String>('category_id');
+    if ($_column == null) return null;
+    final manager = $$LedgerCategoriesTableTableManager(
+      $_db,
+      $_db.ledgerCategories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $SpendingPlanLimitsTable,
+    List<SpendingPlanLimitRow>
+  >
+  _spendingPlanLimitsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.spendingPlanLimits,
+        aliasName: 'spending_plans__id__spending_plan_limits__plan_id',
+      );
+
+  $$SpendingPlanLimitsTableProcessedTableManager get spendingPlanLimitsRefs {
+    final manager = $$SpendingPlanLimitsTableTableManager(
+      $_db,
+      $_db.spendingPlanLimits,
+    ).filter((f) => f.planId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _spendingPlanLimitsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$SpendingPlansTableFilterComposer
+    extends Composer<_$AppDatabase, $SpendingPlansTable> {
+  $$SpendingPlansTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scope => $composableBuilder(
+    column: $table.scope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get limitMinor => $composableBuilder(
+    column: $table.limitMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startsOn => $composableBuilder(
+    column: $table.startsOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endsOn => $composableBuilder(
+    column: $table.endsOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get rollover => $composableBuilder(
+    column: $table.rollover,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get archived => $composableBuilder(
+    column: $table.archived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LedgerAccountsTableFilterComposer get accountId {
+    final $$LedgerAccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerCategoriesTableFilterComposer get categoryId {
+    final $$LedgerCategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.ledgerCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerCategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> spendingPlanLimitsRefs(
+    Expression<bool> Function($$SpendingPlanLimitsTableFilterComposer f) f,
+  ) {
+    final $$SpendingPlanLimitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.spendingPlanLimits,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpendingPlanLimitsTableFilterComposer(
+            $db: $db,
+            $table: $db.spendingPlanLimits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SpendingPlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $SpendingPlansTable> {
+  $$SpendingPlansTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scope => $composableBuilder(
+    column: $table.scope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get limitMinor => $composableBuilder(
+    column: $table.limitMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get startsOn => $composableBuilder(
+    column: $table.startsOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endsOn => $composableBuilder(
+    column: $table.endsOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get rollover => $composableBuilder(
+    column: $table.rollover,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get archived => $composableBuilder(
+    column: $table.archived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LedgerAccountsTableOrderingComposer get accountId {
+    final $$LedgerAccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerCategoriesTableOrderingComposer get categoryId {
+    final $$LedgerCategoriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.ledgerCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerCategoriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SpendingPlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SpendingPlansTable> {
+  $$SpendingPlansTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<String> get scope =>
+      $composableBuilder(column: $table.scope, builder: (column) => column);
+
+  GeneratedColumn<int> get limitMinor => $composableBuilder(
+    column: $table.limitMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get startsOn =>
+      $composableBuilder(column: $table.startsOn, builder: (column) => column);
+
+  GeneratedColumn<String> get endsOn =>
+      $composableBuilder(column: $table.endsOn, builder: (column) => column);
+
+  GeneratedColumn<bool> get rollover =>
+      $composableBuilder(column: $table.rollover, builder: (column) => column);
+
+  GeneratedColumn<bool> get archived =>
+      $composableBuilder(column: $table.archived, builder: (column) => column);
+
+  $$LedgerAccountsTableAnnotationComposer get accountId {
+    final $$LedgerAccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerCategoriesTableAnnotationComposer get categoryId {
+    final $$LedgerCategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.ledgerCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerCategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> spendingPlanLimitsRefs<T extends Object>(
+    Expression<T> Function($$SpendingPlanLimitsTableAnnotationComposer a) f,
+  ) {
+    final $$SpendingPlanLimitsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.spendingPlanLimits,
+          getReferencedColumn: (t) => t.planId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SpendingPlanLimitsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.spendingPlanLimits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$SpendingPlansTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SpendingPlansTable,
+          SpendingPlanRow,
+          $$SpendingPlansTableFilterComposer,
+          $$SpendingPlansTableOrderingComposer,
+          $$SpendingPlansTableAnnotationComposer,
+          $$SpendingPlansTableCreateCompanionBuilder,
+          $$SpendingPlansTableUpdateCompanionBuilder,
+          (SpendingPlanRow, $$SpendingPlansTableReferences),
+          SpendingPlanRow,
+          PrefetchHooks Function({
+            bool accountId,
+            bool categoryId,
+            bool spendingPlanLimitsRefs,
+          })
+        > {
+  $$SpendingPlansTableTableManager(_$AppDatabase db, $SpendingPlansTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SpendingPlansTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SpendingPlansTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SpendingPlansTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<String> scope = const Value.absent(),
+                Value<int> limitMinor = const Value.absent(),
+                Value<String> startsOn = const Value.absent(),
+                Value<String?> endsOn = const Value.absent(),
+                Value<bool> rollover = const Value.absent(),
+                Value<bool> archived = const Value.absent(),
+                Value<String?> accountId = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SpendingPlansCompanion(
+                id: id,
+                name: name,
+                currency: currency,
+                scope: scope,
+                limitMinor: limitMinor,
+                startsOn: startsOn,
+                endsOn: endsOn,
+                rollover: rollover,
+                archived: archived,
+                accountId: accountId,
+                categoryId: categoryId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String currency,
+                required String scope,
+                required int limitMinor,
+                required String startsOn,
+                Value<String?> endsOn = const Value.absent(),
+                required bool rollover,
+                required bool archived,
+                Value<String?> accountId = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SpendingPlansCompanion.insert(
+                id: id,
+                name: name,
+                currency: currency,
+                scope: scope,
+                limitMinor: limitMinor,
+                startsOn: startsOn,
+                endsOn: endsOn,
+                rollover: rollover,
+                archived: archived,
+                accountId: accountId,
+                categoryId: categoryId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SpendingPlansTable, SpendingPlanRow>(table),
+                  $$SpendingPlansTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                accountId = false,
+                categoryId = false,
+                spendingPlanLimitsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (spendingPlanLimitsRefs) db.spendingPlanLimits,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (accountId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.accountId,
+                            referencedTable: $$SpendingPlansTableReferences
+                                ._accountIdTable(db),
+                            referencedColumn: $$SpendingPlansTableReferences
+                                ._accountIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (categoryId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.categoryId,
+                            referencedTable: $$SpendingPlansTableReferences
+                                ._categoryIdTable(db),
+                            referencedColumn: $$SpendingPlansTableReferences
+                                ._categoryIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (spendingPlanLimitsRefs)
+                        await $_getPrefetchedData<
+                          SpendingPlanRow,
+                          $SpendingPlansTable,
+                          SpendingPlanLimitRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SpendingPlansTableReferences
+                              ._spendingPlanLimitsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SpendingPlansTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).spendingPlanLimitsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.planId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$SpendingPlansTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SpendingPlansTable,
+      SpendingPlanRow,
+      $$SpendingPlansTableFilterComposer,
+      $$SpendingPlansTableOrderingComposer,
+      $$SpendingPlansTableAnnotationComposer,
+      $$SpendingPlansTableCreateCompanionBuilder,
+      $$SpendingPlansTableUpdateCompanionBuilder,
+      (SpendingPlanRow, $$SpendingPlansTableReferences),
+      SpendingPlanRow,
+      PrefetchHooks Function({
+        bool accountId,
+        bool categoryId,
+        bool spendingPlanLimitsRefs,
+      })
+    >;
+typedef $$SpendingPlanLimitsTableCreateCompanionBuilder =
+    SpendingPlanLimitsCompanion Function({
+      required String id,
+      required String planId,
+      required String periodStart,
+      required int limitMinor,
+      required bool ongoing,
+      required int savedAtMicros,
+      Value<int> rowid,
+    });
+typedef $$SpendingPlanLimitsTableUpdateCompanionBuilder =
+    SpendingPlanLimitsCompanion Function({
+      Value<String> id,
+      Value<String> planId,
+      Value<String> periodStart,
+      Value<int> limitMinor,
+      Value<bool> ongoing,
+      Value<int> savedAtMicros,
+      Value<int> rowid,
+    });
+
+final class $$SpendingPlanLimitsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SpendingPlanLimitsTable,
+          SpendingPlanLimitRow
+        > {
+  $$SpendingPlanLimitsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $SpendingPlansTable _planIdTable(_$AppDatabase db) => db.spendingPlans
+      .createAlias('spending_plan_limits__plan_id__spending_plans__id');
+
+  $$SpendingPlansTableProcessedTableManager get planId {
+    final $_column = $_itemColumn<String>('plan_id')!;
+
+    final manager = $$SpendingPlansTableTableManager(
+      $_db,
+      $_db.spendingPlans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_planIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SpendingPlanLimitsTableFilterComposer
+    extends Composer<_$AppDatabase, $SpendingPlanLimitsTable> {
+  $$SpendingPlanLimitsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get limitMinor => $composableBuilder(
+    column: $table.limitMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get ongoing => $composableBuilder(
+    column: $table.ongoing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get savedAtMicros => $composableBuilder(
+    column: $table.savedAtMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$SpendingPlansTableFilterComposer get planId {
+    final $$SpendingPlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.spendingPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpendingPlansTableFilterComposer(
+            $db: $db,
+            $table: $db.spendingPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SpendingPlanLimitsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SpendingPlanLimitsTable> {
+  $$SpendingPlanLimitsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get limitMinor => $composableBuilder(
+    column: $table.limitMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get ongoing => $composableBuilder(
+    column: $table.ongoing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get savedAtMicros => $composableBuilder(
+    column: $table.savedAtMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$SpendingPlansTableOrderingComposer get planId {
+    final $$SpendingPlansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.spendingPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpendingPlansTableOrderingComposer(
+            $db: $db,
+            $table: $db.spendingPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SpendingPlanLimitsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SpendingPlanLimitsTable> {
+  $$SpendingPlanLimitsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get limitMinor => $composableBuilder(
+    column: $table.limitMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get ongoing =>
+      $composableBuilder(column: $table.ongoing, builder: (column) => column);
+
+  GeneratedColumn<int> get savedAtMicros => $composableBuilder(
+    column: $table.savedAtMicros,
+    builder: (column) => column,
+  );
+
+  $$SpendingPlansTableAnnotationComposer get planId {
+    final $$SpendingPlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.spendingPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpendingPlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.spendingPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SpendingPlanLimitsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SpendingPlanLimitsTable,
+          SpendingPlanLimitRow,
+          $$SpendingPlanLimitsTableFilterComposer,
+          $$SpendingPlanLimitsTableOrderingComposer,
+          $$SpendingPlanLimitsTableAnnotationComposer,
+          $$SpendingPlanLimitsTableCreateCompanionBuilder,
+          $$SpendingPlanLimitsTableUpdateCompanionBuilder,
+          (SpendingPlanLimitRow, $$SpendingPlanLimitsTableReferences),
+          SpendingPlanLimitRow,
+          PrefetchHooks Function({bool planId})
+        > {
+  $$SpendingPlanLimitsTableTableManager(
+    _$AppDatabase db,
+    $SpendingPlanLimitsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SpendingPlanLimitsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SpendingPlanLimitsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SpendingPlanLimitsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> planId = const Value.absent(),
+                Value<String> periodStart = const Value.absent(),
+                Value<int> limitMinor = const Value.absent(),
+                Value<bool> ongoing = const Value.absent(),
+                Value<int> savedAtMicros = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SpendingPlanLimitsCompanion(
+                id: id,
+                planId: planId,
+                periodStart: periodStart,
+                limitMinor: limitMinor,
+                ongoing: ongoing,
+                savedAtMicros: savedAtMicros,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String planId,
+                required String periodStart,
+                required int limitMinor,
+                required bool ongoing,
+                required int savedAtMicros,
+                Value<int> rowid = const Value.absent(),
+              }) => SpendingPlanLimitsCompanion.insert(
+                id: id,
+                planId: planId,
+                periodStart: periodStart,
+                limitMinor: limitMinor,
+                ongoing: ongoing,
+                savedAtMicros: savedAtMicros,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SpendingPlanLimitsTable, SpendingPlanLimitRow>(
+                    table,
+                  ),
+                  $$SpendingPlanLimitsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({planId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (planId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.planId,
+                        referencedTable: $$SpendingPlanLimitsTableReferences
+                            ._planIdTable(db),
+                        referencedColumn: $$SpendingPlanLimitsTableReferences
+                            ._planIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SpendingPlanLimitsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SpendingPlanLimitsTable,
+      SpendingPlanLimitRow,
+      $$SpendingPlanLimitsTableFilterComposer,
+      $$SpendingPlanLimitsTableOrderingComposer,
+      $$SpendingPlanLimitsTableAnnotationComposer,
+      $$SpendingPlanLimitsTableCreateCompanionBuilder,
+      $$SpendingPlanLimitsTableUpdateCompanionBuilder,
+      (SpendingPlanLimitRow, $$SpendingPlanLimitsTableReferences),
+      SpendingPlanLimitRow,
+      PrefetchHooks Function({bool planId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -10372,4 +12657,8 @@ class $AppDatabaseManager {
       $$CsvImportRowsTableTableManager(_db, _db.csvImportRows);
   $$ImportCategoryRulesTableTableManager get importCategoryRules =>
       $$ImportCategoryRulesTableTableManager(_db, _db.importCategoryRules);
+  $$SpendingPlansTableTableManager get spendingPlans =>
+      $$SpendingPlansTableTableManager(_db, _db.spendingPlans);
+  $$SpendingPlanLimitsTableTableManager get spendingPlanLimits =>
+      $$SpendingPlanLimitsTableTableManager(_db, _db.spendingPlanLimits);
 }

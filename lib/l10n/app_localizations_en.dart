@@ -927,7 +927,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetTransactionsAccountsSubtitle =>
-      'Clear transactions, restore zero-balance default accounts, and preserve categories and backups';
+      'Clear transactions and account-linked plans, then restore zero-balance default accounts';
 
   @override
   String get factoryReset => 'Factory reset';
@@ -1021,7 +1021,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetTransactionsAccountsMessage =>
-      'All transactions will be permanently cleared, custom accounts deleted, and default account balances set to zero. Categories and all backups will be preserved.';
+      'All transactions and account-linked budgets and allowances will be cleared, custom accounts deleted, and default balances set to zero. Categories, other budgets, and backups will be preserved.';
 
   @override
   String get confirmReset => 'Confirm reset';
@@ -1901,4 +1901,113 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get csvScreenshotPrompt =>
       'Transcribe only clearly visible completed income and expense entries from my screenshots. Return CSV only, without a Markdown fence. Use this header verbatim:\ntype,amount,occurred_at,account,category,note,currency_code,merchant,description,payment_channel,source,external_id\nUse expense or income, a positive amount, and an ISO 8601 date or timestamp. Leave unknown fields blank. Do not infer dates, totals, or transaction IDs. Only include an external ID if the screenshot shows the actual transaction ID and its source. Keep refunds, transfers, repayments, and pending items separate from ordinary income and expenses. Omit names of private individuals, account numbers, and card numbers. Quote fields containing commas, double quotes, or line breaks and escape double quotes by doubling them.';
+
+  @override
+  String get spendingPlanBackupConflict =>
+      'The backup has invalid or conflicting budgets or allowances.';
+
+  @override
+  String get spendingPlans => 'Budgets & allowances';
+
+  @override
+  String get addBudget => 'Add budget';
+
+  @override
+  String get addAllowance => 'Add allowance';
+
+  @override
+  String get spendingPlansEmpty =>
+      'Create a budget or track an allowance for an entrusted account.';
+
+  @override
+  String get spendingPlansLoadFailed =>
+      'Could not load budgets and allowances.';
+
+  @override
+  String get spendingPlanScope => 'Spending scope';
+
+  @override
+  String get spendingPlanAllowance => 'External allowance';
+
+  @override
+  String get spendingPlanNoAccounts => 'No eligible account is available.';
+
+  @override
+  String get spendingPlanNoCategories => 'No expense category is available.';
+
+  @override
+  String get spendingPlanMonthly => 'Monthly';
+
+  @override
+  String get spendingPlanFixedPeriod => 'Fixed date range';
+
+  @override
+  String get spendingPlanStart => 'First day';
+
+  @override
+  String get spendingPlanEnd => 'Last day';
+
+  @override
+  String get spendingPlanMonthlyHint =>
+      'Each month resets on the first cycle’s day, or the last day of a shorter month.';
+
+  @override
+  String get spendingPlanRollover => 'Carry over unused amount';
+
+  @override
+  String get spendingPlanLimit => 'Period limit';
+
+  @override
+  String get spendingPlanCarried => 'Carried over';
+
+  @override
+  String get spendingPlanUsed => 'Used';
+
+  @override
+  String get spendingPlanRemaining => 'Remaining';
+
+  @override
+  String get spendingPlanProjected => 'Projected spending at current pace';
+
+  @override
+  String get spendingPlanOverLimit => 'Over limit';
+
+  @override
+  String get spendingPlanChangeLimit => 'Change period limit';
+
+  @override
+  String get spendingPlanOngoing => 'Apply to this and later months';
+
+  @override
+  String get spendingPlanLimitHistory => 'Limit changes';
+
+  @override
+  String get spendingPlanSinglePeriod => 'This period only';
+
+  @override
+  String get spendingPlanFromPeriod => 'This period onward';
+
+  @override
+  String get spendingPlanPrevious => 'Previous period';
+
+  @override
+  String get spendingPlanNext => 'Next period';
+
+  @override
+  String get spendingPlanNoActivity => 'No posted spending in this period.';
+
+  @override
+  String get spendingPlanArchived => 'Archived';
+
+  @override
+  String get spendingPlanReactivate => 'Reactivate';
+
+  @override
+  String get spendingPlanInvalid =>
+      'Check the dates, amount, and selected category or account. An entrusted account can have one active allowance.';
+
+  @override
+  String backupSpendingPlanCount(int count) {
+    return 'Budgets & allowances $count';
+  }
 }
