@@ -4405,6 +4405,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Includes personal cash, bank, wallet and savings balances in the selected currency. Debt payments and collections use that currency’s cash. Overdue outflows are placed on today; overdue inflows wait for a confirmed date. Pending ledger entries are excluded. Each daily figure is an end-of-day balance. Review recurring plans to link any payments you already recorded.'**
   String get forecastAssumptionsText;
+
+  /// No description provided for @ledgerFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get ledgerFilters;
+
+  /// No description provided for @ledgerFiltersActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters applied'**
+  String get ledgerFiltersActive;
+
+  /// No description provided for @ledgerFilterFunding.
+  ///
+  /// In en, this message translates to:
+  /// **'Funding source'**
+  String get ledgerFilterFunding;
+
+  /// No description provided for @ledgerFilterFundingPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personally borne'**
+  String get ledgerFilterFundingPersonal;
+
+  /// No description provided for @ledgerFilterThirdParty.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by others, due back'**
+  String get ledgerFilterThirdParty;
+
+  /// No description provided for @ledgerFilterUnknownFunding.
+  ///
+  /// In en, this message translates to:
+  /// **'Funding to review'**
+  String get ledgerFilterUnknownFunding;
+
+  /// No description provided for @ledgerFilterAllCurrencies.
+  ///
+  /// In en, this message translates to:
+  /// **'All currencies'**
+  String get ledgerFilterAllCurrencies;
+
+  /// No description provided for @ledgerFilterAllAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'All accounts'**
+  String get ledgerFilterAllAccounts;
+
+  /// No description provided for @ledgerFilterAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get ledgerFilterAllCategories;
+
+  /// No description provided for @ledgerFilterAllFunding.
+  ///
+  /// In en, this message translates to:
+  /// **'All funding sources'**
+  String get ledgerFilterAllFunding;
+
+  /// No description provided for @ledgerFilterUseReportPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Use report period'**
+  String get ledgerFilterUseReportPeriod;
+
+  /// No description provided for @ledgerFilterClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get ledgerFilterClear;
+
+  /// No description provided for @ledgerFilterApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply filters'**
+  String get ledgerFilterApply;
+
+  /// No description provided for @ledgerFilterNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions match these filters.'**
+  String get ledgerFilterNoMatches;
+
+  /// No description provided for @ledgerFilterMatched.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} matching transactions'**
+  String ledgerFilterMatched(int count);
+
+  /// No description provided for @ledgerFilterTotals.
+  ///
+  /// In en, this message translates to:
+  /// **'Filtered posted totals'**
+  String get ledgerFilterTotals;
+
+  /// No description provided for @ledgerFilterAllocationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Split payments and categories use the recorded shares. When both are split, the app allocates proportionally to the smallest currency unit. Linked advances contribute cash flow for the account, outside spending categories.'**
+  String get ledgerFilterAllocationHint;
+
+  /// No description provided for @ledgerFilterAccountCashFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash movements by account'**
+  String get ledgerFilterAccountCashFlow;
+
+  /// No description provided for @ledgerFilterAccountCashFlowHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes movements between your own accounts. Ledger adjustments are reflected in balances.'**
+  String get ledgerFilterAccountCashFlowHint;
+
+  /// No description provided for @ledgerFilterAccountAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'View account activity'**
+  String get ledgerFilterAccountAnalysis;
+
+  /// No description provided for @ledgerFilterAccountGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Account group'**
+  String get ledgerFilterAccountGroup;
+
+  /// No description provided for @ledgerFilterAllGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'All account groups'**
+  String get ledgerFilterAllGroups;
 }
 
 class _AppLocalizationsDelegate

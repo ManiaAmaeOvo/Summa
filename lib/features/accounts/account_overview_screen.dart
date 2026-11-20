@@ -4,7 +4,9 @@ import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/analytics/ledger_analysis.dart';
 import 'package:summa/features/planning/savings_goals_screen.dart';
+import 'package:summa/features/reports/report_screen.dart';
 import 'package:summa/features/reconciliation/reconciliation_screen.dart';
 import 'package:summa/features/valuation/valuation_screen.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
@@ -37,6 +39,7 @@ class _AccountOverview extends ConsumerStatefulWidget {
 
 class _AccountOverviewState extends ConsumerState<_AccountOverview> {
   String? _currency;
+  AccountGroup? _group;
   List<AccountBalance> get items => widget.items;
 
   @override
@@ -200,44 +203,58 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
             label: Text(context.l10n.savingsGoals),
           ),
         ),
-        const SizedBox(height: 24),
-        _AccountGroup(
-          title: context.l10n.personalAccounts,
-          description: context.l10n.personalAccountsDescription,
-          items: _itemsFor(AccountGroup.personalAsset),
-          onEdit: editBalance,
-          onDelete: deleteAccount,
-        ),
-        if (_itemsFor(AccountGroup.prepaid).isNotEmpty)
-          _AccountGroup(
-            title: context.l10n.prepaidAccounts,
-            description: context.l10n.prepaidAccountsDescription,
-            items: _itemsFor(AccountGroup.prepaid),
-            onEdit: editBalance,
-            onDelete: deleteAccount,
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: PopupMenuButton<String>(
+            tooltip: context.l10n.ledgerFilterAccountGroup,
+            onSelected: (value) => setState(
+              () => _group = value.isEmpty
+                  ? null
+                  : AccountGroup.values.byName(value),
+            ),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: '',
+                child: Text(context.l10n.ledgerFilterAllGroups),
+              ),
+              for (final group in _displayGroups)
+                PopupMenuItem(
+                  value: group.name,
+                  child: Text(_groupLabel(context, group).$1),
+                ),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.filter_list),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      _group == null
+                          ? context.l10n.ledgerFilterAllGroups
+                          : _groupLabel(context, _group!).$1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        _AccountGroup(
-          title: context.l10n.entrustedFunds,
-          description: context.l10n.entrustedFundsDescription,
-          items: _itemsFor(AccountGroup.entrustedFunds),
-          onEdit: editBalance,
-          onDelete: deleteAccount,
         ),
-        if (_itemsFor(AccountGroup.receivable).isNotEmpty)
-          _AccountGroup(
-            title: context.l10n.receivableAccounts,
-            description: context.l10n.receivableAccountsDescription,
-            items: _itemsFor(AccountGroup.receivable),
-            onEdit: editBalance,
-            onDelete: deleteAccount,
-          ),
-        _AccountGroup(
-          title: context.l10n.liabilityAccounts,
-          description: context.l10n.liabilityAccountsDescription,
-          items: _itemsFor(AccountGroup.liability),
-          onEdit: editBalance,
-          onDelete: deleteAccount,
-        ),
+        for (final group in _displayGroups)
+          if ((_group == null || _group == group) &&
+              (_group != null ||
+                  group != AccountGroup.prepaid &&
+                      group != AccountGroup.receivable ||
+                  _itemsFor(group, currency).isNotEmpty))
+            _AccountGroup(
+              title: _groupLabel(context, group).$1,
+              description: _groupLabel(context, group).$2,
+              items: _itemsFor(group, currency),
+              onEdit: editBalance,
+              onDelete: deleteAccount,
+            ),
         const SizedBox(height: 8),
         Text(
           context.l10n.accountCalibrationHint,
@@ -247,8 +264,46 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
     );
   }
 
-  List<AccountBalance> _itemsFor(AccountGroup group) =>
-      items.where((account) => account.group == group).toList(growable: false);
+  List<AccountBalance> _itemsFor(AccountGroup group, String currency) => items
+      .where(
+        (account) => account.group == group && account.currencyCode == currency,
+      )
+      .toList(growable: false);
+}
+
+const _displayGroups = [
+  AccountGroup.personalAsset,
+  AccountGroup.prepaid,
+  AccountGroup.entrustedFunds,
+  AccountGroup.receivable,
+  AccountGroup.liability,
+];
+
+(String, String) _groupLabel(BuildContext context, AccountGroup group) {
+  final labels = context.l10n;
+  return switch (group) {
+    AccountGroup.personalAsset => (
+      labels.personalAccounts,
+      labels.personalAccountsDescription,
+    ),
+    AccountGroup.prepaid => (
+      labels.prepaidAccounts,
+      labels.prepaidAccountsDescription,
+    ),
+    AccountGroup.entrustedFunds => (
+      labels.entrustedFunds,
+      labels.entrustedFundsDescription,
+    ),
+    AccountGroup.receivable => (
+      labels.receivableAccounts,
+      labels.receivableAccountsDescription,
+    ),
+    AccountGroup.liability => (
+      labels.liabilityAccounts,
+      labels.liabilityAccountsDescription,
+    ),
+    AccountGroup.external => (labels.familyDirectFunding, ''),
+  };
 }
 
 class AddAccountDialog extends ConsumerStatefulWidget {
@@ -666,6 +721,27 @@ class _AccountGroup extends StatelessWidget {
                         onSelected: (action) {
                           final account = items[index];
                           switch (action) {
+                            case _AccountAction.analyze:
+                              Navigator.push<void>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Scaffold(
+                                    appBar: AppBar(
+                                      title: Text(
+                                        context
+                                            .l10n
+                                            .ledgerFilterAccountAnalysis,
+                                      ),
+                                    ),
+                                    body: ReportScreen(
+                                      initialFilter: LedgerFilter(
+                                        accountId: account.id,
+                                      ),
+                                      initialCurrency: account.currencyCode,
+                                    ),
+                                  ),
+                                ),
+                              );
                             case _AccountAction.reconcile:
                               Navigator.push<void>(
                                 context,
@@ -681,6 +757,12 @@ class _AccountGroup extends StatelessWidget {
                           }
                         },
                         itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: _AccountAction.analyze,
+                            child: Text(
+                              context.l10n.ledgerFilterAccountAnalysis,
+                            ),
+                          ),
                           PopupMenuItem(
                             value: _AccountAction.reconcile,
                             child: Text(context.l10n.reconciliation),
@@ -708,4 +790,4 @@ class _AccountGroup extends StatelessWidget {
   }
 }
 
-enum _AccountAction { reconcile, editBalance, delete }
+enum _AccountAction { analyze, reconcile, editBalance, delete }

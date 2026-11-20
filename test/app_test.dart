@@ -535,6 +535,58 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('account actions open the account-scoped report', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final expense = LedgerRecord(
+      id: 'account-activity',
+      type: LedgerTransactionType.expense,
+      amountMinor: 230,
+      occurredAt: DateTime.now(),
+      parentCategoryId: 'expense-parent-0',
+      parentCategoryName: '饮食',
+      categoryId: 'expense-parent-0-child-1',
+      categoryName: '午餐',
+      accountId: cashBalance.id,
+      accountName: cashBalance.name,
+      accountKind: AccountKind.cash.name,
+      accountPostings: [
+        AccountPosting(
+          accountId: cashBalance.id,
+          accountName: cashBalance.name,
+          accountKind: AccountKind.cash.name,
+          debitMinor: -230,
+          needsReview: false,
+        ),
+      ],
+      note: '',
+    );
+    await tester.pumpWidget(
+      _testApp(
+        overrides: [
+          transactionsProvider.overrideWith((ref) => Stream.value([expense])),
+          accountBalancesProvider.overrideWith(
+            (ref) => Stream.value([cashBalance]),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('账户').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('账户操作'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('查看账户收支'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看账户收支'), findsOneWidget);
+    expect(find.text('现金 · CNY'), findsOneWidget);
+    expect(find.text('-¥2.30'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('account dialog closes without lifecycle errors', (tester) async {
     await tester.pumpWidget(
       _testApp(

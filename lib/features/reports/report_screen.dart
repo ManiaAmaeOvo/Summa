@@ -10,8 +10,10 @@ import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/financial_activity.dart';
+import 'package:summa/domain/analytics/ledger_analysis.dart';
 import 'package:summa/domain/import_export/ledger_export.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/features/analysis/ledger_filter_control.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/l10n.dart';
 import 'package:share_plus/share_plus.dart';
@@ -19,7 +21,14 @@ import 'package:share_plus/share_plus.dart';
 enum _ReportPeriod { day, week, month, year }
 
 class ReportScreen extends ConsumerStatefulWidget {
-  const ReportScreen({super.key});
+  const ReportScreen({
+    super.key,
+    this.initialFilter = const LedgerFilter(),
+    this.initialCurrency,
+  });
+
+  final LedgerFilter initialFilter;
+  final String? initialCurrency;
 
   @override
   ConsumerState<ReportScreen> createState() => _ReportScreenState();
@@ -28,7 +37,8 @@ class ReportScreen extends ConsumerStatefulWidget {
 class _ReportScreenState extends ConsumerState<ReportScreen> {
   _ReportPeriod _period = _ReportPeriod.month;
   DateTime _anchor = DateTime.now();
-  String? _currency;
+  late String? _currency = widget.initialCurrency;
+  late LedgerFilter _filter = widget.initialFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +51,22 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
         if (balances == null) {
           return const Center(child: CircularProgressIndicator());
         }
-        final range = _rangeFor(_period, _anchor);
+        final custom = _filter.range;
+        final range = custom == null
+            ? _rangeFor(_period, _anchor)
+            : _DateRange(custom.start, custom.endExclusive);
+        final filter = LedgerFilter(
+          range: (start: range.start, endExclusive: range.end),
+          accountId: _filter.accountId,
+          categoryId: _filter.categoryId,
+          funding: _filter.funding,
+        );
         final posted = all
             .where((item) => !item.isPending)
             .toList(growable: false);
         final currencies = currencyOptions([
           ...balances.map((account) => account.currencyCode),
-          ...posted.map((item) => item.currencyCode),
+          for (final record in posted) ...ledgerRecordCurrencies(record),
         ]);
         final currency = currencies.contains(_currency)
             ? _currency!
@@ -59,10 +78,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                   item.occurredAt.isBefore(range.end),
             )
             .toList(growable: false);
-        final selected = periodRecords
-            .where((item) => item.currencyCode == currency)
-            .toList();
-        final activity = summarizeFinancialActivity(periodRecords, currency);
+        final analysis = analyzeLedger(posted, currency, filter);
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
           children: [
@@ -75,63 +91,78 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               ),
               const SizedBox(height: 12),
             ],
-            SegmentedButton<_ReportPeriod>(
-              segments: [
-                ButtonSegment(
-                  value: _ReportPeriod.day,
-                  label: Text(context.l10n.periodDay),
-                ),
-                ButtonSegment(
-                  value: _ReportPeriod.week,
-                  label: Text(context.l10n.periodWeek),
-                ),
-                ButtonSegment(
-                  value: _ReportPeriod.month,
-                  label: Text(context.l10n.periodMonth),
-                ),
-                ButtonSegment(
-                  value: _ReportPeriod.year,
-                  label: Text(context.l10n.periodYear),
-                ),
-              ],
-              selected: {_period},
-              onSelectionChanged: (value) => setState(() {
-                _period = value.single;
-                _anchor = DateTime.now();
-              }),
+            LedgerFilterControl(
+              filter: _filter,
+              records: posted,
+              balances: balances,
+              forReport: true,
+              onChanged: (value) => setState(() => _filter = value),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () => setState(() => _anchor = _shift(-1)),
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                Expanded(
-                  child: Text(
-                    _rangeLabel(context, _period, range),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
+            if (custom == null) ...[
+              SegmentedButton<_ReportPeriod>(
+                segments: [
+                  ButtonSegment(
+                    value: _ReportPeriod.day,
+                    label: Text(context.l10n.periodDay),
                   ),
-                ),
-                IconButton(
-                  onPressed: () => setState(() => _anchor = _shift(1)),
-                  icon: const Icon(Icons.chevron_right),
-                ),
-              ],
-            ),
+                  ButtonSegment(
+                    value: _ReportPeriod.week,
+                    label: Text(context.l10n.periodWeek),
+                  ),
+                  ButtonSegment(
+                    value: _ReportPeriod.month,
+                    label: Text(context.l10n.periodMonth),
+                  ),
+                  ButtonSegment(
+                    value: _ReportPeriod.year,
+                    label: Text(context.l10n.periodYear),
+                  ),
+                ],
+                selected: {_period},
+                onSelectionChanged: (value) => setState(() {
+                  _period = value.single;
+                  _anchor = DateTime.now();
+                }),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => setState(() => _anchor = _shift(-1)),
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Expanded(
+                    child: Text(
+                      _rangeLabel(context, _period, range),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => _anchor = _shift(1)),
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 8),
-            _SummaryGrid(
-              records: selected,
-              currency: currency,
-              activity: activity,
-            ),
+            _SummaryGrid(analysis: analysis, currency: currency),
             const SizedBox(height: 16),
-            _FundingSummary(currency: currency, activity: activity),
+            _FundingSummary(currency: currency, activity: analysis.activity),
+            if (analysis.accountFlows.isNotEmpty)
+              _AccountFlowCard(
+                flows: analysis.accountFlows,
+                currency: currency,
+              ),
+            if (_filter.hasDimensions)
+              ExpansionTile(
+                title: Text(context.l10n.ledgerFiltersActive),
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                children: [Text(context.l10n.ledgerFilterAllocationHint)],
+              ),
             const SizedBox(height: 16),
             _TrendCard(
-              records: selected,
-              range: range,
+              points: analysis.spending,
               period: _period,
               currency: currency,
             ),
@@ -139,28 +170,33 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             _CategoryPieCard(
               title: context.l10n.expenseCategories,
               emptyText: context.l10n.noExpenseCategoryData,
-              type: LedgerTransactionType.expense,
-              records: selected,
+              rows: analysis.expenseCategories,
               currency: currency,
             ),
             const SizedBox(height: 16),
             _CategoryPieCard(
               title: context.l10n.incomeCategories,
               emptyText: context.l10n.noIncomeCategoryData,
-              type: LedgerTransactionType.income,
-              records: selected,
+              rows: analysis.incomeCategories,
               currency: currency,
             ),
-            const SizedBox(height: 16),
-            _DebtTrendCard(
-              allRecords: posted,
-              selectedRecords: periodRecords,
-              balances: balances
-                  .where((item) => item.currencyCode == currency)
-                  .toList(),
-              currency: currency,
-              range: range,
-            ),
+            if (_filter.categoryId == null && _filter.funding == null) ...[
+              const SizedBox(height: 16),
+              _DebtTrendCard(
+                allRecords: posted,
+                selectedRecords: periodRecords,
+                balances: balances
+                    .where(
+                      (item) =>
+                          item.currencyCode == currency &&
+                          (_filter.accountId == null ||
+                              _filter.accountId == item.id),
+                    )
+                    .toList(),
+                currency: currency,
+                range: range,
+              ),
+            ],
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: () => showDialog<void>(
@@ -185,22 +221,14 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 }
 
 class _SummaryGrid extends StatelessWidget {
-  const _SummaryGrid({
-    required this.records,
-    required this.currency,
-    required this.activity,
-  });
+  const _SummaryGrid({required this.analysis, required this.currency});
 
-  final List<LedgerRecord> records;
-
+  final LedgerAnalysis analysis;
   final String currency;
-  final FinancialActivity activity;
 
   @override
   Widget build(BuildContext context) {
-    final income = _sum(records, LedgerTransactionType.income);
-    final borrowing = _sum(records, LedgerTransactionType.borrowing);
-    final repayment = _sum(records, LedgerTransactionType.repayment);
+    final activity = analysis.activity;
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -211,7 +239,7 @@ class _SummaryGrid extends StatelessWidget {
       children: [
         _Metric(
           label: context.l10n.income,
-          text: formatMoney(income, currency),
+          text: formatMoneyTotal(analysis.incomeMinor, currency),
         ),
         _Metric(
           label: context.l10n.grossSpending,
@@ -227,7 +255,7 @@ class _SummaryGrid extends StatelessWidget {
         _Metric(
           label: context.l10n.borrowingRepayment,
           text:
-              '${formatMoney(borrowing, currency)} / ${formatMoney(repayment, currency)}',
+              '${formatMoneyTotal(analysis.borrowingMinor, currency)} / ${formatMoneyTotal(analysis.repaymentMinor, currency)}',
         ),
       ],
     );
@@ -285,6 +313,42 @@ class _FundingSummary extends StatelessWidget {
   }
 }
 
+class _AccountFlowCard extends StatelessWidget {
+  const _AccountFlowCard({required this.flows, required this.currency});
+
+  final List<AnalysisAccountFlow> flows;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = context.l10n;
+    final locale = Localizations.localeOf(context);
+    return Card(
+      child: ExpansionTile(
+        title: Text(labels.ledgerFilterAccountCashFlow),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(labels.ledgerFilterAccountCashFlowHint),
+          for (final row in flows)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                DefaultLedgerLabels.accountName(locale, row.id, row.name),
+              ),
+              subtitle: Text(
+                [
+                  '${labels.personalCashInflow}  ${formatMoneyTotal(row.inflowMinor, currency)}',
+                  '${labels.personalCashOutflow}  ${formatMoneyTotal(row.outflowMinor, currency)}',
+                ].join('\n'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Metric extends StatelessWidget {
   const _Metric({required this.label, required this.text});
   final String label;
@@ -323,31 +387,30 @@ class _Metric extends StatelessWidget {
 
 class _TrendCard extends StatelessWidget {
   const _TrendCard({
-    required this.records,
-    required this.range,
+    required this.points,
     required this.currency,
     required this.period,
   });
-  final List<LedgerRecord> records;
-  final _DateRange range;
-  final _ReportPeriod period;
 
+  final List<AnalysisSpendingPoint> points;
+  final _ReportPeriod period;
   final String currency;
 
   @override
   Widget build(BuildContext context) {
-    final buckets = <DateTime, int>{};
-    for (final record in records.where((item) => item.spendingMinor != 0)) {
+    final buckets = <DateTime, BigInt>{};
+    for (final item in points) {
+      final date = item.date;
       final key = period == _ReportPeriod.year
-          ? DateTime(record.occurredAt.year, record.occurredAt.month)
-          : DateTime(
-              record.occurredAt.year,
-              record.occurredAt.month,
-              record.occurredAt.day,
-            );
-      buckets[key] = (buckets[key] ?? 0) + record.spendingMinor;
+          ? DateTime(date.year, date.month)
+          : DateTime(date.year, date.month, date.day);
+      buckets.update(
+        key,
+        (sum) => sum + item.amountMinor,
+        ifAbsent: () => item.amountMinor,
+      );
     }
-    final points = buckets.entries.toList()
+    final timeline = buckets.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     return Card(
       child: Padding(
@@ -363,14 +426,16 @@ class _TrendCard extends StatelessWidget {
             SizedBox(
               height: 190,
               width: double.infinity,
-              child: points.isEmpty
+              child: timeline.isEmpty
                   ? Center(child: Text(context.l10n.noExpensesThisPeriod))
                   : CustomPaint(
                       painter: _TrendPainter(
                         currency: currency,
-                        values: points.map((e) => e.value).toList(),
+                        values: timeline
+                            .map((e) => e.value.toDouble())
+                            .toList(),
                         xLabels: _axisDateLabels(
-                          points.map((e) => e.key).toList(),
+                          timeline.map((e) => e.key).toList(),
                           context,
                           useMonths: period == _ReportPeriod.year,
                         ),
@@ -401,7 +466,7 @@ class _TrendPainter extends CustomPainter {
     required this.textDirection,
   });
 
-  final List<int> values;
+  final List<num> values;
   final String currency;
   final List<String> xLabels;
   final Color lineColor;
@@ -438,10 +503,13 @@ class _TrendPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(plot);
-    final minValue = math.min(0, values.reduce(math.min)).toDouble();
-    final maxValue = math
-        .max(minValue == 0 ? 1 : 0, values.reduce(math.max))
-        .toDouble();
+    var minValue = 0.0;
+    var maxValue = 0.0;
+    for (final value in values) {
+      minValue = math.min(minValue, value.toDouble());
+      maxValue = math.max(maxValue, value.toDouble());
+    }
+    if (maxValue == minValue) maxValue = 1;
     final span = maxValue - minValue;
     final zeroY = plot.bottom + plot.height * minValue / span;
 
@@ -449,7 +517,7 @@ class _TrendPainter extends CustomPainter {
       final fraction = tick / 2;
       final y = plot.top + plot.height * fraction;
       canvas.drawLine(Offset(plot.left, y), Offset(plot.right, y), gridPaint);
-      final value = (maxValue - span * fraction).round();
+      final value = maxValue - span * fraction;
       _paintAxisLabel(
         canvas,
         _compactAxisAmount(value, currency),
@@ -551,7 +619,7 @@ List<String> _axisDateLabels(
   ];
 }
 
-String _compactAxisAmount(int minor, String currency) {
+String _compactAxisAmount(num minor, String currency) {
   final digits = currencyMinorDigits[currency] ?? 0;
   final amount = minor / math.pow(10, digits);
   final compact = NumberFormat.compact(locale: 'en').format(amount);
@@ -562,47 +630,23 @@ class _CategoryPieCard extends StatelessWidget {
   const _CategoryPieCard({
     required this.title,
     required this.emptyText,
-    required this.type,
-    required this.records,
+    required this.rows,
     required this.currency,
   });
 
   final String title;
   final String emptyText;
-  final LedgerTransactionType type;
-  final List<LedgerRecord> records;
-
+  final List<AnalysisBreakdown> rows;
   final String currency;
 
   @override
   Widget build(BuildContext context) {
-    final totals = <String, int>{};
-    final storedNames = <String, String>{};
-    for (final item in records) {
-      if (type == LedgerTransactionType.expense) {
-        for (final part in item.spendingCategories) {
-          final label = item.allocationLabels[part.categoryId];
-          final parent = label?.parentId ?? item.parentCategoryId;
-          totals.update(
-            parent,
-            (value) => value + part.amountMinor,
-            ifAbsent: () => part.amountMinor,
-          );
-          storedNames[parent] = label?.parentName ?? item.parentCategoryName;
-        }
-      } else if (item.type == type) {
-        totals.update(
-          item.parentCategoryId,
-          (value) => value + item.signedAmountMinor,
-          ifAbsent: () => item.signedAmountMinor,
-        );
-        storedNames[item.parentCategoryId] = item.parentCategoryName;
-      }
-    }
-    final rows = totals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final total = rows.fold<int>(0, (sum, row) => sum + row.value);
-    final showPie = total > 0 && rows.every((row) => row.value >= 0);
+    final sorted = [...rows]
+      ..sort((a, b) => b.amountMinor.compareTo(a.amountMinor));
+    final total = sorted.fold(BigInt.zero, (sum, row) => sum + row.amountMinor);
+    final showPie =
+        total > BigInt.zero &&
+        sorted.every((row) => !row.amountMinor.isNegative);
     final colors = [
       Theme.of(context).colorScheme.primary,
       Theme.of(context).colorScheme.tertiary,
@@ -621,7 +665,7 @@ class _CategoryPieCard extends StatelessWidget {
           children: [
             Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
-            if (rows.isEmpty)
+            if (sorted.isEmpty)
               SizedBox(height: 120, child: Center(child: Text(emptyText)))
             else ...[
               if (showPie) ...[
@@ -630,7 +674,7 @@ class _CategoryPieCard extends StatelessWidget {
                     dimension: 176,
                     child: CustomPaint(
                       painter: _PiePainter(
-                        values: rows.map((row) => row.value).toList(),
+                        values: sorted.map((row) => row.amountMinor).toList(),
                         colors: colors,
                       ),
                     ),
@@ -638,7 +682,7 @@ class _CategoryPieCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
               ],
-              for (var index = 0; index < rows.length; index++) ...[
+              for (var index = 0; index < sorted.length; index++) ...[
                 Row(
                   children: [
                     Container(
@@ -654,18 +698,18 @@ class _CategoryPieCard extends StatelessWidget {
                       child: Text(
                         DefaultLedgerLabels.categoryName(
                           Localizations.localeOf(context),
-                          rows[index].key,
-                          storedNames[rows[index].key]!,
+                          sorted[index].id,
+                          sorted[index].name,
                         ),
                       ),
                     ),
                     Text(
-                      '${showPie ? '${(rows[index].value * 100 / total).toStringAsFixed(1)}%  ' : ''}'
-                      '${formatMoney(rows[index].value, currency)}',
+                      '${showPie ? '${(sorted[index].amountMinor.toDouble() * 100 / total.toDouble()).toStringAsFixed(1)}%  ' : ''}'
+                      '${formatMoneyTotal(sorted[index].amountMinor, currency)}',
                     ),
                   ],
                 ),
-                if (index != rows.length - 1) const SizedBox(height: 8),
+                if (index != sorted.length - 1) const SizedBox(height: 8),
               ],
             ],
           ],
@@ -678,16 +722,16 @@ class _CategoryPieCard extends StatelessWidget {
 class _PiePainter extends CustomPainter {
   const _PiePainter({required this.values, required this.colors});
 
-  final List<int> values;
+  final List<BigInt> values;
   final List<Color> colors;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final total = values.fold<int>(0, (sum, value) => sum + value);
+    final total = values.fold(BigInt.zero, (sum, value) => sum + value);
     var start = -math.pi / 2;
     final rect = Offset.zero & size;
     for (var index = 0; index < values.length; index++) {
-      final sweep = math.pi * 2 * values[index] / total;
+      final sweep = math.pi * 2 * values[index].toDouble() / total.toDouble();
       canvas.drawArc(
         rect.deflate(8),
         start,
@@ -733,18 +777,19 @@ class _DebtTrendCard extends StatelessWidget {
         .where((record) => !record.occurredAt.isBefore(range.start))
         .fold(
           current,
-          (balance, record) => balance - _liabilityDelta(record, liabilityIds),
+          (balance, record) =>
+              balance - _liabilityDelta(record, liabilityIds, currency),
         );
     final ordered =
         selectedRecords
-            .where((item) => _liabilityDelta(item, liabilityIds) != 0)
+            .where((item) => _liabilityDelta(item, liabilityIds, currency) != 0)
             .toList()
           ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
     final values = <int>[opening];
     final dates = <DateTime>[range.start];
     var running = opening;
     for (final record in ordered) {
-      running += _liabilityDelta(record, liabilityIds);
+      running += _liabilityDelta(record, liabilityIds, currency);
       values.add(running);
       dates.add(record.occurredAt);
     }
@@ -755,7 +800,9 @@ class _DebtTrendCard extends StatelessWidget {
     }
     final hasLiabilityData =
         liabilityIds.isNotEmpty ||
-        ordered.any((item) => _liabilityDelta(item, liabilityIds) != 0);
+        ordered.any(
+          (item) => _liabilityDelta(item, liabilityIds, currency) != 0,
+        );
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -815,9 +862,16 @@ class _DebtTrendCard extends StatelessWidget {
   }
 }
 
-int _liabilityDelta(LedgerRecord record, Set<String> liabilityIds) => record
-    .accountPostings
-    .where((posting) => liabilityIds.contains(posting.accountId))
+int _liabilityDelta(
+  LedgerRecord record,
+  Set<String> liabilityIds,
+  String currency,
+) => record.accountPostings
+    .where(
+      (posting) =>
+          posting.currencyCode == currency &&
+          liabilityIds.contains(posting.accountId),
+    )
     .fold(0, (balance, posting) => balance - posting.debitMinor);
 
 enum _ExportRange { week, month, year, all, custom }
@@ -967,17 +1021,6 @@ class _ExportDialogState extends State<_ExportDialog> {
     if (mounted) Navigator.pop(context);
   }
 }
-
-int _sum(List<LedgerRecord> records, LedgerTransactionType type) => records
-    .where((item) => item.type == type)
-    .fold(
-      0,
-      (sum, item) =>
-          sum +
-          (type == LedgerTransactionType.expense
-              ? item.spendingMinor
-              : item.signedAmountMinor),
-    );
 
 class _DateRange {
   const _DateRange(this.start, this.end);

@@ -912,5 +912,34 @@
   "forecastUncertainInflow": "Date unconfirmed · excluded from balance",
   "forecastUnscheduledPrincipal": "Principal with no scheduled date",
   "forecastAssumptions": "What is included",
-  "forecastAssumptionsText": "Includes personal cash, bank, wallet and savings balances in the selected currency. Debt payments and collections use that currency’s cash. Overdue outflows are placed on today; overdue inflows wait for a confirmed date. Pending ledger entries are excluded. Each daily figure is an end-of-day balance. Review recurring plans to link any payments you already recorded."
+  "forecastAssumptionsText": "Includes personal cash, bank, wallet and savings balances in the selected currency. Debt payments and collections use that currency’s cash. Overdue outflows are placed on today; overdue inflows wait for a confirmed date. Pending ledger entries are excluded. Each daily figure is an end-of-day balance. Review recurring plans to link any payments you already recorded.",
+  "ledgerFilters": "Filters",
+  "ledgerFiltersActive": "Filters applied",
+  "ledgerFilterFunding": "Funding source",
+  "ledgerFilterFundingPersonal": "Personally borne",
+  "ledgerFilterThirdParty": "Paid by others, due back",
+  "ledgerFilterUnknownFunding": "Funding to review",
+  "ledgerFilterAllCurrencies": "All currencies",
+  "ledgerFilterAllAccounts": "All accounts",
+  "ledgerFilterAllCategories": "All categories",
+  "ledgerFilterAllFunding": "All funding sources",
+  "ledgerFilterUseReportPeriod": "Use report period",
+  "ledgerFilterClear": "Clear filters",
+  "ledgerFilterApply": "Apply filters",
+  "ledgerFilterNoMatches": "No transactions match these filters.",
+  "ledgerFilterMatched": "{count} matching transactions",
+  "ledgerFilterTotals": "Filtered posted totals",
+  "ledgerFilterAllocationHint": "Split payments and categories use the recorded shares. When both are split, the app allocates proportionally to the smallest currency unit. Linked advances contribute cash flow for the account, outside spending categories.",
+  "ledgerFilterAccountCashFlow": "Cash movements by account",
+  "ledgerFilterAccountCashFlowHint": "Includes movements between your own accounts. Ledger adjustments are reflected in balances.",
+  "ledgerFilterAccountAnalysis": "View account activity",
+  "ledgerFilterAccountGroup": "Account group",
+  "ledgerFilterAllGroups": "All account groups",
+  "@ledgerFilterMatched": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

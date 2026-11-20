@@ -2466,4 +2466,74 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get forecastAssumptionsText =>
       'Includes personal cash, bank, wallet and savings balances in the selected currency. Debt payments and collections use that currency’s cash. Overdue outflows are placed on today; overdue inflows wait for a confirmed date. Pending ledger entries are excluded. Each daily figure is an end-of-day balance. Review recurring plans to link any payments you already recorded.';
+
+  @override
+  String get ledgerFilters => 'Filters';
+
+  @override
+  String get ledgerFiltersActive => 'Filters applied';
+
+  @override
+  String get ledgerFilterFunding => 'Funding source';
+
+  @override
+  String get ledgerFilterFundingPersonal => 'Personally borne';
+
+  @override
+  String get ledgerFilterThirdParty => 'Paid by others, due back';
+
+  @override
+  String get ledgerFilterUnknownFunding => 'Funding to review';
+
+  @override
+  String get ledgerFilterAllCurrencies => 'All currencies';
+
+  @override
+  String get ledgerFilterAllAccounts => 'All accounts';
+
+  @override
+  String get ledgerFilterAllCategories => 'All categories';
+
+  @override
+  String get ledgerFilterAllFunding => 'All funding sources';
+
+  @override
+  String get ledgerFilterUseReportPeriod => 'Use report period';
+
+  @override
+  String get ledgerFilterClear => 'Clear filters';
+
+  @override
+  String get ledgerFilterApply => 'Apply filters';
+
+  @override
+  String get ledgerFilterNoMatches => 'No transactions match these filters.';
+
+  @override
+  String ledgerFilterMatched(int count) {
+    return '$count matching transactions';
+  }
+
+  @override
+  String get ledgerFilterTotals => 'Filtered posted totals';
+
+  @override
+  String get ledgerFilterAllocationHint =>
+      'Split payments and categories use the recorded shares. When both are split, the app allocates proportionally to the smallest currency unit. Linked advances contribute cash flow for the account, outside spending categories.';
+
+  @override
+  String get ledgerFilterAccountCashFlow => 'Cash movements by account';
+
+  @override
+  String get ledgerFilterAccountCashFlowHint =>
+      'Includes movements between your own accounts. Ledger adjustments are reflected in balances.';
+
+  @override
+  String get ledgerFilterAccountAnalysis => 'View account activity';
+
+  @override
+  String get ledgerFilterAccountGroup => 'Account group';
+
+  @override
+  String get ledgerFilterAllGroups => 'All account groups';
 }

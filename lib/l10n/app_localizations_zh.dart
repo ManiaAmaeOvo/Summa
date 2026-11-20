@@ -2310,4 +2310,73 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get forecastAssumptionsText =>
       '起点为所选币种的本人现金、银行、钱包及储蓄余额。计划还款和回款影响同币种现金。逾期流出列在今天，逾期流入待确认日期。待入账交易另行复核。每日显示日末余额，已记账的周期交易可在计划中关联。';
+
+  @override
+  String get ledgerFilters => '筛选';
+
+  @override
+  String get ledgerFiltersActive => '已应用筛选';
+
+  @override
+  String get ledgerFilterFunding => '资金来源';
+
+  @override
+  String get ledgerFilterFundingPersonal => '本人承担';
+
+  @override
+  String get ledgerFilterThirdParty => '他人代付待偿';
+
+  @override
+  String get ledgerFilterUnknownFunding => '资金来源待复核';
+
+  @override
+  String get ledgerFilterAllCurrencies => '全部币种';
+
+  @override
+  String get ledgerFilterAllAccounts => '全部账户';
+
+  @override
+  String get ledgerFilterAllCategories => '全部分类';
+
+  @override
+  String get ledgerFilterAllFunding => '全部资金来源';
+
+  @override
+  String get ledgerFilterUseReportPeriod => '使用当前报表周期';
+
+  @override
+  String get ledgerFilterClear => '清除筛选';
+
+  @override
+  String get ledgerFilterApply => '应用筛选';
+
+  @override
+  String get ledgerFilterNoMatches => '没有符合筛选条件的交易。';
+
+  @override
+  String ledgerFilterMatched(int count) {
+    return '符合条件的交易 $count 笔';
+  }
+
+  @override
+  String get ledgerFilterTotals => '已入账筛选汇总';
+
+  @override
+  String get ledgerFilterAllocationHint =>
+      '拆分款项按已记录的分录和分类份额统计。账户与分类同时拆分时，按比例分配至最小货币单位。关联垫付计入账户现金流，列在消费分类之外。';
+
+  @override
+  String get ledgerFilterAccountCashFlow => '按账户查看现金变动';
+
+  @override
+  String get ledgerFilterAccountCashFlowHint => '账户明细含本人账户之间的划转。余额另包含账务调整。';
+
+  @override
+  String get ledgerFilterAccountAnalysis => '查看账户收支';
+
+  @override
+  String get ledgerFilterAccountGroup => '账户分组';
+
+  @override
+  String get ledgerFilterAllGroups => '全部账户分组';
 }

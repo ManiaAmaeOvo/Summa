@@ -5,9 +5,11 @@ import 'package:summa/app/providers.dart';
 import 'package:summa/app/widgets/currency_selector.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/analytics/ledger_analysis.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/features/accounts/account_overview_screen.dart';
+import 'package:summa/features/analysis/ledger_filter_control.dart';
 import 'package:summa/features/import_export/csv_import_screen.dart';
 import 'package:summa/features/import_export/structured_import_screen.dart';
 import 'package:summa/features/planning/debt_contracts_screen.dart';
@@ -204,22 +206,29 @@ class _TransactionList extends ConsumerStatefulWidget {
 class _TransactionListState extends ConsumerState<_TransactionList> {
   String? _currency;
   bool _reviewOnly = false;
+  LedgerFilter _filter = const LedgerFilter();
 
   @override
   Widget build(BuildContext context) {
     final items = widget.items;
     final reviewCount = items.where((record) => record.needsReview).length;
-    final visibleItems = _reviewOnly
-        ? items.where((record) => record.needsReview).toList()
-        : items;
+    final visibleItems = items
+        .where(
+          (record) =>
+              (!_reviewOnly || record.needsReview) && _filter.matches(record),
+        )
+        .toList();
     final balances = widget.balances;
     final currencies = currencyOptions([
       ...balances.map((account) => account.currencyCode),
-      ...items.map((record) => record.currencyCode),
+      for (final record in items) ...ledgerRecordCurrencies(record),
     ]);
-    final currency = currencies.contains(_currency)
-        ? _currency!
-        : currencies.first;
+    final currency =
+        _filter.currency ??
+        (currencies.contains(_currency) ? _currency! : currencies.first);
+    final analysis = _filter.isActive
+        ? analyzeLedger(visibleItems, currency, _filter)
+        : null;
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month);
     final dayStart = DateTime(now.year, now.month, now.day);
@@ -298,7 +307,7 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
 
     return CustomScrollView(
       slivers: [
-        if (currencies.length > 1)
+        if (currencies.length > 1 && _filter.currency == null)
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             sliver: SliverToBoxAdapter(
@@ -310,46 +319,69 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
               ),
             ),
           ),
+        if (analysis == null)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            sliver: SliverToBoxAdapter(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                mainAxisExtent: 104,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _DashboardSummaryCard(
+                    label: context.l10n.expenseThisMonth,
+                    amount: monthTotal,
+                    currency: currency,
+                    icon: Icons.calendar_month_outlined,
+                  ),
+                  _DashboardSummaryCard(
+                    label: context.l10n.expenseThisWeek,
+                    amount: weekTotal,
+                    currency: currency,
+                    icon: Icons.date_range_outlined,
+                  ),
+                  _DashboardSummaryCard(
+                    label: context.l10n.expenseAllTime,
+                    amount: total,
+                    currency: currency,
+                    icon: Icons.receipt_long_outlined,
+                  ),
+                  _DashboardSummaryCard(
+                    label: context.l10n.liquidNetWorth,
+                    amount: netAssets,
+                    currency: currency,
+                    icon: Icons.account_balance_wallet_outlined,
+                    onTap: widget.onOpenAccounts,
+                  ),
+                ],
+              ),
+            ),
+          ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverToBoxAdapter(
-            child: GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              mainAxisExtent: 104,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _DashboardSummaryCard(
-                  label: context.l10n.expenseThisMonth,
-                  amount: monthTotal,
-                  currency: currency,
-                  icon: Icons.calendar_month_outlined,
-                ),
-                _DashboardSummaryCard(
-                  label: context.l10n.expenseThisWeek,
-                  amount: weekTotal,
-                  currency: currency,
-                  icon: Icons.date_range_outlined,
-                ),
-                _DashboardSummaryCard(
-                  label: context.l10n.expenseAllTime,
-                  amount: total,
-                  currency: currency,
-                  icon: Icons.receipt_long_outlined,
-                ),
-                _DashboardSummaryCard(
-                  label: context.l10n.liquidNetWorth,
-                  amount: netAssets,
-                  currency: currency,
-                  icon: Icons.account_balance_wallet_outlined,
-                  onTap: widget.onOpenAccounts,
-                ),
-              ],
+            child: LedgerFilterControl(
+              filter: _filter,
+              records: items,
+              balances: balances,
+              onChanged: (value) => setState(() => _filter = value),
             ),
           ),
         ),
+        if (analysis != null)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            sliver: SliverToBoxAdapter(
+              child: _FilteredTotals(
+                analysis: analysis,
+                currency: currency,
+                count: visibleItems.length,
+              ),
+            ),
+          ),
         if (reviewCount > 0 || _reviewOnly)
           SliverToBoxAdapter(
             child: SwitchListTile(
@@ -359,8 +391,13 @@ class _TransactionListState extends ConsumerState<_TransactionList> {
             ),
           ),
         if (visibleItems.isEmpty)
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 240, child: _EmptyState()),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 240,
+              child: _filter.isActive
+                  ? Center(child: Text(context.l10n.ledgerFilterNoMatches))
+                  : const _EmptyState(),
+            ),
           )
         else
           SliverPadding(
@@ -526,6 +563,48 @@ enum _RecordAction { edit, post, refund, reverse, delete }
 int _sumSince(List<LedgerRecord> items, DateTime start) => items
     .where((item) => !item.occurredAt.isBefore(start))
     .fold<int>(0, (sum, item) => sum + item.spendingMinor);
+
+class _FilteredTotals extends StatelessWidget {
+  const _FilteredTotals({
+    required this.analysis,
+    required this.currency,
+    required this.count,
+  });
+
+  final LedgerAnalysis analysis;
+  final String currency;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = context.l10n;
+    final activity = analysis.activity;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(labels.ledgerFilterMatched(count)),
+            Text(
+              '${labels.ledgerFilterTotals} · $currency',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            for (final (label, amount) in [
+              (labels.income, analysis.incomeMinor),
+              (labels.grossSpending, activity.grossSpending),
+              (
+                labels.personalCashFlowNet,
+                activity.personalCashInflow - activity.personalCashOutflow,
+              ),
+            ])
+              Text('$label  ${formatMoneyTotal(amount, currency)}'),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _DashboardSummaryCard extends StatelessWidget {
   const _DashboardSummaryCard({
