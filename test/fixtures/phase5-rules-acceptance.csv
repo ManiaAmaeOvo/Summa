@@ -1,0 +1,3 @@
+type,amount,occurred_at,account,category,merchant,description,note,currency_code,source,external_id
+expense,2.50,2026-11-20T18:08:00+08:00,Migration test cash,,Harbor Cafe,Fresh meal,Rule acceptance meal,CNY,rules-fixture,meal-1
+expense,1.25,2026-11-20T17:08:00+08:00,Migration test cash,,Harbor Cafe,Paper,Rule acceptance paper,CNY,rules-fixture,paper-1

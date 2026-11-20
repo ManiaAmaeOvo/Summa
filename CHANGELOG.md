@@ -5,6 +5,28 @@
 This project follows semantic versioning. The Android build number appears
 after `+` in the Flutter version.
 
+## [2.0.0-rc.1] - 2026-11-20
+
+### Added
+
+- A financial home with net worth, available funds, budgets, upcoming obligations,
+  and reconciliation tasks.
+- Ledger postings, split payments, refunds, pending transactions, and
+  multi-currency accounts with separate settlement and valuation rates.
+- Statement import with duplicate detection, compound category rules, dry runs,
+  manual review, batch undo, and links to source rows.
+- Budget and savings plans, subscriptions, debt and receivable schedules,
+  and cash flow forecasts.
+- Reports with combined filters, historical comparisons, transaction drill-down,
+  and JSON, CSV, XLSX, and Markdown export.
+
+### Data compatibility
+
+- The Android app uses `com.maniaamae.summa`. Import a complete JSON backup to
+  transfer a ledger from an installation with the earlier app ID.
+- Database schema 20 stores compound rules. Summa writes Version 14 backups and
+  restores Summa Versions 1–13 and LedgerPro Version 1.
+
 ## [0.4.2] - 2026-10-02
 
 ### Changed
