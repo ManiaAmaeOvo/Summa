@@ -51,6 +51,8 @@ class DriftRecurringPlanStore {
 
   Stream<List<RecurringPlan>> watch() => _query().watch().map(_read);
 
+  Future<List<RecurringPlan>> read() async => _read(await _query().get());
+
   Future<void> add(String id, RecurringPlanDraft draft) async {
     if (!draft.isValid || !await _validReferences(draft, activeOnly: true)) {
       throw const RecurringPlanException(RecurringPlanError.invalid);

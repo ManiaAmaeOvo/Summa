@@ -38,47 +38,40 @@ class DriftDebtContractStore {
         },
       )
       .watch()
-      .asyncMap(
-        (_) => _db.transaction(() async {
-          final contracts = await _contracts();
-          if (contracts.isEmpty) return <DebtContract>[];
-          final installments = _group(
-            await _installments(),
-            (row) => row.accountId,
-          );
-          final links = _group(
-            await _db.select(_db.debtSettlements).get(),
-            (row) => row.accountId,
-          );
-          final accounts = {
-            for (final row in await balances.get()) row.read<String>('id'): row,
-          };
-          return [
-            for (final contract in contracts)
-              DebtContract(
-                draft: _draft(
-                  contract,
-                  installments[contract.accountId] ?? const [],
-                ),
-                accountName: accounts[contract.accountId]!.read<String>('name'),
-                balanceMinor: accounts[contract.accountId]!.read<int>(
-                  'current_balance',
-                ),
-                links: [
-                  for (final row
-                      in links[contract.accountId] ??
-                          const <DebtSettlementRow>[])
-                    (
-                      id: row.id,
-                      entryId: row.entryId,
-                      kind: DebtLinkKind.values.byName(row.kind),
-                      voided: row.voided,
-                    ),
-                ],
+      .asyncMap((_) => _db.transaction(() => read(balances)));
+
+  Future<List<DebtContract>> read(Selectable<QueryRow> balances) async {
+    final contracts = await _contracts();
+    if (contracts.isEmpty) return <DebtContract>[];
+    final installments = _group(await _installments(), (row) => row.accountId);
+    final links = _group(
+      await _db.select(_db.debtSettlements).get(),
+      (row) => row.accountId,
+    );
+    final accounts = {
+      for (final row in await balances.get()) row.read<String>('id'): row,
+    };
+    return [
+      for (final contract in contracts)
+        DebtContract(
+          draft: _draft(contract, installments[contract.accountId] ?? const []),
+          accountName: accounts[contract.accountId]!.read<String>('name'),
+          balanceMinor: accounts[contract.accountId]!.read<int>(
+            'current_balance',
+          ),
+          links: [
+            for (final row
+                in links[contract.accountId] ?? const <DebtSettlementRow>[])
+              (
+                id: row.id,
+                entryId: row.entryId,
+                kind: DebtLinkKind.values.byName(row.kind),
+                voided: row.voided,
               ),
-          ];
-        }),
-      );
+          ],
+        ),
+    ];
+  }
 
   Future<void> add(DebtContractDraft draft) async {
     if (!draft.isValid || !await _validAccount(draft, activeOnly: true)) {

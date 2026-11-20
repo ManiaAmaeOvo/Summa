@@ -852,5 +852,65 @@
         "type": "int"
       }
     }
-  }
+  },
+  "cashForecast": "Cash flow forecast",
+  "cashForecastReadFailed": "Could not load the cash flow forecast.",
+  "forecastRangeDays": "{days} days",
+  "@forecastRangeDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "forecastPostedBalance": "Posted cash through today",
+  "forecastClosingBalance": "Projected closing balance",
+  "forecastPeakShortfall": "Largest projected shortfall",
+  "forecastFirstShortfall": "First shortfall {date}",
+  "@forecastFirstShortfall": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "forecastNoShortfall": "No projected shortfall",
+  "forecastBalanceOverTime": "Projected balance by date",
+  "forecastDailyClosing": "Projected day-end balance",
+  "forecastCashMovements": "Cash flow timeline",
+  "forecastNoMovements": "No cash movements scheduled in this range.",
+  "forecastFuturePosted": "Posted · future date",
+  "forecastScheduled": "Forecast · {source}",
+  "@forecastScheduled": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "forecastRecurringIncome": "Recurring income",
+  "forecastRecurringExpense": "Recurring expense",
+  "forecastSubscription": "Subscription renewal",
+  "forecastDebtRepayment": "Debt repayment",
+  "forecastReceivableCollection": "Receivable collection",
+  "forecastOverdueSince": "Originally due {date}",
+  "@forecastOverdueSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "forecastOverdueCycles": "{count} overdue cycles",
+  "@forecastOverdueCycles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "forecastUncertainInflow": "Date unconfirmed · excluded from balance",
+  "forecastUnscheduledPrincipal": "Principal with no scheduled date",
+  "forecastAssumptions": "What is included",
+  "forecastAssumptionsText": "Includes personal cash, bank, wallet and savings balances in the selected currency. Debt payments and collections use that currency’s cash. Overdue outflows are placed on today; overdue inflows wait for a confirmed date. Pending ledger entries are excluded. Each daily figure is an end-of-day balance. Review recurring plans to link any payments you already recorded."
 }

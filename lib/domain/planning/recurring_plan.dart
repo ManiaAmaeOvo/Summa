@@ -60,28 +60,46 @@ class RecurringPlanDraft {
                 customDays! <= maxCustomDays
           : customDays == null);
 
+  int? get _monthStep => switch (cadence) {
+    RecurringCadence.monthly => 1,
+    RecurringCadence.quarterly => 3,
+    RecurringCadence.yearly => 12,
+    _ => null,
+  };
+
+  int get _dayStep =>
+      customDays ?? (cadence == RecurringCadence.weekly ? 7 : 1);
+
   DateTime? dueOn(int index) {
     // A daily plan cannot have more cycles than days in the date range.
     if (index < 0 ||
         index >= (lastPlanningYear - firstPlanningYear + 1) * 366) {
       return null;
     }
-    final months = switch (cadence) {
-      RecurringCadence.monthly => 1,
-      RecurringCadence.quarterly => 3,
-      RecurringCadence.yearly => 12,
-      _ => null,
-    };
+    final months = _monthStep;
     if (months != null) {
       final date = monthlyPlanningDate(firstDueOn, index * months);
       return isPlanningDay(date) ? date : null;
     }
-    final days =
-        index * (customDays ?? (cadence == RecurringCadence.weekly ? 7 : 1));
+    final days = index * _dayStep;
     final last = DateTime.utc(lastPlanningYear, 12, 31);
     return days <= last.difference(firstDueOn).inDays
         ? firstDueOn.add(Duration(days: days))
         : null;
+  }
+
+  int firstIndexOnOrAfter(DateTime day) {
+    if (!day.isAfter(firstDueOn)) return 0;
+    final step = _monthStep;
+    if (step == null) {
+      return (day.difference(firstDueOn).inDays + _dayStep - 1) ~/ _dayStep;
+    }
+    final months =
+        (day.year - firstDueOn.year) * 12 + day.month - firstDueOn.month;
+    final index = months ~/ step;
+    return monthlyPlanningDate(firstDueOn, index * step).isBefore(day)
+        ? index + 1
+        : index;
   }
 
   bool matches(LedgerRecord record) =>

@@ -4255,6 +4255,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Savings goals {count}'**
   String backupSavingsGoalCount(int count);
+
+  /// No description provided for @cashForecast.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash flow forecast'**
+  String get cashForecast;
+
+  /// No description provided for @cashForecastReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the cash flow forecast.'**
+  String get cashForecastReadFailed;
+
+  /// No description provided for @forecastRangeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days'**
+  String forecastRangeDays(int days);
+
+  /// No description provided for @forecastPostedBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted cash through today'**
+  String get forecastPostedBalance;
+
+  /// No description provided for @forecastClosingBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected closing balance'**
+  String get forecastClosingBalance;
+
+  /// No description provided for @forecastPeakShortfall.
+  ///
+  /// In en, this message translates to:
+  /// **'Largest projected shortfall'**
+  String get forecastPeakShortfall;
+
+  /// No description provided for @forecastFirstShortfall.
+  ///
+  /// In en, this message translates to:
+  /// **'First shortfall {date}'**
+  String forecastFirstShortfall(String date);
+
+  /// No description provided for @forecastNoShortfall.
+  ///
+  /// In en, this message translates to:
+  /// **'No projected shortfall'**
+  String get forecastNoShortfall;
+
+  /// No description provided for @forecastBalanceOverTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected balance by date'**
+  String get forecastBalanceOverTime;
+
+  /// No description provided for @forecastDailyClosing.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected day-end balance'**
+  String get forecastDailyClosing;
+
+  /// No description provided for @forecastCashMovements.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash flow timeline'**
+  String get forecastCashMovements;
+
+  /// No description provided for @forecastNoMovements.
+  ///
+  /// In en, this message translates to:
+  /// **'No cash movements scheduled in this range.'**
+  String get forecastNoMovements;
+
+  /// No description provided for @forecastFuturePosted.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted · future date'**
+  String get forecastFuturePosted;
+
+  /// No description provided for @forecastScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast · {source}'**
+  String forecastScheduled(String source);
+
+  /// No description provided for @forecastRecurringIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring income'**
+  String get forecastRecurringIncome;
+
+  /// No description provided for @forecastRecurringExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring expense'**
+  String get forecastRecurringExpense;
+
+  /// No description provided for @forecastSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription renewal'**
+  String get forecastSubscription;
+
+  /// No description provided for @forecastDebtRepayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt repayment'**
+  String get forecastDebtRepayment;
+
+  /// No description provided for @forecastReceivableCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Receivable collection'**
+  String get forecastReceivableCollection;
+
+  /// No description provided for @forecastOverdueSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Originally due {date}'**
+  String forecastOverdueSince(String date);
+
+  /// No description provided for @forecastOverdueCycles.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} overdue cycles'**
+  String forecastOverdueCycles(int count);
+
+  /// No description provided for @forecastUncertainInflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Date unconfirmed · excluded from balance'**
+  String get forecastUncertainInflow;
+
+  /// No description provided for @forecastUnscheduledPrincipal.
+  ///
+  /// In en, this message translates to:
+  /// **'Principal with no scheduled date'**
+  String get forecastUnscheduledPrincipal;
+
+  /// No description provided for @forecastAssumptions.
+  ///
+  /// In en, this message translates to:
+  /// **'What is included'**
+  String get forecastAssumptions;
+
+  /// No description provided for @forecastAssumptionsText.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes personal cash, bank, wallet and savings balances in the selected currency. Debt payments and collections use that currency’s cash. Overdue outflows are placed on today; overdue inflows wait for a confirmed date. Pending ledger entries are excluded. Each daily figure is an end-of-day balance. Review recurring plans to link any payments you already recorded.'**
+  String get forecastAssumptionsText;
 }
 
 class _AppLocalizationsDelegate

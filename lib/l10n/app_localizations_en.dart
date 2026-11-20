@@ -2378,4 +2378,92 @@ class AppLocalizationsEn extends AppLocalizations {
   String backupSavingsGoalCount(int count) {
     return 'Savings goals $count';
   }
+
+  @override
+  String get cashForecast => 'Cash flow forecast';
+
+  @override
+  String get cashForecastReadFailed => 'Could not load the cash flow forecast.';
+
+  @override
+  String forecastRangeDays(int days) {
+    return '$days days';
+  }
+
+  @override
+  String get forecastPostedBalance => 'Posted cash through today';
+
+  @override
+  String get forecastClosingBalance => 'Projected closing balance';
+
+  @override
+  String get forecastPeakShortfall => 'Largest projected shortfall';
+
+  @override
+  String forecastFirstShortfall(String date) {
+    return 'First shortfall $date';
+  }
+
+  @override
+  String get forecastNoShortfall => 'No projected shortfall';
+
+  @override
+  String get forecastBalanceOverTime => 'Projected balance by date';
+
+  @override
+  String get forecastDailyClosing => 'Projected day-end balance';
+
+  @override
+  String get forecastCashMovements => 'Cash flow timeline';
+
+  @override
+  String get forecastNoMovements =>
+      'No cash movements scheduled in this range.';
+
+  @override
+  String get forecastFuturePosted => 'Posted · future date';
+
+  @override
+  String forecastScheduled(String source) {
+    return 'Forecast · $source';
+  }
+
+  @override
+  String get forecastRecurringIncome => 'Recurring income';
+
+  @override
+  String get forecastRecurringExpense => 'Recurring expense';
+
+  @override
+  String get forecastSubscription => 'Subscription renewal';
+
+  @override
+  String get forecastDebtRepayment => 'Debt repayment';
+
+  @override
+  String get forecastReceivableCollection => 'Receivable collection';
+
+  @override
+  String forecastOverdueSince(String date) {
+    return 'Originally due $date';
+  }
+
+  @override
+  String forecastOverdueCycles(int count) {
+    return '$count overdue cycles';
+  }
+
+  @override
+  String get forecastUncertainInflow =>
+      'Date unconfirmed · excluded from balance';
+
+  @override
+  String get forecastUnscheduledPrincipal => 'Principal with no scheduled date';
+
+  @override
+  String get forecastAssumptions => 'What is included';
+
+  @override
+  String get forecastAssumptionsText =>
+      'Includes personal cash, bank, wallet and savings balances in the selected currency. Debt payments and collections use that currency’s cash. Overdue outflows are placed on today; overdue inflows wait for a confirmed date. Pending ledger entries are excluded. Each daily figure is an end-of-day balance. Review recurring plans to link any payments you already recorded.';
 }

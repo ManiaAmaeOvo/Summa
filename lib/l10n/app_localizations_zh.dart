@@ -2224,4 +2224,90 @@ class AppLocalizationsZh extends AppLocalizations {
   String backupSavingsGoalCount(int count) {
     return '储蓄目标 $count';
   }
+
+  @override
+  String get cashForecast => '现金流预测';
+
+  @override
+  String get cashForecastReadFailed => '无法加载现金流预测。';
+
+  @override
+  String forecastRangeDays(int days) {
+    return '未来 $days 天';
+  }
+
+  @override
+  String get forecastPostedBalance => '截至今日已入账现金余额';
+
+  @override
+  String get forecastClosingBalance => '预测期末余额';
+
+  @override
+  String get forecastPeakShortfall => '最大预计资金缺口';
+
+  @override
+  String forecastFirstShortfall(String date) {
+    return '首次出现资金缺口 $date';
+  }
+
+  @override
+  String get forecastNoShortfall => '未出现预计资金缺口';
+
+  @override
+  String get forecastBalanceOverTime => '预测余额走势';
+
+  @override
+  String get forecastDailyClosing => '预测日末余额';
+
+  @override
+  String get forecastCashMovements => '现金流明细';
+
+  @override
+  String get forecastNoMovements => '所选范围内暂无现金变动。';
+
+  @override
+  String get forecastFuturePosted => '已入账 · 未来日期';
+
+  @override
+  String forecastScheduled(String source) {
+    return '预测 · $source';
+  }
+
+  @override
+  String get forecastRecurringIncome => '周期收入';
+
+  @override
+  String get forecastRecurringExpense => '周期支出';
+
+  @override
+  String get forecastSubscription => '订阅续费';
+
+  @override
+  String get forecastDebtRepayment => '债务还款';
+
+  @override
+  String get forecastReceivableCollection => '应收回款';
+
+  @override
+  String forecastOverdueSince(String date) {
+    return '原定 $date 到期';
+  }
+
+  @override
+  String forecastOverdueCycles(int count) {
+    return '逾期 $count 期';
+  }
+
+  @override
+  String get forecastUncertainInflow => '日期待确认 · 未计入余额';
+
+  @override
+  String get forecastUnscheduledPrincipal => '未排期本金';
+
+  @override
+  String get forecastAssumptions => '预测口径';
+
+  @override
+  String get forecastAssumptionsText =>
+      '起点为所选币种的本人现金、银行、钱包及储蓄余额。计划还款和回款影响同币种现金。逾期流出列在今天，逾期流入待确认日期。待入账交易另行复核。每日显示日末余额，已记账的周期交易可在计划中关联。';
 }

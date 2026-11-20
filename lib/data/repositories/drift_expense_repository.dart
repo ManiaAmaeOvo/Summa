@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/data/database/app_database.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/analytics/cash_forecast.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
@@ -83,25 +84,52 @@ class DriftExpenseRepository implements ExpenseRepository {
   }
 
   @override
-  Stream<List<AccountBalance>> watchAccountBalances() {
-    final query = _balanceQuery();
-    return query.watch().map(
-      (rows) => rows
-          .map((row) {
-            final kind = AccountKind.values.byName(row.read<String>('kind'));
-            final opening = row.read<int>('opening_balance_minor');
-            return AccountBalance(
-              id: row.read<String>('id'),
-              name: row.read<String>('name'),
-              kind: kind,
-              openingBalanceMinor: opening,
-              currentBalanceMinor: row.read<int>('current_balance'),
-              currencyCode: row.read<String>('currency_code'),
-            );
-          })
-          .toList(growable: false),
-    );
-  }
+  Stream<List<AccountBalance>> watchAccountBalances() =>
+      _balanceQuery().watch().map(_accountBalances);
+
+  List<AccountBalance> _accountBalances(List<QueryRow> rows) => [
+    for (final row in rows)
+      AccountBalance(
+        id: row.read<String>('id'),
+        name: row.read<String>('name'),
+        kind: AccountKind.values.byName(row.read<String>('kind')),
+        openingBalanceMinor: row.read<int>('opening_balance_minor'),
+        currentBalanceMinor: row.read<int>('current_balance'),
+        currencyCode: row.read<String>('currency_code'),
+      ),
+  ];
+
+  @override
+  Stream<CashForecastInputs> watchCashForecastInputs() => _database
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {
+          _database.ledgerEntries,
+          _database.ledgerPostings,
+          _database.ledgerAccounts,
+          _database.ledgerCategories,
+          _database.balanceCheckpoints,
+          _database.recurringPlans,
+          _database.recurringOccurrences,
+          _database.debtContracts,
+          _database.debtInstallments,
+          _database.debtSettlements,
+        },
+      )
+      .watch()
+      .asyncMap(
+        (_) => _database.transaction(() async {
+          final ledger = _transactionRows();
+          return CashForecastInputs(
+            balances: _accountBalances(await _balanceQuery().get()),
+            transactions: await ledger.decode(await ledger.query.get()),
+            recurringPlans: await _recurringPlans.read(),
+            contracts: await _debtContracts.read(
+              _balanceQuery(scope: _BalanceScope.contracts),
+            ),
+          );
+        }),
+      );
 
   @override
   Stream<List<LedgerCategory>> watchExpenseCategories() {
@@ -137,6 +165,15 @@ class DriftExpenseRepository implements ExpenseRepository {
 
   @override
   Stream<List<LedgerRecord>> watchTransactions() {
+    final ledger = _transactionRows();
+    return ledger.query.watch().asyncMap(ledger.decode);
+  }
+
+  ({
+    Selectable<TypedResult> query,
+    Future<List<LedgerRecord>> Function(List<TypedResult>) decode,
+  })
+  _transactionRows() {
     final entry = _database.ledgerEntries;
     final child = _database.ledgerCategories;
     final parent = _database.alias(
@@ -180,7 +217,7 @@ class DriftExpenseRepository implements ExpenseRepository {
             OrderingTerm.asc(postings.position),
           ]);
 
-    return query.watch().asyncMap((rows) async {
+    Future<List<LedgerRecord>> decode(List<TypedResult> rows) async {
       final transactions = <String, List<TypedResult>>{};
       for (final row in rows) {
         (transactions[row.readTable(entry).id] ??= []).add(row);
@@ -222,7 +259,9 @@ class DriftExpenseRepository implements ExpenseRepository {
             postings,
           ),
       ];
-    });
+    }
+
+    return (query: query, decode: decode);
   }
 
   Future<Map<String, ({String parentId, String parentName, String name})>>

@@ -198,6 +198,7 @@ typedef DebtProgress = ({
   List<DebtSettlement> settlements,
   BigInt linkedPrincipalMinor,
   BigInt unlinkedPrincipalMinor,
+  BigInt unlinkedInterestMinor,
 });
 
 DebtProgress summarizeDebtContract(
@@ -211,11 +212,13 @@ DebtProgress summarizeDebtContract(
       if (!link.voided) link.entryId,
   };
   var unlinkedPrincipal = BigInt.zero;
+  var unlinkedInterest = BigInt.zero;
   for (final record in byId.values) {
     if (linkedIds.contains(record.id)) continue;
     final payment = debtPaymentForRecord(draft, DebtLinkKind.principal, record);
     if (payment != null) {
       unlinkedPrincipal += BigInt.from(payment.principalMinor);
+      unlinkedInterest += BigInt.from(payment.interestMinor);
     }
   }
   final activeFirst = [...contract.links]
@@ -283,6 +286,7 @@ DebtProgress summarizeDebtContract(
     settlements: settlements.reversed.toList(),
     linkedPrincipalMinor: linkedPrincipal,
     unlinkedPrincipalMinor: unlinkedPrincipal,
+    unlinkedInterestMinor: unlinkedInterest,
   );
 }
 

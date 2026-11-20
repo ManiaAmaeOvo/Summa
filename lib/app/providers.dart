@@ -4,6 +4,7 @@ import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/auto_backup_expense_repository.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/analytics/cash_forecast.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
@@ -44,6 +45,11 @@ final accountsProvider = StreamProvider<List<LedgerAccount>>((ref) {
 final accountBalancesProvider = StreamProvider<List<AccountBalance>>((ref) {
   return ref.watch(expenseRepositoryProvider).watchAccountBalances();
 });
+
+final cashForecastInputsProvider =
+    StreamProvider.autoDispose<CashForecastInputs>(
+      (ref) => ref.watch(expenseRepositoryProvider).watchCashForecastInputs(),
+    );
 
 final expenseCategoriesProvider = StreamProvider<List<LedgerCategory>>((ref) {
   return ref.watch(expenseRepositoryProvider).watchExpenseCategories();
