@@ -30,6 +30,8 @@ class LedgerFilterControl extends StatelessWidget {
     final selection = [
       if (filter.range case final range?) _rangeLabel(context, range),
       ?filter.currency,
+      ?filter.channel,
+      ?filter.counterparty,
       if (filter.accountId case final id?) options.accounts[id] ?? id,
       if (filter.categoryId case final id?) options.categories[id] ?? id,
       if (filter.funding case final funding?) _fundingLabel(context, funding),
@@ -83,6 +85,12 @@ class _FilterOptions {
       accounts[row.id] = '${account(row.id, row.name)} · ${row.currencyCode}';
     }
     for (final record in records) {
+      for (final source in record.sources) {
+        if (source.channel case final channel?) channels[channel] = channel;
+        if (source.counterparty case final party?) {
+          counterparties[party] = party;
+        }
+      }
       accounts.putIfAbsent(
         record.accountId,
         () => account(record.accountId, record.accountName),
@@ -110,6 +118,8 @@ class _FilterOptions {
   late final List<String> currencies;
   final accounts = <String, String>{};
   final categories = <String, String>{};
+  final channels = <String, String>{};
+  final counterparties = <String, String>{};
 }
 
 class _FilterDialog extends StatefulWidget {
@@ -133,6 +143,8 @@ class _FilterDialogState extends State<_FilterDialog> {
   late String? _account = widget.filter.accountId;
   late String? _category = widget.filter.categoryId;
   late LedgerFunding? _funding = widget.filter.funding;
+  late String? _channel = widget.filter.channel;
+  late String? _counterparty = widget.filter.counterparty;
 
   @override
   Widget build(BuildContext context) {
@@ -199,6 +211,22 @@ class _FilterDialogState extends State<_FilterDialog> {
                   : LedgerFunding.values.byName(value),
             ),
           ),
+          if (widget.options.channels.isNotEmpty || _channel != null)
+            _field(
+              labels.paymentChannel,
+              labels.allPaymentChannels,
+              _channel,
+              widget.options.channels,
+              (value) => setState(() => _channel = value),
+            ),
+          if (widget.options.counterparties.isNotEmpty || _counterparty != null)
+            _field(
+              labels.transactionCounterparty,
+              labels.allCounterparties,
+              _counterparty,
+              widget.options.counterparties,
+              (value) => setState(() => _counterparty = value),
+            ),
         ],
       ),
       actions: [
@@ -219,6 +247,8 @@ class _FilterDialogState extends State<_FilterDialog> {
               accountId: _account,
               categoryId: _category,
               funding: _funding,
+              channel: _channel,
+              counterparty: _counterparty,
             ),
           ),
           child: Text(labels.ledgerFilterApply),

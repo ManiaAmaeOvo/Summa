@@ -47,7 +47,7 @@ Open **Settings → Font size** to follow the Android system setting or choose
 Small, Standard, Large, or Extra large for Summa only. The selection takes
 effect immediately and is retained after restarting the app.
 
-Tapping the **Liquid net worth** summary card on the home screen opens the
+Tapping the **Liquid net worth** summary card in **Transactions** opens the
 Accounts page, where all four balance groups and individual accounts are shown.
 
 ## 3. Accounts and liabilities
@@ -151,13 +151,13 @@ source account must have enough money.
 
 ## 5. Edit and delete transactions
 
-Tap an existing transaction on the home screen to open it in the editor. Amount,
+Tap an existing transaction in **Transactions** to open it in the editor. Amount,
 time, category, accounts, flow direction, and note are updated as one operation.
 Summa recalculates and validates the complete affected ledger before accepting
 the change.
 
 Deleting a transaction uses a soft delete. It disappears immediately from the
-home screen, reports, and balance calculations, while the database retains the
+transaction list, reports, and balance calculations, while the database retains the
 minimum historical state required for backup compatibility and consistency.
 Soft-deleted rows do not remain in memory; they only cause gradual SQLite file
 growth over long-term use.
@@ -182,7 +182,7 @@ does not delete custom categories.
 
 ## 7. JSON code import
 
-Tap the code icon in the top-right of the home screen. This workflow is designed
+Tap the code icon in the top-right of **Transactions**. This workflow is designed
 for transaction screenshots that have been converted to strict JSON by OCR or a
 language model.
 

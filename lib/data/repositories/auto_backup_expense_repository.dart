@@ -2,6 +2,7 @@ import 'package:summa/core/money/money.dart';
 import 'package:summa/data/backup/local_backup_store.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/cash_forecast.dart';
+import 'package:summa/domain/analytics/ledger_history.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
@@ -51,6 +52,10 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
   @override
   Stream<List<AccountBalance>> watchAccountBalances() =>
       _delegate.watchAccountBalances();
+
+  @override
+  Stream<LedgerHistoryInputs> watchLedgerHistoryInputs() =>
+      _delegate.watchLedgerHistoryInputs();
 
   @override
   Stream<CashForecastInputs> watchCashForecastInputs() =>

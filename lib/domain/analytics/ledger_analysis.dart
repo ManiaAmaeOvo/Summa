@@ -25,6 +25,8 @@ class LedgerFilter {
     this.categoryId,
     this.accountId,
     this.funding,
+    this.channel,
+    this.counterparty,
   });
 
   final LedgerDateRange? range;
@@ -32,17 +34,47 @@ class LedgerFilter {
   final String? categoryId;
   final String? accountId;
   final LedgerFunding? funding;
+  final String? channel;
+  final String? counterparty;
+
+  LedgerFilter scoped({
+    LedgerDateRange? range,
+    String? currency,
+    String? categoryId,
+    String? accountId,
+  }) => LedgerFilter(
+    range: range ?? this.range,
+    currency: currency ?? this.currency,
+    categoryId: categoryId ?? this.categoryId,
+    accountId: accountId ?? this.accountId,
+    funding: funding,
+    channel: channel,
+    counterparty: counterparty,
+  );
+
+  bool get hasSourceDimensions => channel != null || counterparty != null;
 
   bool get hasDimensions =>
       categoryId != null || accountId != null || funding != null;
-  bool get isActive => hasDimensions || currency != null || range != null;
+  bool get isActive =>
+      hasDimensions || hasSourceDimensions || currency != null || range != null;
+
+  bool includesSources(LedgerRecord record) =>
+      !hasSourceDimensions ||
+      record.sources.any(
+        (source) =>
+            (channel == null || source.channel == channel) &&
+            (counterparty == null || source.counterparty == counterparty),
+      );
 
   bool includesDate(DateTime time) =>
       range == null ||
       !time.isBefore(range!.start) && time.isBefore(range!.endExclusive);
 
   bool matches(LedgerRecord record) {
-    if (!includesDate(record.occurredAt)) return false;
+    if (!includesDate(record.occurredAt) || !includesSources(record)) {
+      return false;
+    }
     final currencies = ledgerRecordCurrencies(record);
     if (!hasDimensions) {
       return currency == null || currencies.contains(currency);
@@ -114,6 +146,7 @@ LedgerAnalysis analyzeLedger(
         (item) =>
             !item.isPending &&
             filter.includesDate(item.occurredAt) &&
+            filter.includesSources(item) &&
             (filter.currency == null || filter.currency == currency),
       )
       .toList();

@@ -146,7 +146,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get helpJsonTitle => 'JSON 代码块导入';
 
   @override
-  String get helpJson1 => '首页右上角代码图标可粘贴单笔或批量 JSON，适合把账单截图经 OCR 或语言模型整理后导入。';
+  String get helpJson1 => '账单页右上角代码图标可粘贴单笔或批量 JSON，适合把账单截图经 OCR 或语言模型整理后导入。';
 
   @override
   String get helpJson2 =>
@@ -2379,4 +2379,80 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ledgerFilterAllGroups => '全部账户分组';
+
+  @override
+  String get homeTab => '首页';
+
+  @override
+  String get planningTab => '规划';
+
+  @override
+  String get homeLoadFailed => '无法加载财务首页。';
+
+  @override
+  String get availableFunds => '可用资金';
+
+  @override
+  String get availableFundsHint => '截至今日的本人现金余额，按账户扣除储蓄预留。';
+
+  @override
+  String get homeBudgetRemaining => '预算余量';
+
+  @override
+  String get homeNoBudgets => '所选币种暂无生效预算。';
+
+  @override
+  String get homeObligations => '近 7 天财务义务';
+
+  @override
+  String get homeNoObligations => '所选币种近期无计划付款。';
+
+  @override
+  String get homeReconciliation => '待对账事项';
+
+  @override
+  String get homeNoReconciliation => '暂无待核对的余额差异。';
+
+  @override
+  String get paymentChannel => '支付渠道';
+
+  @override
+  String get allPaymentChannels => '全部支付渠道';
+
+  @override
+  String get transactionCounterparty => '交易对方';
+
+  @override
+  String get allCounterparties => '全部交易对方';
+
+  @override
+  String get transactionSources => '原始账单';
+
+  @override
+  String get importedRowFields => '导入字段';
+
+  @override
+  String get historicalAnalysis => '历史分析';
+
+  @override
+  String get reportTransactions => '查看对应流水';
+
+  @override
+  String get historyFilterHint => '各期收支和现金流沿用报表维度，净资产按所选币种和账户统计。';
+
+  @override
+  String get historyMethod => '期末净资产按原币统计。本期截至今日。';
+
+  @override
+  String get historyNetWorth => '期末净资产';
+
+  @override
+  String historyThroughDate(String date) {
+    return '截至 $date';
+  }
+
+  @override
+  String historyPreviousDifference(String amount) {
+    return '较上期 $amount';
+  }
 }

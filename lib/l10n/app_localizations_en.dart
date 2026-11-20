@@ -154,7 +154,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helpJson1 =>
-      'Use the code icon in the top-right of the home screen to paste one or many JSON transactions. This is useful after an OCR tool or language model structures a statement screenshot.';
+      'Use the code icon in the top-right of Transactions to paste one or many JSON transactions. This is useful after an OCR tool or language model structures a statement screenshot.';
 
   @override
   String get helpJson2 =>
@@ -2536,4 +2536,84 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ledgerFilterAllGroups => 'All account groups';
+
+  @override
+  String get homeTab => 'Home';
+
+  @override
+  String get planningTab => 'Planning';
+
+  @override
+  String get homeLoadFailed => 'Could not load the financial overview.';
+
+  @override
+  String get availableFunds => 'Available funds';
+
+  @override
+  String get availableFundsHint =>
+      'Personal cash through today, after savings reservations in each account.';
+
+  @override
+  String get homeBudgetRemaining => 'Budget remaining';
+
+  @override
+  String get homeNoBudgets => 'No active budgets in this currency.';
+
+  @override
+  String get homeObligations => 'Cash obligations in the next 7 days';
+
+  @override
+  String get homeNoObligations =>
+      'No scheduled cash payments in this currency.';
+
+  @override
+  String get homeReconciliation => 'Reconciliation to review';
+
+  @override
+  String get homeNoReconciliation => 'No outstanding balance differences.';
+
+  @override
+  String get paymentChannel => 'Payment channel';
+
+  @override
+  String get allPaymentChannels => 'All payment channels';
+
+  @override
+  String get transactionCounterparty => 'Counterparty';
+
+  @override
+  String get allCounterparties => 'All counterparties';
+
+  @override
+  String get transactionSources => 'Original statement';
+
+  @override
+  String get importedRowFields => 'Imported fields';
+
+  @override
+  String get historicalAnalysis => 'Historical analysis';
+
+  @override
+  String get reportTransactions => 'View matching transactions';
+
+  @override
+  String get historyFilterHint =>
+      'Activity uses the report filters across each period. Net worth uses the currency and account selection.';
+
+  @override
+  String get historyMethod =>
+      'Net worth at period end is shown in the original currency. The current period runs through today.';
+
+  @override
+  String get historyNetWorth => 'Period-end net worth';
+
+  @override
+  String historyThroughDate(String date) {
+    return 'Through $date';
+  }
+
+  @override
+  String historyPreviousDifference(String amount) {
+    return 'Vs previous period $amount';
+  }
 }

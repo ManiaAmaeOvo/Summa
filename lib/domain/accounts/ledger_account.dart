@@ -53,6 +53,8 @@ class AccountBalance {
     required this.openingBalanceMinor,
     required this.currentBalanceMinor,
     this.currencyCode = defaultCurrency,
+    this.createdAt,
+    this.archivedAt,
   });
 
   final String id;
@@ -61,6 +63,8 @@ class AccountBalance {
   final int openingBalanceMinor;
   final int currentBalanceMinor;
   final String currencyCode;
+  final DateTime? createdAt;
+  final DateTime? archivedAt;
 
   AccountGroup get group => kind.group;
 }

@@ -6,6 +6,7 @@ import 'package:summa/core/money/money.dart';
 import 'package:summa/data/database/app_database.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/cash_forecast.dart';
+import 'package:summa/domain/analytics/ledger_history.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
@@ -17,6 +18,7 @@ import 'package:summa/domain/planning/savings_goal.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/transaction_source.dart';
 import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/domain/transactions/ledger_posting.dart';
@@ -36,7 +38,7 @@ import 'drift_valuation_store.dart';
 const _backupFormat = 'summa_full_backup';
 const _legacyBackupFormat = 'ledgerpro_full_backup';
 
-enum _BalanceScope { active, contracts, savings }
+enum _BalanceScope { active, contracts, savings, history }
 
 class DriftExpenseRepository implements ExpenseRepository {
   DriftExpenseRepository(this._database)
@@ -95,6 +97,10 @@ class DriftExpenseRepository implements ExpenseRepository {
         kind: AccountKind.values.byName(row.read<String>('kind')),
         openingBalanceMinor: row.read<int>('opening_balance_minor'),
         currentBalanceMinor: row.read<int>('current_balance'),
+        createdAt: row.read<DateTime>('created_at'),
+        archivedAt: row.read<bool>('is_archived')
+            ? row.read<DateTime>('updated_at')
+            : null,
         currencyCode: row.read<String>('currency_code'),
       ),
   ];
@@ -163,17 +169,47 @@ class DriftExpenseRepository implements ExpenseRepository {
     });
   }
 
+  Selectable<QueryRow> get _ledgerChanges => _database.customSelect(
+    'SELECT 1',
+    readsFrom: {
+      _database.ledgerEntries,
+      _database.ledgerCategories,
+      _database.ledgerAccounts,
+      _database.ledgerPostings,
+      _database.balanceCheckpoints,
+      _database.csvImportRows,
+      _database.csvImportBatches,
+    },
+  );
+
   @override
-  Stream<List<LedgerRecord>> watchTransactions() {
-    final ledger = _transactionRows();
-    return ledger.query.watch().asyncMap(ledger.decode);
-  }
+  Stream<LedgerHistoryInputs> watchLedgerHistoryInputs() =>
+      _ledgerChanges.watch().asyncMap(
+        (_) => _database.transaction(() async {
+          final ledger = _transactionRows(includeSources: true);
+          return LedgerHistoryInputs(
+            balances: _accountBalances(
+              await _balanceQuery(scope: _BalanceScope.history).get(),
+            ),
+            transactions: await ledger.decode(await ledger.query.get()),
+          );
+        }),
+      );
+
+  @override
+  Stream<List<LedgerRecord>> watchTransactions() =>
+      _ledgerChanges.watch().asyncMap(
+        (_) => _database.transaction(() async {
+          final ledger = _transactionRows(includeSources: true);
+          return ledger.decode(await ledger.query.get());
+        }),
+      );
 
   ({
     Selectable<TypedResult> query,
     Future<List<LedgerRecord>> Function(List<TypedResult>) decode,
   })
-  _transactionRows() {
+  _transactionRows({bool includeSources = false}) {
     final entry = _database.ledgerEntries;
     final child = _database.ledgerCategories;
     final parent = _database.alias(
@@ -243,6 +279,9 @@ class DriftExpenseRepository implements ExpenseRepository {
               ({String parentId, String parentName, String name})
             >{}
           : await _allocationLabels(allocationIds);
+      final sources = includeSources
+          ? await _csv.activeSources()
+          : const <String, List<TransactionSource>>{};
       return [
         for (final group in transactions.entries)
           _ledgerRecord(
@@ -250,6 +289,7 @@ class DriftExpenseRepository implements ExpenseRepository {
             terms[group.key] ?? const TransactionTerms(),
             reversedIds.contains(group.key),
             labels,
+            sources[group.key] ?? const [],
             entry,
             parent,
             child,
@@ -286,6 +326,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     TransactionTerms terms,
     bool hasReversal,
     Map<String, ({String parentId, String parentName, String name})> labels,
+    List<TransactionSource> sources,
     $LedgerEntriesTable entry,
     $LedgerCategoriesTable parent,
     $LedgerCategoriesTable child,
@@ -322,6 +363,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       settlement: _entrySettlement(item),
       terms: terms,
       hasReversal: hasReversal,
+      sources: List.unmodifiable(sources),
       isReconciliationAdjustment:
           row.readTableOrNull(_database.balanceCheckpoints) != null,
       allocationLabels: {
@@ -2139,10 +2181,12 @@ class DriftExpenseRepository implements ExpenseRepository {
               'a.id IN (SELECT account_id FROM debt_contracts)',
             _BalanceScope.savings =>
               'a.id IN (SELECT account_id FROM savings_goals)',
+            _BalanceScope.history => "a.kind <> 'familyDirect'",
           };
     return _database.customSelect(
       """
       SELECT a.id, a.name, a.kind, a.currency_code, a.opening_balance_minor, a.is_archived,
+        a.created_at, a.updated_at,
         a.opening_balance_minor + COALESCE(p.net_debit, 0) *
           CASE WHEN a.kind IN ('creditLine', 'thirdPartyPayable') THEN -1 ELSE 1 END AS current_balance
       FROM ledger_accounts AS a

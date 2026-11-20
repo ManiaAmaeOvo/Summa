@@ -46,7 +46,8 @@ class CsvImportHistoryScreen extends ConsumerWidget {
                           onTap: () => Navigator.push<void>(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => _BatchDetails(id: batch.id),
+                              builder: (_) =>
+                                  CsvBatchDetailsScreen(id: batch.id),
                             ),
                           ),
                         ),
@@ -58,15 +59,16 @@ class CsvImportHistoryScreen extends ConsumerWidget {
   }
 }
 
-class _BatchDetails extends ConsumerStatefulWidget {
-  const _BatchDetails({required this.id});
+class CsvBatchDetailsScreen extends ConsumerStatefulWidget {
+  const CsvBatchDetailsScreen({super.key, required this.id});
   final String id;
 
   @override
-  ConsumerState<_BatchDetails> createState() => _BatchDetailsState();
+  ConsumerState<CsvBatchDetailsScreen> createState() =>
+      _CsvBatchDetailsScreenState();
 }
 
-class _BatchDetailsState extends ConsumerState<_BatchDetails> {
+class _CsvBatchDetailsScreenState extends ConsumerState<CsvBatchDetailsScreen> {
   bool _busy = false;
   String? _error;
 

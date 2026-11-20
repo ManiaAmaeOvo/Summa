@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/analytics/ledger_analysis.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -202,6 +204,66 @@ void main() {
     await repo.undoCsvImport(result.batchId);
     expect(await balance(yen.id), 700);
     expect(await repo.watchTransactions().first, hasLength(1));
+  });
+
+  test('active source links update live, filter activity, and survive V13 restore', () async {
+    final file = parseCsvImport(
+      'wallet.csv',
+      utf8.encode(
+        '$header,payment_channel,merchant\n'
+        '${expense('12', 'Matched lunch', id: 'trace-123')},Wallet,Example Bakery',
+      ),
+    );
+    await repo.addExpense(
+      amountMinor: 1200,
+      occurredAt: time,
+      categoryId: food,
+      accountId: cash,
+      note: 'Matched lunch',
+    );
+    final row = (await repo.previewCsvImport(file)).single;
+    final updates = StreamIterator(repo.watchTransactions());
+    final filter = const LedgerFilter(
+      channel: 'Wallet',
+      counterparty: 'Example Bakery',
+    );
+    try {
+      expect(await updates.moveNext(), isTrue);
+      expect(updates.current.single.sources, isEmpty);
+      final next = updates.moveNext();
+      final result = await repo.commitCsvImport(file, [
+        select(row, matchId: row.matches.single.id),
+      ]);
+      expect(result.matched, 1);
+      expect(await next, isTrue);
+      final source = updates.current.single.sources.single;
+      expect(source.batchId, result.batchId);
+      expect(source.line, 2);
+      expect(source.provider, 'bank-a');
+      expect(source.cells['external_id'], 'trace-123');
+      expect(filter.matches(updates.current.single), isTrue);
+      expect(
+        analyzeLedger(updates.current, 'CNY', filter).activity.grossSpending,
+        BigInt.from(1200),
+      );
+      final backup = await repo.createFullBackup();
+      final undone = updates.moveNext();
+      await repo.undoCsvImport(result.batchId);
+      expect(await undone, isTrue);
+      expect(updates.current.single.sources, isEmpty);
+      expect(filter.matches(updates.current.single), isFalse);
+      expect(await balance(cash), 18800);
+      await repo.restoreFullBackup(backup, mode: BackupRestoreMode.replace);
+      final restored = await repo.watchLedgerHistoryInputs().first;
+      expect(
+        restored.transactions.single.sources.single.batchName,
+        'wallet.csv',
+      );
+      expect(filter.matches(restored.transactions.single), isTrue);
+      expect(await balance(cash), 18800);
+    } finally {
+      await updates.cancel();
+    }
   });
 
   test('overlap without IDs requires review and permits explicitly separate postings', () async {

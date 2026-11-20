@@ -71,7 +71,7 @@ Android currently requires `minSdk 24` and targets SDK 36.
    Borrowing, Repayment, or Transfer.
 3. Open **Settings → Category management** to maintain the two-level income
    and expense categories.
-4. Use the code icon in the top-right of the home screen to paste strict JSON,
+4. Use the code icon in the top-right of **Transactions** to paste strict JSON,
    preview the parsed transactions, and import them as one atomic batch.
 5. Open **Reports** for daily, weekly, monthly, or yearly summaries and export
    JSON, CSV, or Markdown for a selected period.
@@ -80,7 +80,7 @@ Android currently requires `minSdk 24` and targets SDK 36.
 7. Open **Settings → Language** to follow the system language or explicitly use
    English or Simplified Chinese.
 8. Open **Settings → Font size** to follow Android or choose a size used only
-   inside Summa. Tap **Liquid net worth** on the home screen to open Accounts.
+   inside Summa. Tap **Liquid net worth** in **Transactions** to open Accounts.
 
 See the [complete user guide](USER_GUIDE.md) for ledger semantics, import
 examples, backup behavior, recovery options, and common questions. The same

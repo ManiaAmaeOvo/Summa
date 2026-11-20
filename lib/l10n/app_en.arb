@@ -44,7 +44,7 @@
   "helpAccounts1": "The Accounts tab shows personal liquid assets, outstanding liabilities, liquid net worth, and entrusted or authorized funds. Tap an account to calibrate its current balance; calibration does not create artificial income or expenses.",
   "helpAccounts2": "Accounts can be added or archived. Category management in Settings maintains separate two-level structures for income and expenses. Transactions use the second level, and every primary category keeps an “Other” fallback.",
   "helpJsonTitle": "JSON code import",
-  "helpJson1": "Use the code icon in the top-right of the home screen to paste one or many JSON transactions. This is useful after an OCR tool or language model structures a statement screenshot.",
+  "helpJson1": "Use the code icon in the top-right of Transactions to paste one or many JSON transactions. This is useful after an OCR tool or language model structures a statement screenshot.",
   "helpJson2": "The flow is parse and validate, preview and edit each item, confirm the count, then write atomically. Unknown accounts can be created automatically; unknown categories must be created first or corrected in the preview.",
   "helpJson3": "Amounts are positive decimal strings, timestamps use ISO 8601, and categories use “Primary/Secondary”.",
   "helpReportsTitle": "Reports and export",
@@ -939,6 +939,44 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "homeTab": "Home",
+  "planningTab": "Planning",
+  "homeLoadFailed": "Could not load the financial overview.",
+  "availableFunds": "Available funds",
+  "availableFundsHint": "Personal cash through today, after savings reservations in each account.",
+  "homeBudgetRemaining": "Budget remaining",
+  "homeNoBudgets": "No active budgets in this currency.",
+  "homeObligations": "Cash obligations in the next 7 days",
+  "homeNoObligations": "No scheduled cash payments in this currency.",
+  "homeReconciliation": "Reconciliation to review",
+  "homeNoReconciliation": "No outstanding balance differences.",
+  "paymentChannel": "Payment channel",
+  "allPaymentChannels": "All payment channels",
+  "transactionCounterparty": "Counterparty",
+  "allCounterparties": "All counterparties",
+  "transactionSources": "Original statement",
+  "importedRowFields": "Imported fields",
+  "historicalAnalysis": "Historical analysis",
+  "reportTransactions": "View matching transactions",
+  "historyFilterHint": "Activity uses the report filters across each period. Net worth uses the currency and account selection.",
+  "historyMethod": "Net worth at period end is shown in the original currency. The current period runs through today.",
+  "historyNetWorth": "Period-end net worth",
+  "historyThroughDate": "Through {date}",
+  "historyPreviousDifference": "Vs previous period {amount}",
+  "@historyThroughDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@historyPreviousDifference": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
       }
     }
   }

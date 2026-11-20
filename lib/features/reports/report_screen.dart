@@ -14,6 +14,8 @@ import 'package:summa/domain/analytics/ledger_analysis.dart';
 import 'package:summa/domain/import_export/ledger_export.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/features/analysis/ledger_filter_control.dart';
+import 'package:summa/features/dashboard/transaction_browser.dart';
+import 'package:summa/features/reports/historical_analysis_screen.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/l10n.dart';
 import 'package:share_plus/share_plus.dart';
@@ -55,12 +57,6 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
         final range = custom == null
             ? _rangeFor(_period, _anchor)
             : _DateRange(custom.start, custom.endExclusive);
-        final filter = LedgerFilter(
-          range: (start: range.start, endExclusive: range.end),
-          accountId: _filter.accountId,
-          categoryId: _filter.categoryId,
-          funding: _filter.funding,
-        );
         final posted = all
             .where((item) => !item.isPending)
             .toList(growable: false);
@@ -71,6 +67,16 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
         final currency = currencies.contains(_currency)
             ? _currency!
             : currencies.first;
+        final filter = _filter.scoped(
+          range: (start: range.start, endExclusive: range.end),
+          currency: currency,
+        );
+        void openTransactions(LedgerFilter selected) => Navigator.push<void>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LedgerDrilldownScreen(filter: selected),
+          ),
+        );
         final periodRecords = posted
             .where(
               (item) =>
@@ -146,6 +152,29 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               ),
             ],
             const SizedBox(height: 8),
+            Wrap(
+              spacing: 4,
+              children: [
+                TextButton.icon(
+                  onPressed: () => openTransactions(filter),
+                  icon: const Icon(Icons.receipt_long_outlined),
+                  label: Text(context.l10n.reportTransactions),
+                ),
+                TextButton.icon(
+                  onPressed: () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HistoricalAnalysisScreen(
+                        initialCurrency: currency,
+                        initialFilter: _filter,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.history),
+                  label: Text(context.l10n.historicalAnalysis),
+                ),
+              ],
+            ),
             _SummaryGrid(analysis: analysis, currency: currency),
             const SizedBox(height: 16),
             _FundingSummary(currency: currency, activity: analysis.activity),
@@ -153,6 +182,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               _AccountFlowCard(
                 flows: analysis.accountFlows,
                 currency: currency,
+                onOpen: (id) => openTransactions(filter.scoped(accountId: id)),
               ),
             if (_filter.hasDimensions)
               ExpansionTile(
@@ -172,6 +202,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               emptyText: context.l10n.noExpenseCategoryData,
               rows: analysis.expenseCategories,
               currency: currency,
+              onOpen: (id) => openTransactions(filter.scoped(categoryId: id)),
             ),
             const SizedBox(height: 16),
             _CategoryPieCard(
@@ -179,8 +210,11 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               emptyText: context.l10n.noIncomeCategoryData,
               rows: analysis.incomeCategories,
               currency: currency,
+              onOpen: (id) => openTransactions(filter.scoped(categoryId: id)),
             ),
-            if (_filter.categoryId == null && _filter.funding == null) ...[
+            if (_filter.categoryId == null &&
+                _filter.funding == null &&
+                !_filter.hasSourceDimensions) ...[
               const SizedBox(height: 16),
               _DebtTrendCard(
                 allRecords: posted,
@@ -314,10 +348,15 @@ class _FundingSummary extends StatelessWidget {
 }
 
 class _AccountFlowCard extends StatelessWidget {
-  const _AccountFlowCard({required this.flows, required this.currency});
+  const _AccountFlowCard({
+    required this.flows,
+    required this.currency,
+    required this.onOpen,
+  });
 
   final List<AnalysisAccountFlow> flows;
   final String currency;
+  final ValueChanged<String> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -333,6 +372,8 @@ class _AccountFlowCard extends StatelessWidget {
           for (final row in flows)
             ListTile(
               contentPadding: EdgeInsets.zero,
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => onOpen(row.id),
               title: Text(
                 DefaultLedgerLabels.accountName(locale, row.id, row.name),
               ),
@@ -632,12 +673,14 @@ class _CategoryPieCard extends StatelessWidget {
     required this.emptyText,
     required this.rows,
     required this.currency,
+    required this.onOpen,
   });
 
   final String title;
   final String emptyText;
   final List<AnalysisBreakdown> rows;
   final String currency;
+  final ValueChanged<String> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -682,35 +725,29 @@ class _CategoryPieCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
               ],
-              for (var index = 0; index < sorted.length; index++) ...[
-                Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: colors[index % colors.length],
-                        shape: BoxShape.circle,
-                      ),
+              for (final (index, row) in sorted.indexed)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  onTap: () => onOpen(row.id),
+                  leading: Icon(
+                    Icons.circle,
+                    size: 12,
+                    color: colors[index % colors.length],
+                  ),
+                  title: Text(
+                    DefaultLedgerLabels.categoryName(
+                      Localizations.localeOf(context),
+                      row.id,
+                      row.name,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        DefaultLedgerLabels.categoryName(
-                          Localizations.localeOf(context),
-                          sorted[index].id,
-                          sorted[index].name,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '${showPie ? '${(sorted[index].amountMinor.toDouble() * 100 / total.toDouble()).toStringAsFixed(1)}%  ' : ''}'
-                      '${formatMoneyTotal(sorted[index].amountMinor, currency)}',
-                    ),
-                  ],
+                  ),
+                  subtitle: Text(
+                    '${showPie ? '${(row.amountMinor.toDouble() * 100 / total.toDouble()).toStringAsFixed(1)}%  ' : ''}'
+                    '${formatMoneyTotal(row.amountMinor, currency)}',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
                 ),
-                if (index != sorted.length - 1) const SizedBox(height: 8),
-              ],
             ],
           ],
         ),

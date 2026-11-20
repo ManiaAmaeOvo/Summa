@@ -8,6 +8,7 @@ import 'package:summa/domain/defaults/default_ledger_names.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/transactions/transaction_source.dart';
 
 class DriftCsvImportStore {
   DriftCsvImportStore(this._db);
@@ -343,6 +344,35 @@ class DriftCsvImportStore {
             ),
         ],
       );
+
+  Future<Map<String, List<TransactionSource>>> activeSources() async {
+    final rows = _db.csvImportRows;
+    final batches = _db.csvImportBatches;
+    final query =
+        _db.select(rows).join([
+            innerJoin(batches, batches.id.equalsExp(rows.batchId)),
+          ])
+          ..where(rows.active.equals(true) & batches.undoneAt.isNull())
+          ..orderBy([
+            OrderingTerm.desc(batches.createdAt),
+            OrderingTerm.asc(batches.id),
+            OrderingTerm.asc(rows.rowNumber),
+          ]);
+    final result = <String, List<TransactionSource>>{};
+    for (final entry in await query.get()) {
+      final row = entry.readTable(rows);
+      final batch = entry.readTable(batches);
+      (result[row.entryId] ??= []).add(
+        TransactionSource(
+          batchId: row.batchId,
+          batchName: batch.name,
+          line: row.line,
+          cells: Map.unmodifiable(_rawCells(row.rawJson)),
+        ),
+      );
+    }
+    return result;
+  }
 
   Future<List<CsvBatchItem>> items(String id) async => [
     for (final row in await readRows(id))

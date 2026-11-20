@@ -1,5 +1,6 @@
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/transactions/transaction_source.dart';
 import 'package:summa/domain/transactions/transaction_terms.dart';
 
 enum LedgerTransactionType {
@@ -94,6 +95,7 @@ class LedgerRecord {
     this.settlement,
     this.terms = const TransactionTerms(),
     this.allocationLabels = const {},
+    this.sources = const [],
     this.hasReversal = false,
     this.isReconciliationAdjustment = false,
     required this.note,
@@ -121,6 +123,7 @@ class LedgerRecord {
   final TransactionTerms terms;
   final Map<String, ({String parentId, String parentName, String name})>
   allocationLabels;
+  final List<TransactionSource> sources;
   final bool hasReversal;
   final bool isReconciliationAdjustment;
   final String note;

@@ -1,6 +1,7 @@
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/cash_forecast.dart';
+import 'package:summa/domain/analytics/ledger_history.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
@@ -57,6 +58,8 @@ abstract interface class ExpenseRepository {
   Stream<List<LedgerAccount>> watchAccounts();
 
   Stream<List<AccountBalance>> watchAccountBalances();
+
+  Stream<LedgerHistoryInputs> watchLedgerHistoryInputs();
 
   Stream<CashForecastInputs> watchCashForecastInputs();
 

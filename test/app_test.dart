@@ -13,6 +13,7 @@ import 'package:summa/app/theme/ledger_scroll_behavior.dart';
 import 'package:summa/data/database/app_database.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
+import 'package:summa/domain/analytics/cash_forecast.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
@@ -42,7 +43,9 @@ void main() {
     currentBalanceMinor: 0,
   );
 
-  testWidgets('shows the Summa foundation screen', (tester) async {
+  testWidgets('opens the financial home and provides five destinations', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _testApp(
         overrides: [
@@ -55,12 +58,23 @@ void main() {
         ],
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Summa'), findsOneWidget);
-    expect(find.text('还没有账单'), findsOneWidget);
+    expect(find.text('首页'), findsOneWidget);
+    expect(find.text('折算净资产'), findsOneWidget);
+    expect(find.text('可用资金'), findsOneWidget);
+    expect(find.text('账户'), findsOneWidget);
+    expect(find.text('报表'), findsOneWidget);
+    expect(find.text('规划'), findsOneWidget);
     expect(find.text('记一笔'), findsOneWidget);
     expect(find.text('本月支出'), findsOneWidget);
+    await tester.tap(find.text('规划'));
+    await tester.pumpAndSettle();
+    expect(find.text('预算与外部额度'), findsOneWidget);
+    expect(find.text('现金流预测'), findsOneWidget);
+    await _openTransactions(tester);
+    expect(find.text('还没有账单'), findsOneWidget);
     expect(find.text('流动净资产'), findsOneWidget);
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.scrollBehavior, isA<LedgerScrollBehavior>());
@@ -82,10 +96,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('No transactions yet'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Available funds'), findsOneWidget);
+    expect(find.text('Planning'), findsOneWidget);
     expect(find.text('Add transaction'), findsOneWidget);
     expect(find.text('Expense this month'), findsOneWidget);
-    expect(find.text('Liquid net worth'), findsOneWidget);
     expect(find.text('Accounts'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -104,6 +119,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openTransactions(tester);
     await tester.tap(find.text('流动净资产'));
     await tester.pumpAndSettle();
 
@@ -172,6 +188,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    await _openTransactions(tester);
     expect(find.text('¥10.00'), findsOneWidget);
     expect(find.text('USD 30.00'), findsNothing);
     await selectUsd();
@@ -246,6 +263,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await _openTransactions(tester);
       await tester.tap(find.text('转账'));
       await tester.pumpAndSettle();
 
@@ -660,6 +678,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openTransactions(tester);
     await tester.scrollUntilVisible(
       find.text('饮食 · 午餐'),
       200,
@@ -837,11 +856,31 @@ void main() {
   });
 }
 
+Future<void> _openTransactions(WidgetTester tester) async {
+  await tester.tap(find.text('账单'));
+  await tester.pumpAndSettle();
+}
+
 Widget _testApp({
   required List<Override> overrides,
   Stream<ValuationSettings>? valuation,
 }) => ProviderScope(
   overrides: [
+    cashForecastInputsProvider.overrideWith(
+      (ref) => Stream.value(
+        CashForecastInputs(
+          balances: const [],
+          transactions: const [],
+          recurringPlans: const [],
+          contracts: const [],
+        ),
+      ),
+    ),
+    spendingPlansProvider.overrideWith((ref) => Stream.value(const [])),
+    savingsAllocationsProvider.overrideWith((ref) => Stream.value(const [])),
+    balanceCheckpointsProvider.overrideWith(
+      (ref, id) => Stream.value(const []),
+    ),
     valuationSettingsProvider.overrideWith(
       (ref) => valuation ?? Stream.value(const ValuationSettings()),
     ),

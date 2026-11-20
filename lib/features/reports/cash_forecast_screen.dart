@@ -205,7 +205,7 @@ class _ForecastDayCard extends StatelessWidget {
                 ),
                 subtitle: Text(
                   [
-                    _source(context, event.source),
+                    cashForecastSourceLabel(context, event.source),
                     if (event.dueOn.isBefore(day.date))
                       labels.forecastOverdueSince(_date(context, event.dueOn)),
                     if (event.overdueCycles > 1)
@@ -229,7 +229,10 @@ class _ForecastDayCard extends StatelessWidget {
   }
 }
 
-String _source(BuildContext context, CashForecastSource source) {
+String cashForecastSourceLabel(
+  BuildContext context,
+  CashForecastSource source,
+) {
   final labels = context.l10n;
   return switch (source) {
     CashForecastSource.recurringIncome => labels.forecastScheduled(

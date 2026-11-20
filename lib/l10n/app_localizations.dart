@@ -359,7 +359,7 @@ abstract class AppLocalizations {
   /// No description provided for @helpJson1.
   ///
   /// In en, this message translates to:
-  /// **'Use the code icon in the top-right of the home screen to paste one or many JSON transactions. This is useful after an OCR tool or language model structures a statement screenshot.'**
+  /// **'Use the code icon in the top-right of Transactions to paste one or many JSON transactions. This is useful after an OCR tool or language model structures a statement screenshot.'**
   String get helpJson1;
 
   /// No description provided for @helpJson2.
@@ -4537,6 +4537,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All account groups'**
   String get ledgerFilterAllGroups;
+
+  /// No description provided for @homeTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get homeTab;
+
+  /// No description provided for @planningTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Planning'**
+  String get planningTab;
+
+  /// No description provided for @homeLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the financial overview.'**
+  String get homeLoadFailed;
+
+  /// No description provided for @availableFunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Available funds'**
+  String get availableFunds;
+
+  /// No description provided for @availableFundsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal cash through today, after savings reservations in each account.'**
+  String get availableFundsHint;
+
+  /// No description provided for @homeBudgetRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget remaining'**
+  String get homeBudgetRemaining;
+
+  /// No description provided for @homeNoBudgets.
+  ///
+  /// In en, this message translates to:
+  /// **'No active budgets in this currency.'**
+  String get homeNoBudgets;
+
+  /// No description provided for @homeObligations.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash obligations in the next 7 days'**
+  String get homeObligations;
+
+  /// No description provided for @homeNoObligations.
+  ///
+  /// In en, this message translates to:
+  /// **'No scheduled cash payments in this currency.'**
+  String get homeNoObligations;
+
+  /// No description provided for @homeReconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconciliation to review'**
+  String get homeReconciliation;
+
+  /// No description provided for @homeNoReconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'No outstanding balance differences.'**
+  String get homeNoReconciliation;
+
+  /// No description provided for @paymentChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment channel'**
+  String get paymentChannel;
+
+  /// No description provided for @allPaymentChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'All payment channels'**
+  String get allPaymentChannels;
+
+  /// No description provided for @transactionCounterparty.
+  ///
+  /// In en, this message translates to:
+  /// **'Counterparty'**
+  String get transactionCounterparty;
+
+  /// No description provided for @allCounterparties.
+  ///
+  /// In en, this message translates to:
+  /// **'All counterparties'**
+  String get allCounterparties;
+
+  /// No description provided for @transactionSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Original statement'**
+  String get transactionSources;
+
+  /// No description provided for @importedRowFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported fields'**
+  String get importedRowFields;
+
+  /// No description provided for @historicalAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Historical analysis'**
+  String get historicalAnalysis;
+
+  /// No description provided for @reportTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'View matching transactions'**
+  String get reportTransactions;
+
+  /// No description provided for @historyFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity uses the report filters across each period. Net worth uses the currency and account selection.'**
+  String get historyFilterHint;
+
+  /// No description provided for @historyMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Net worth at period end is shown in the original currency. The current period runs through today.'**
+  String get historyMethod;
+
+  /// No description provided for @historyNetWorth.
+  ///
+  /// In en, this message translates to:
+  /// **'Period-end net worth'**
+  String get historyNetWorth;
+
+  /// No description provided for @historyThroughDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Through {date}'**
+  String historyThroughDate(String date);
+
+  /// No description provided for @historyPreviousDifference.
+  ///
+  /// In en, this message translates to:
+  /// **'Vs previous period {amount}'**
+  String historyPreviousDifference(String amount);
 }
 
 class _AppLocalizationsDelegate

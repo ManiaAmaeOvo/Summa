@@ -5,6 +5,7 @@ import 'package:summa/data/repositories/auto_backup_expense_repository.dart';
 import 'package:summa/data/repositories/drift_expense_repository.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/cash_forecast.dart';
+import 'package:summa/domain/analytics/ledger_history.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
@@ -45,6 +46,11 @@ final accountsProvider = StreamProvider<List<LedgerAccount>>((ref) {
 final accountBalancesProvider = StreamProvider<List<AccountBalance>>((ref) {
   return ref.watch(expenseRepositoryProvider).watchAccountBalances();
 });
+
+final ledgerHistoryInputsProvider =
+    StreamProvider.autoDispose<LedgerHistoryInputs>(
+      (ref) => ref.watch(expenseRepositoryProvider).watchLedgerHistoryInputs(),
+    );
 
 final cashForecastInputsProvider =
     StreamProvider.autoDispose<CashForecastInputs>(
