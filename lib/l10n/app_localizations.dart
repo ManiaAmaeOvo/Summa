@@ -1871,7 +1871,7 @@ abstract class AppLocalizations {
   /// No description provided for @resetTransactionsAccountsMessage.
   ///
   /// In en, this message translates to:
-  /// **'All transactions and account-linked budgets and allowances will be cleared, custom accounts deleted, and default balances set to zero. Categories, other budgets, and backups will be preserved.'**
+  /// **'All transactions, recurring plans, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.'**
   String get resetTransactionsAccountsMessage;
 
   /// No description provided for @confirmReset.
@@ -3571,6 +3571,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Budgets & allowances {count}'**
   String backupSpendingPlanCount(int count);
+
+  /// No description provided for @recurringPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions & recurring plans'**
+  String get recurringPlans;
+
+  /// No description provided for @recurringAddPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Add recurring plan'**
+  String get recurringAddPlan;
+
+  /// No description provided for @recurringEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a subscription or another repeating expense or income.'**
+  String get recurringEmpty;
+
+  /// No description provided for @recurringLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load recurring plans.'**
+  String get recurringLoadFailed;
+
+  /// No description provided for @recurringSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription'**
+  String get recurringSubscription;
+
+  /// No description provided for @recurringPlanType.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan type'**
+  String get recurringPlanType;
+
+  /// No description provided for @recurringCadence.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequency'**
+  String get recurringCadence;
+
+  /// No description provided for @recurringDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get recurringDaily;
+
+  /// No description provided for @recurringWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get recurringWeekly;
+
+  /// No description provided for @recurringQuarterly.
+  ///
+  /// In en, this message translates to:
+  /// **'Quarterly'**
+  String get recurringQuarterly;
+
+  /// No description provided for @recurringYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get recurringYearly;
+
+  /// No description provided for @recurringCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom days'**
+  String get recurringCustom;
+
+  /// No description provided for @recurringIntervalDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days between occurrences'**
+  String get recurringIntervalDays;
+
+  /// No description provided for @recurringFirstDue.
+  ///
+  /// In en, this message translates to:
+  /// **'First due date'**
+  String get recurringFirstDue;
+
+  /// No description provided for @recurringNextDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Next due date'**
+  String get recurringNextDue;
+
+  /// No description provided for @recurringExpectedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected amount'**
+  String get recurringExpectedAmount;
+
+  /// No description provided for @recurringChangeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Change expected amount'**
+  String get recurringChangeAmount;
+
+  /// No description provided for @recurringPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get recurringPause;
+
+  /// No description provided for @recurringResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get recurringResume;
+
+  /// No description provided for @recurringPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get recurringPaused;
+
+  /// No description provided for @recurringOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get recurringOverdue;
+
+  /// No description provided for @recurringScheduleEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'No more dates'**
+  String get recurringScheduleEnded;
+
+  /// No description provided for @recurringConfirmPosting.
+  ///
+  /// In en, this message translates to:
+  /// **'Review & post'**
+  String get recurringConfirmPosting;
+
+  /// No description provided for @recurringPostTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm actual transaction'**
+  String get recurringPostTitle;
+
+  /// No description provided for @recurringActualAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual amount'**
+  String get recurringActualAmount;
+
+  /// No description provided for @recurringActualDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual date'**
+  String get recurringActualDate;
+
+  /// No description provided for @recurringPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm & post'**
+  String get recurringPost;
+
+  /// No description provided for @recurringLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link an existing transaction'**
+  String get recurringLink;
+
+  /// No description provided for @recurringSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search note, date or amount'**
+  String get recurringSearch;
+
+  /// No description provided for @recurringNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No eligible posted transactions for this account and currency.'**
+  String get recurringNoMatches;
+
+  /// No description provided for @recurringHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked transactions'**
+  String get recurringHistory;
+
+  /// No description provided for @recurringNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No cycles have been confirmed yet.'**
+  String get recurringNoHistory;
+
+  /// No description provided for @recurringUnavailableEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction unavailable'**
+  String get recurringUnavailableEntry;
+
+  /// No description provided for @recurringReversedEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversed'**
+  String get recurringReversedEntry;
+
+  /// No description provided for @recurringChangedEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction details changed'**
+  String get recurringChangedEntry;
+
+  /// No description provided for @recurringUnavailableTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'The account or category is archived or unavailable.'**
+  String get recurringUnavailableTarget;
+
+  /// No description provided for @recurringInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the plan, amount and date.'**
+  String get recurringInvalid;
+
+  /// No description provided for @recurringStale.
+  ///
+  /// In en, this message translates to:
+  /// **'This cycle was already processed or the plan changed. Review the current cycle.'**
+  String get recurringStale;
+
+  /// No description provided for @recurringIneligible.
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction can no longer be linked.'**
+  String get recurringIneligible;
+
+  /// No description provided for @recurringAlreadyLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction is already linked to a cycle.'**
+  String get recurringAlreadyLinked;
+
+  /// No description provided for @recurringBackupConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup has invalid or conflicting recurring plans or transaction links.'**
+  String get recurringBackupConflict;
+
+  /// No description provided for @backupRecurringPlanCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions & recurring plans {count}'**
+  String backupRecurringPlanCount(int count);
 }
 
 class _AppLocalizationsDelegate

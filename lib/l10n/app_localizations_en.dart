@@ -1021,7 +1021,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetTransactionsAccountsMessage =>
-      'All transactions and account-linked budgets and allowances will be cleared, custom accounts deleted, and default balances set to zero. Categories, other budgets, and backups will be preserved.';
+      'All transactions, recurring plans, and account-linked budgets and allowances will be cleared. Custom accounts will be deleted and default balances set to zero. Categories, other budgets, and backups will be preserved.';
 
   @override
   String get confirmReset => 'Confirm reset';
@@ -2009,5 +2009,139 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String backupSpendingPlanCount(int count) {
     return 'Budgets & allowances $count';
+  }
+
+  @override
+  String get recurringPlans => 'Subscriptions & recurring plans';
+
+  @override
+  String get recurringAddPlan => 'Add recurring plan';
+
+  @override
+  String get recurringEmpty =>
+      'Create a subscription or another repeating expense or income.';
+
+  @override
+  String get recurringLoadFailed => 'Could not load recurring plans.';
+
+  @override
+  String get recurringSubscription => 'Subscription';
+
+  @override
+  String get recurringPlanType => 'Plan type';
+
+  @override
+  String get recurringCadence => 'Frequency';
+
+  @override
+  String get recurringDaily => 'Daily';
+
+  @override
+  String get recurringWeekly => 'Weekly';
+
+  @override
+  String get recurringQuarterly => 'Quarterly';
+
+  @override
+  String get recurringYearly => 'Yearly';
+
+  @override
+  String get recurringCustom => 'Custom days';
+
+  @override
+  String get recurringIntervalDays => 'Days between occurrences';
+
+  @override
+  String get recurringFirstDue => 'First due date';
+
+  @override
+  String get recurringNextDue => 'Next due date';
+
+  @override
+  String get recurringExpectedAmount => 'Expected amount';
+
+  @override
+  String get recurringChangeAmount => 'Change expected amount';
+
+  @override
+  String get recurringPause => 'Pause';
+
+  @override
+  String get recurringResume => 'Resume';
+
+  @override
+  String get recurringPaused => 'Paused';
+
+  @override
+  String get recurringOverdue => 'Overdue';
+
+  @override
+  String get recurringScheduleEnded => 'No more dates';
+
+  @override
+  String get recurringConfirmPosting => 'Review & post';
+
+  @override
+  String get recurringPostTitle => 'Confirm actual transaction';
+
+  @override
+  String get recurringActualAmount => 'Actual amount';
+
+  @override
+  String get recurringActualDate => 'Actual date';
+
+  @override
+  String get recurringPost => 'Confirm & post';
+
+  @override
+  String get recurringLink => 'Link an existing transaction';
+
+  @override
+  String get recurringSearch => 'Search note, date or amount';
+
+  @override
+  String get recurringNoMatches =>
+      'No eligible posted transactions for this account and currency.';
+
+  @override
+  String get recurringHistory => 'Linked transactions';
+
+  @override
+  String get recurringNoHistory => 'No cycles have been confirmed yet.';
+
+  @override
+  String get recurringUnavailableEntry => 'Transaction unavailable';
+
+  @override
+  String get recurringReversedEntry => 'Reversed';
+
+  @override
+  String get recurringChangedEntry => 'Transaction details changed';
+
+  @override
+  String get recurringUnavailableTarget =>
+      'The account or category is archived or unavailable.';
+
+  @override
+  String get recurringInvalid => 'Check the plan, amount and date.';
+
+  @override
+  String get recurringStale =>
+      'This cycle was already processed or the plan changed. Review the current cycle.';
+
+  @override
+  String get recurringIneligible => 'This transaction can no longer be linked.';
+
+  @override
+  String get recurringAlreadyLinked =>
+      'This transaction is already linked to a cycle.';
+
+  @override
+  String get recurringBackupConflict =>
+      'The backup has invalid or conflicting recurring plans or transaction links.';
+
+  @override
+  String backupRecurringPlanCount(int count) {
+    return 'Subscriptions & recurring plans $count';
   }
 }

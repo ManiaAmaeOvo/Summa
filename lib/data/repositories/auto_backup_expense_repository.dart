@@ -6,6 +6,7 @@ import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
+import 'package:summa/domain/planning/recurring_plan.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -297,6 +298,48 @@ class AutoBackupExpenseRepository implements ExpenseRepository {
   @override
   Future<void> setSpendingPlanArchived(String id, bool archived) =>
       _mutate(() => _delegate.setSpendingPlanArchived(id, archived));
+
+  @override
+  Stream<List<RecurringPlan>> watchRecurringPlans() =>
+      _delegate.watchRecurringPlans();
+
+  @override
+  Future<void> addRecurringPlan(RecurringPlanDraft draft) =>
+      _mutate(() => _delegate.addRecurringPlan(draft));
+
+  @override
+  Future<void> setRecurringPlanPaused(String id, bool paused) =>
+      _mutate(() => _delegate.setRecurringPlanPaused(id, paused));
+
+  @override
+  Future<void> setRecurringPlanExpectedAmount(String id, int amountMinor) =>
+      _mutate(() => _delegate.setRecurringPlanExpectedAmount(id, amountMinor));
+
+  @override
+  Future<void> confirmRecurringOccurrence(
+    String id,
+    int expectedIndex, {
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String note,
+  }) => _mutate(
+    () => _delegate.confirmRecurringOccurrence(
+      id,
+      expectedIndex,
+      amountMinor: amountMinor,
+      occurredAt: occurredAt,
+      note: note,
+    ),
+  );
+
+  @override
+  Future<void> linkRecurringOccurrence(
+    String id,
+    int expectedIndex,
+    String entryId,
+  ) => _mutate(
+    () => _delegate.linkRecurringOccurrence(id, expectedIndex, entryId),
+  );
 
   @override
   Future<List<CsvReviewRow>> previewCsvImport(

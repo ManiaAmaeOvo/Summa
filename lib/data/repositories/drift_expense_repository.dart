@@ -10,6 +10,7 @@ import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/planning/recurring_plan.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -23,6 +24,7 @@ import 'package:uuid/uuid.dart';
 import 'drift_csv_import_store.dart';
 import 'drift_import_rule_store.dart';
 import 'drift_reconciliation_store.dart';
+import 'drift_recurring_plan_store.dart';
 import 'drift_spending_plan_store.dart';
 import 'drift_valuation_store.dart';
 
@@ -35,7 +37,8 @@ class DriftExpenseRepository implements ExpenseRepository {
       _reconciliation = DriftReconciliationStore(_database),
       _csv = DriftCsvImportStore(_database),
       _importRules = DriftImportRuleStore(_database),
-      _spendingPlans = DriftSpendingPlanStore(_database);
+      _spendingPlans = DriftSpendingPlanStore(_database),
+      _recurringPlans = DriftRecurringPlanStore(_database);
 
   final AppDatabase _database;
   final DriftValuationStore _valuation;
@@ -43,6 +46,7 @@ class DriftExpenseRepository implements ExpenseRepository {
   final DriftCsvImportStore _csv;
   final DriftImportRuleStore _importRules;
   final DriftSpendingPlanStore _spendingPlans;
+  final DriftRecurringPlanStore _recurringPlans;
   final Uuid _uuid = const Uuid();
 
   @override
@@ -1250,6 +1254,93 @@ class DriftExpenseRepository implements ExpenseRepository {
       _database.transaction(() => _spendingPlans.setArchived(id, archived));
 
   @override
+  Stream<List<RecurringPlan>> watchRecurringPlans() => _recurringPlans.watch();
+
+  @override
+  Future<void> addRecurringPlan(RecurringPlanDraft draft) =>
+      _database.transaction(() => _recurringPlans.add(_uuid.v4(), draft));
+
+  @override
+  Future<void> setRecurringPlanPaused(String id, bool paused) =>
+      _recurringPlans.setPaused(id, paused);
+
+  @override
+  Future<void> setRecurringPlanExpectedAmount(String id, int amountMinor) =>
+      _recurringPlans.setExpectedAmount(id, amountMinor);
+
+  @override
+  Future<void> confirmRecurringOccurrence(
+    String id,
+    int expectedIndex, {
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String note,
+  }) => _database.transaction(() async {
+    final plan = await _recurringPlans.requireOpenCycle(id, expectedIndex);
+    if (amountMinor <= 0 || occurredAt.isAfter(DateTime.now())) {
+      throw const RecurringPlanException(RecurringPlanError.invalid);
+    }
+    final entryId = _uuid.v4();
+    await _saveTransaction(
+      newEntryId: entryId,
+      type: plan.kind.transactionType,
+      amountMinor: amountMinor,
+      occurredAt: occurredAt,
+      accountId: plan.accountId,
+      categoryId: plan.categoryId,
+      targetAccountId: null,
+      payments: null,
+      requiredCurrency: plan.currency,
+      status: LedgerPostingStatus.posted,
+      note: note,
+    );
+    await _recurringPlans.record(
+      id,
+      expectedIndex,
+      entryId,
+      plan.expectedMinor,
+    );
+  });
+
+  @override
+  Future<void> linkRecurringOccurrence(
+    String id,
+    int expectedIndex,
+    String entryId,
+  ) => _database.transaction(() async {
+    final plan = await _recurringPlans.requireOpenCycle(id, expectedIndex);
+    final entry = await (_database.select(
+      _database.ledgerEntries,
+    )..where((row) => row.id.equals(entryId))).getSingleOrNull();
+    if (entry == null ||
+        entry.isDeleted ||
+        entry.status != LedgerPostingStatus.posted.name ||
+        entry.transactionType != plan.kind.transactionType.name ||
+        entry.currencyCode != plan.currency ||
+        entry.refundOfId != null ||
+        _decodeTerms(entry.termsJson).reversalOfId != null ||
+        entry.occurredAt.isAfter(DateTime.now()) ||
+        await _hasActiveReversal(entryId)) {
+      throw const RecurringPlanException(RecurringPlanError.ineligible);
+    }
+    final postings = await _accountPostings(entryId);
+    if (postings.any((posting) => posting.needsReview) ||
+        !postings.any(
+          (posting) =>
+              posting.accountId == plan.accountId &&
+              posting.currencyCode == plan.currency,
+        )) {
+      throw const RecurringPlanException(RecurringPlanError.ineligible);
+    }
+    await _recurringPlans.record(
+      id,
+      expectedIndex,
+      entryId,
+      plan.expectedMinor,
+    );
+  });
+
+  @override
   Future<List<CsvReviewRow>> previewCsvImport(
     CsvImportFile file, {
     Map<int, CsvMapping> mappings = const {},
@@ -2417,7 +2508,8 @@ class DriftExpenseRepository implements ExpenseRepository {
     final valuation = await _valuation.readSettings();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': 10,
+      'backup_version': 11,
+      'recurring_plans': await _recurringPlans.backup(),
       'spending_plans': await _spendingPlans.backup(),
       'import_category_rules': await _importRules.backup(),
       'csv_import': await _csv.backup(),
@@ -2455,6 +2547,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       checkpointCount: payload.checkpoints.length,
       importBatchCount: payload.csvBatches.length,
       spendingPlanCount: payload.spendingPlans.length,
+      recurringPlanCount: payload.recurringPlans.length,
       categoryCount: payload.categories.length,
       entryCount: entries.length,
       deletedEntryCount: entries
@@ -2473,6 +2566,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       if (mode == BackupRestoreMode.replace) {
         await _database.delete(_database.csvImportBatches).go();
         await _database.delete(_database.balanceCheckpoints).go();
+        await _database.delete(_database.recurringPlans).go();
         await _database.delete(_database.ledgerEntries).go();
         await _database.delete(_database.importCategoryRules).go();
         await _database.delete(_database.spendingPlans).go();
@@ -2632,6 +2726,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       await _csv.restore(payload.csvBatches, payload.csvRows);
       await _importRules.restore(payload.importRules);
       await _spendingPlans.restore(payload.spendingPlans);
+      await _recurringPlans.restore(payload.recurringPlans);
       try {
         await _checkReceivableBalances();
       } on TransactionRuleException {
@@ -3268,6 +3363,7 @@ Map<String, Object?> _backupPosting(PostingRow posting) => {
   List<Map<String, dynamic>> csvRows,
   List<Map<String, dynamic>> importRules,
   List<Map<String, dynamic>> spendingPlans,
+  List<Map<String, dynamic>> recurringPlans,
 })
 _parseBackup(String source) {
   dynamic decoded;
@@ -3282,7 +3378,7 @@ _parseBackup(String source) {
   final version = decoded['backup_version'];
   final format = decoded['format'];
   if (version is! int ||
-      !(format == _backupFormat && (version >= 1 && version <= 10) ||
+      !(format == _backupFormat && (version >= 1 && version <= 11) ||
           format == _legacyBackupFormat && version == 1)) {
     throw const LedgerBackupException('这不是受支持的 Summa 完整备份');
   }
@@ -3300,6 +3396,9 @@ _parseBackup(String source) {
     accounts: _requiredObjectList(decoded, 'accounts'),
     categories: _requiredObjectList(decoded, 'categories'),
     entries: _requiredObjectList(decoded, 'entries'),
+    recurringPlans: version >= 11
+        ? _requiredObjectList(decoded, 'recurring_plans')
+        : const [],
     spendingPlans: version >= 10
         ? _requiredObjectList(decoded, 'spending_plans')
         : const [],

@@ -5,6 +5,7 @@ import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
 import 'package:summa/domain/import_export/ledger_import.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/planning/recurring_plan.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -175,6 +176,28 @@ abstract interface class ExpenseRepository {
   Future<void> setSpendingPlanLimit(String id, SpendingPlanLimit limit);
 
   Future<void> setSpendingPlanArchived(String id, bool archived);
+
+  Stream<List<RecurringPlan>> watchRecurringPlans();
+
+  Future<void> addRecurringPlan(RecurringPlanDraft draft);
+
+  Future<void> setRecurringPlanPaused(String id, bool paused);
+
+  Future<void> setRecurringPlanExpectedAmount(String id, int amountMinor);
+
+  Future<void> confirmRecurringOccurrence(
+    String id,
+    int expectedIndex, {
+    required int amountMinor,
+    required DateTime occurredAt,
+    required String note,
+  });
+
+  Future<void> linkRecurringOccurrence(
+    String id,
+    int expectedIndex,
+    String entryId,
+  );
 
   Future<List<CsvReviewRow>> previewCsvImport(
     CsvImportFile file, {

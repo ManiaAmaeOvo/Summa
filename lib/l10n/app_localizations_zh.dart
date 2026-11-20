@@ -953,7 +953,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resetTransactionsAccountsMessage =>
-      '将清除所有交易及关联账户的预算和外部额度，删除自定义账户，并将默认账户余额归零。分类、其他预算和备份会保留。';
+      '将清除所有交易、周期计划及关联账户的预算和外部额度，删除自定义账户，并将默认账户余额归零。分类、其他预算和备份会保留。';
 
   @override
   String get confirmReset => '确认重置';
@@ -1875,5 +1875,133 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String backupSpendingPlanCount(int count) {
     return '预算与外部额度 $count';
+  }
+
+  @override
+  String get recurringPlans => '订阅与周期计划';
+
+  @override
+  String get recurringAddPlan => '新建周期计划';
+
+  @override
+  String get recurringEmpty => '可新建订阅或其他周期性支出、收入。';
+
+  @override
+  String get recurringLoadFailed => '无法加载周期计划。';
+
+  @override
+  String get recurringSubscription => '订阅';
+
+  @override
+  String get recurringPlanType => '计划类型';
+
+  @override
+  String get recurringCadence => '重复频率';
+
+  @override
+  String get recurringDaily => '每日';
+
+  @override
+  String get recurringWeekly => '每周';
+
+  @override
+  String get recurringQuarterly => '每季度';
+
+  @override
+  String get recurringYearly => '每年';
+
+  @override
+  String get recurringCustom => '自定义天数';
+
+  @override
+  String get recurringIntervalDays => '间隔天数';
+
+  @override
+  String get recurringFirstDue => '首次到期日';
+
+  @override
+  String get recurringNextDue => '下次到期日';
+
+  @override
+  String get recurringExpectedAmount => '预计金额';
+
+  @override
+  String get recurringChangeAmount => '修改预计金额';
+
+  @override
+  String get recurringPause => '暂停';
+
+  @override
+  String get recurringResume => '恢复';
+
+  @override
+  String get recurringPaused => '已暂停';
+
+  @override
+  String get recurringOverdue => '已逾期';
+
+  @override
+  String get recurringScheduleEnded => '排期已结束';
+
+  @override
+  String get recurringConfirmPosting => '复核并入账';
+
+  @override
+  String get recurringPostTitle => '确认实际交易';
+
+  @override
+  String get recurringActualAmount => '实际金额';
+
+  @override
+  String get recurringActualDate => '实际日期';
+
+  @override
+  String get recurringPost => '确认入账';
+
+  @override
+  String get recurringLink => '关联已有交易';
+
+  @override
+  String get recurringSearch => '搜索备注、日期或金额';
+
+  @override
+  String get recurringNoMatches => '该账户与币种下没有可关联的已入账交易。';
+
+  @override
+  String get recurringHistory => '关联交易';
+
+  @override
+  String get recurringNoHistory => '尚无已确认的期次。';
+
+  @override
+  String get recurringUnavailableEntry => '交易已不可用';
+
+  @override
+  String get recurringReversedEntry => '已冲销';
+
+  @override
+  String get recurringChangedEntry => '交易信息已变更';
+
+  @override
+  String get recurringUnavailableTarget => '所选账户或分类已归档或不可用。';
+
+  @override
+  String get recurringInvalid => '请检查计划、金额和日期。';
+
+  @override
+  String get recurringStale => '该期已处理或计划已变更，请复核当前期次。';
+
+  @override
+  String get recurringIneligible => '该交易当前无法关联。';
+
+  @override
+  String get recurringAlreadyLinked => '该交易已关联其他期次。';
+
+  @override
+  String get recurringBackupConflict => '备份中的周期计划或交易关联无效或存在冲突。';
+
+  @override
+  String backupRecurringPlanCount(int count) {
+    return '订阅与周期计划 $count';
   }
 }

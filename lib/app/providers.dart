@@ -7,6 +7,7 @@ import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/categories/ledger_category.dart';
 import 'package:summa/domain/import_export/csv_import.dart';
 import 'package:summa/domain/import_export/import_category_rule.dart';
+import 'package:summa/domain/planning/recurring_plan.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/reconciliation/balance_checkpoint.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
@@ -77,4 +78,8 @@ final importCategoryRulesProvider =
 
 final spendingPlansProvider = StreamProvider.autoDispose<List<SpendingPlan>>(
   (ref) => ref.watch(expenseRepositoryProvider).watchSpendingPlans(),
+);
+
+final recurringPlansProvider = StreamProvider.autoDispose<List<RecurringPlan>>(
+  (ref) => ref.watch(expenseRepositoryProvider).watchRecurringPlans(),
 );

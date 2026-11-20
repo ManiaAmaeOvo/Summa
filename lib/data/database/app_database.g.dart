@@ -6442,6 +6442,1005 @@ class SpendingPlanLimitsCompanion
   }
 }
 
+class $RecurringPlansTable extends RecurringPlans
+    with TableInfo<$RecurringPlansTable, RecurringPlanRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecurringPlansTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cadenceMeta = const VerificationMeta(
+    'cadence',
+  );
+  @override
+  late final GeneratedColumn<String> cadence = GeneratedColumn<String>(
+    'cadence',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _firstDueOnMeta = const VerificationMeta(
+    'firstDueOn',
+  );
+  @override
+  late final GeneratedColumn<String> firstDueOn = GeneratedColumn<String>(
+    'first_due_on',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _customDaysMeta = const VerificationMeta(
+    'customDays',
+  );
+  @override
+  late final GeneratedColumn<int> customDays = GeneratedColumn<int>(
+    'custom_days',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _currencyMeta = const VerificationMeta(
+    'currency',
+  );
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+    'currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expectedMinorMeta = const VerificationMeta(
+    'expectedMinor',
+  );
+  @override
+  late final GeneratedColumn<int> expectedMinor = GeneratedColumn<int>(
+    'expected_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_accounts (id)',
+    ),
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ledger_categories (id)',
+    ),
+  );
+  static const VerificationMeta _pausedMeta = const VerificationMeta('paused');
+  @override
+  late final GeneratedColumn<bool> paused = GeneratedColumn<bool>(
+    'paused',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("paused" IN (0, 1))',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    kind,
+    cadence,
+    firstDueOn,
+    customDays,
+    currency,
+    expectedMinor,
+    accountId,
+    categoryId,
+    paused,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recurring_plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecurringPlanRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('cadence')) {
+      context.handle(
+        _cadenceMeta,
+        cadence.isAcceptableOrUnknown(data['cadence']!, _cadenceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cadenceMeta);
+    }
+    if (data.containsKey('first_due_on')) {
+      context.handle(
+        _firstDueOnMeta,
+        firstDueOn.isAcceptableOrUnknown(
+          data['first_due_on']!,
+          _firstDueOnMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_firstDueOnMeta);
+    }
+    if (data.containsKey('custom_days')) {
+      context.handle(
+        _customDaysMeta,
+        customDays.isAcceptableOrUnknown(data['custom_days']!, _customDaysMeta),
+      );
+    }
+    if (data.containsKey('currency')) {
+      context.handle(
+        _currencyMeta,
+        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyMeta);
+    }
+    if (data.containsKey('expected_minor')) {
+      context.handle(
+        _expectedMinorMeta,
+        expectedMinor.isAcceptableOrUnknown(
+          data['expected_minor']!,
+          _expectedMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_expectedMinorMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryIdMeta);
+    }
+    if (data.containsKey('paused')) {
+      context.handle(
+        _pausedMeta,
+        paused.isAcceptableOrUnknown(data['paused']!, _pausedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pausedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RecurringPlanRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecurringPlanRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      cadence: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cadence'],
+      )!,
+      firstDueOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}first_due_on'],
+      )!,
+      customDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}custom_days'],
+      ),
+      currency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency'],
+      )!,
+      expectedMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expected_minor'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      )!,
+      paused: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}paused'],
+      )!,
+    );
+  }
+
+  @override
+  $RecurringPlansTable createAlias(String alias) {
+    return $RecurringPlansTable(attachedDatabase, alias);
+  }
+}
+
+class RecurringPlanRow extends DataClass
+    implements Insertable<RecurringPlanRow> {
+  final String id;
+  final String name;
+  final String kind;
+  final String cadence;
+  final String firstDueOn;
+  final int? customDays;
+  final String currency;
+  final int expectedMinor;
+  final String accountId;
+  final String categoryId;
+  final bool paused;
+  const RecurringPlanRow({
+    required this.id,
+    required this.name,
+    required this.kind,
+    required this.cadence,
+    required this.firstDueOn,
+    this.customDays,
+    required this.currency,
+    required this.expectedMinor,
+    required this.accountId,
+    required this.categoryId,
+    required this.paused,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['kind'] = Variable<String>(kind);
+    map['cadence'] = Variable<String>(cadence);
+    map['first_due_on'] = Variable<String>(firstDueOn);
+    if (!nullToAbsent || customDays != null) {
+      map['custom_days'] = Variable<int>(customDays);
+    }
+    map['currency'] = Variable<String>(currency);
+    map['expected_minor'] = Variable<int>(expectedMinor);
+    map['account_id'] = Variable<String>(accountId);
+    map['category_id'] = Variable<String>(categoryId);
+    map['paused'] = Variable<bool>(paused);
+    return map;
+  }
+
+  RecurringPlansCompanion toCompanion(bool nullToAbsent) {
+    return RecurringPlansCompanion(
+      id: Value(id),
+      name: Value(name),
+      kind: Value(kind),
+      cadence: Value(cadence),
+      firstDueOn: Value(firstDueOn),
+      customDays: customDays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customDays),
+      currency: Value(currency),
+      expectedMinor: Value(expectedMinor),
+      accountId: Value(accountId),
+      categoryId: Value(categoryId),
+      paused: Value(paused),
+    );
+  }
+
+  factory RecurringPlanRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecurringPlanRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      kind: serializer.fromJson<String>(json['kind']),
+      cadence: serializer.fromJson<String>(json['cadence']),
+      firstDueOn: serializer.fromJson<String>(json['firstDueOn']),
+      customDays: serializer.fromJson<int?>(json['customDays']),
+      currency: serializer.fromJson<String>(json['currency']),
+      expectedMinor: serializer.fromJson<int>(json['expectedMinor']),
+      accountId: serializer.fromJson<String>(json['accountId']),
+      categoryId: serializer.fromJson<String>(json['categoryId']),
+      paused: serializer.fromJson<bool>(json['paused']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'kind': serializer.toJson<String>(kind),
+      'cadence': serializer.toJson<String>(cadence),
+      'firstDueOn': serializer.toJson<String>(firstDueOn),
+      'customDays': serializer.toJson<int?>(customDays),
+      'currency': serializer.toJson<String>(currency),
+      'expectedMinor': serializer.toJson<int>(expectedMinor),
+      'accountId': serializer.toJson<String>(accountId),
+      'categoryId': serializer.toJson<String>(categoryId),
+      'paused': serializer.toJson<bool>(paused),
+    };
+  }
+
+  RecurringPlanRow copyWith({
+    String? id,
+    String? name,
+    String? kind,
+    String? cadence,
+    String? firstDueOn,
+    Value<int?> customDays = const Value.absent(),
+    String? currency,
+    int? expectedMinor,
+    String? accountId,
+    String? categoryId,
+    bool? paused,
+  }) => RecurringPlanRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    kind: kind ?? this.kind,
+    cadence: cadence ?? this.cadence,
+    firstDueOn: firstDueOn ?? this.firstDueOn,
+    customDays: customDays.present ? customDays.value : this.customDays,
+    currency: currency ?? this.currency,
+    expectedMinor: expectedMinor ?? this.expectedMinor,
+    accountId: accountId ?? this.accountId,
+    categoryId: categoryId ?? this.categoryId,
+    paused: paused ?? this.paused,
+  );
+  RecurringPlanRow copyWithCompanion(RecurringPlansCompanion data) {
+    return RecurringPlanRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      cadence: data.cadence.present ? data.cadence.value : this.cadence,
+      firstDueOn: data.firstDueOn.present
+          ? data.firstDueOn.value
+          : this.firstDueOn,
+      customDays: data.customDays.present
+          ? data.customDays.value
+          : this.customDays,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      expectedMinor: data.expectedMinor.present
+          ? data.expectedMinor.value
+          : this.expectedMinor,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      paused: data.paused.present ? data.paused.value : this.paused,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringPlanRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('kind: $kind, ')
+          ..write('cadence: $cadence, ')
+          ..write('firstDueOn: $firstDueOn, ')
+          ..write('customDays: $customDays, ')
+          ..write('currency: $currency, ')
+          ..write('expectedMinor: $expectedMinor, ')
+          ..write('accountId: $accountId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('paused: $paused')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    kind,
+    cadence,
+    firstDueOn,
+    customDays,
+    currency,
+    expectedMinor,
+    accountId,
+    categoryId,
+    paused,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecurringPlanRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.kind == this.kind &&
+          other.cadence == this.cadence &&
+          other.firstDueOn == this.firstDueOn &&
+          other.customDays == this.customDays &&
+          other.currency == this.currency &&
+          other.expectedMinor == this.expectedMinor &&
+          other.accountId == this.accountId &&
+          other.categoryId == this.categoryId &&
+          other.paused == this.paused);
+}
+
+class RecurringPlansCompanion extends UpdateCompanion<RecurringPlanRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> kind;
+  final Value<String> cadence;
+  final Value<String> firstDueOn;
+  final Value<int?> customDays;
+  final Value<String> currency;
+  final Value<int> expectedMinor;
+  final Value<String> accountId;
+  final Value<String> categoryId;
+  final Value<bool> paused;
+  final Value<int> rowid;
+  const RecurringPlansCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.cadence = const Value.absent(),
+    this.firstDueOn = const Value.absent(),
+    this.customDays = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.expectedMinor = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.paused = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecurringPlansCompanion.insert({
+    required String id,
+    required String name,
+    required String kind,
+    required String cadence,
+    required String firstDueOn,
+    this.customDays = const Value.absent(),
+    required String currency,
+    required int expectedMinor,
+    required String accountId,
+    required String categoryId,
+    required bool paused,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       kind = Value(kind),
+       cadence = Value(cadence),
+       firstDueOn = Value(firstDueOn),
+       currency = Value(currency),
+       expectedMinor = Value(expectedMinor),
+       accountId = Value(accountId),
+       categoryId = Value(categoryId),
+       paused = Value(paused);
+  static Insertable<RecurringPlanRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? kind,
+    Expression<String>? cadence,
+    Expression<String>? firstDueOn,
+    Expression<int>? customDays,
+    Expression<String>? currency,
+    Expression<int>? expectedMinor,
+    Expression<String>? accountId,
+    Expression<String>? categoryId,
+    Expression<bool>? paused,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (kind != null) 'kind': kind,
+      if (cadence != null) 'cadence': cadence,
+      if (firstDueOn != null) 'first_due_on': firstDueOn,
+      if (customDays != null) 'custom_days': customDays,
+      if (currency != null) 'currency': currency,
+      if (expectedMinor != null) 'expected_minor': expectedMinor,
+      if (accountId != null) 'account_id': accountId,
+      if (categoryId != null) 'category_id': categoryId,
+      if (paused != null) 'paused': paused,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecurringPlansCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? kind,
+    Value<String>? cadence,
+    Value<String>? firstDueOn,
+    Value<int?>? customDays,
+    Value<String>? currency,
+    Value<int>? expectedMinor,
+    Value<String>? accountId,
+    Value<String>? categoryId,
+    Value<bool>? paused,
+    Value<int>? rowid,
+  }) {
+    return RecurringPlansCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      kind: kind ?? this.kind,
+      cadence: cadence ?? this.cadence,
+      firstDueOn: firstDueOn ?? this.firstDueOn,
+      customDays: customDays ?? this.customDays,
+      currency: currency ?? this.currency,
+      expectedMinor: expectedMinor ?? this.expectedMinor,
+      accountId: accountId ?? this.accountId,
+      categoryId: categoryId ?? this.categoryId,
+      paused: paused ?? this.paused,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (cadence.present) {
+      map['cadence'] = Variable<String>(cadence.value);
+    }
+    if (firstDueOn.present) {
+      map['first_due_on'] = Variable<String>(firstDueOn.value);
+    }
+    if (customDays.present) {
+      map['custom_days'] = Variable<int>(customDays.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (expectedMinor.present) {
+      map['expected_minor'] = Variable<int>(expectedMinor.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (paused.present) {
+      map['paused'] = Variable<bool>(paused.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringPlansCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('kind: $kind, ')
+          ..write('cadence: $cadence, ')
+          ..write('firstDueOn: $firstDueOn, ')
+          ..write('customDays: $customDays, ')
+          ..write('currency: $currency, ')
+          ..write('expectedMinor: $expectedMinor, ')
+          ..write('accountId: $accountId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('paused: $paused, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RecurringOccurrencesTable extends RecurringOccurrences
+    with TableInfo<$RecurringOccurrencesTable, RecurringOccurrenceRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecurringOccurrencesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES recurring_plans (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _cycleMeta = const VerificationMeta('cycle');
+  @override
+  late final GeneratedColumn<int> cycle = GeneratedColumn<int>(
+    'cycle',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entryIdMeta = const VerificationMeta(
+    'entryId',
+  );
+  @override
+  late final GeneratedColumn<String> entryId = GeneratedColumn<String>(
+    'entry_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'UNIQUE REFERENCES ledger_entries (id)',
+    ),
+  );
+  static const VerificationMeta _expectedMinorMeta = const VerificationMeta(
+    'expectedMinor',
+  );
+  @override
+  late final GeneratedColumn<int> expectedMinor = GeneratedColumn<int>(
+    'expected_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [planId, cycle, entryId, expectedMinor];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recurring_occurrences';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecurringOccurrenceRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planIdMeta);
+    }
+    if (data.containsKey('cycle')) {
+      context.handle(
+        _cycleMeta,
+        cycle.isAcceptableOrUnknown(data['cycle']!, _cycleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cycleMeta);
+    }
+    if (data.containsKey('entry_id')) {
+      context.handle(
+        _entryIdMeta,
+        entryId.isAcceptableOrUnknown(data['entry_id']!, _entryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entryIdMeta);
+    }
+    if (data.containsKey('expected_minor')) {
+      context.handle(
+        _expectedMinorMeta,
+        expectedMinor.isAcceptableOrUnknown(
+          data['expected_minor']!,
+          _expectedMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_expectedMinorMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {planId, cycle};
+  @override
+  RecurringOccurrenceRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecurringOccurrenceRow(
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      )!,
+      cycle: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cycle'],
+      )!,
+      entryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entry_id'],
+      )!,
+      expectedMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expected_minor'],
+      )!,
+    );
+  }
+
+  @override
+  $RecurringOccurrencesTable createAlias(String alias) {
+    return $RecurringOccurrencesTable(attachedDatabase, alias);
+  }
+}
+
+class RecurringOccurrenceRow extends DataClass
+    implements Insertable<RecurringOccurrenceRow> {
+  final String planId;
+  final int cycle;
+  final String entryId;
+  final int expectedMinor;
+  const RecurringOccurrenceRow({
+    required this.planId,
+    required this.cycle,
+    required this.entryId,
+    required this.expectedMinor,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['plan_id'] = Variable<String>(planId);
+    map['cycle'] = Variable<int>(cycle);
+    map['entry_id'] = Variable<String>(entryId);
+    map['expected_minor'] = Variable<int>(expectedMinor);
+    return map;
+  }
+
+  RecurringOccurrencesCompanion toCompanion(bool nullToAbsent) {
+    return RecurringOccurrencesCompanion(
+      planId: Value(planId),
+      cycle: Value(cycle),
+      entryId: Value(entryId),
+      expectedMinor: Value(expectedMinor),
+    );
+  }
+
+  factory RecurringOccurrenceRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecurringOccurrenceRow(
+      planId: serializer.fromJson<String>(json['planId']),
+      cycle: serializer.fromJson<int>(json['cycle']),
+      entryId: serializer.fromJson<String>(json['entryId']),
+      expectedMinor: serializer.fromJson<int>(json['expectedMinor']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'planId': serializer.toJson<String>(planId),
+      'cycle': serializer.toJson<int>(cycle),
+      'entryId': serializer.toJson<String>(entryId),
+      'expectedMinor': serializer.toJson<int>(expectedMinor),
+    };
+  }
+
+  RecurringOccurrenceRow copyWith({
+    String? planId,
+    int? cycle,
+    String? entryId,
+    int? expectedMinor,
+  }) => RecurringOccurrenceRow(
+    planId: planId ?? this.planId,
+    cycle: cycle ?? this.cycle,
+    entryId: entryId ?? this.entryId,
+    expectedMinor: expectedMinor ?? this.expectedMinor,
+  );
+  RecurringOccurrenceRow copyWithCompanion(RecurringOccurrencesCompanion data) {
+    return RecurringOccurrenceRow(
+      planId: data.planId.present ? data.planId.value : this.planId,
+      cycle: data.cycle.present ? data.cycle.value : this.cycle,
+      entryId: data.entryId.present ? data.entryId.value : this.entryId,
+      expectedMinor: data.expectedMinor.present
+          ? data.expectedMinor.value
+          : this.expectedMinor,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringOccurrenceRow(')
+          ..write('planId: $planId, ')
+          ..write('cycle: $cycle, ')
+          ..write('entryId: $entryId, ')
+          ..write('expectedMinor: $expectedMinor')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(planId, cycle, entryId, expectedMinor);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecurringOccurrenceRow &&
+          other.planId == this.planId &&
+          other.cycle == this.cycle &&
+          other.entryId == this.entryId &&
+          other.expectedMinor == this.expectedMinor);
+}
+
+class RecurringOccurrencesCompanion
+    extends UpdateCompanion<RecurringOccurrenceRow> {
+  final Value<String> planId;
+  final Value<int> cycle;
+  final Value<String> entryId;
+  final Value<int> expectedMinor;
+  final Value<int> rowid;
+  const RecurringOccurrencesCompanion({
+    this.planId = const Value.absent(),
+    this.cycle = const Value.absent(),
+    this.entryId = const Value.absent(),
+    this.expectedMinor = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecurringOccurrencesCompanion.insert({
+    required String planId,
+    required int cycle,
+    required String entryId,
+    required int expectedMinor,
+    this.rowid = const Value.absent(),
+  }) : planId = Value(planId),
+       cycle = Value(cycle),
+       entryId = Value(entryId),
+       expectedMinor = Value(expectedMinor);
+  static Insertable<RecurringOccurrenceRow> custom({
+    Expression<String>? planId,
+    Expression<int>? cycle,
+    Expression<String>? entryId,
+    Expression<int>? expectedMinor,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (planId != null) 'plan_id': planId,
+      if (cycle != null) 'cycle': cycle,
+      if (entryId != null) 'entry_id': entryId,
+      if (expectedMinor != null) 'expected_minor': expectedMinor,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecurringOccurrencesCompanion copyWith({
+    Value<String>? planId,
+    Value<int>? cycle,
+    Value<String>? entryId,
+    Value<int>? expectedMinor,
+    Value<int>? rowid,
+  }) {
+    return RecurringOccurrencesCompanion(
+      planId: planId ?? this.planId,
+      cycle: cycle ?? this.cycle,
+      entryId: entryId ?? this.entryId,
+      expectedMinor: expectedMinor ?? this.expectedMinor,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
+    if (cycle.present) {
+      map['cycle'] = Variable<int>(cycle.value);
+    }
+    if (entryId.present) {
+      map['entry_id'] = Variable<String>(entryId.value);
+    }
+    if (expectedMinor.present) {
+      map['expected_minor'] = Variable<int>(expectedMinor.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringOccurrencesCompanion(')
+          ..write('planId: $planId, ')
+          ..write('cycle: $cycle, ')
+          ..write('entryId: $entryId, ')
+          ..write('expectedMinor: $expectedMinor, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6465,6 +7464,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SpendingPlansTable spendingPlans = $SpendingPlansTable(this);
   late final $SpendingPlanLimitsTable spendingPlanLimits =
       $SpendingPlanLimitsTable(this);
+  late final $RecurringPlansTable recurringPlans = $RecurringPlansTable(this);
+  late final $RecurringOccurrencesTable recurringOccurrences =
+      $RecurringOccurrencesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6482,6 +7484,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     importCategoryRules,
     spendingPlans,
     spendingPlanLimits,
+    recurringPlans,
+    recurringOccurrences,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -6505,6 +7509,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('spending_plan_limits', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'recurring_plans',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('recurring_occurrences', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -6634,6 +7645,24 @@ final class $$LedgerAccountsTableReferences
     ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_spendingPlansRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RecurringPlansTable, List<RecurringPlanRow>>
+  _recurringPlansRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.recurringPlans,
+    aliasName: 'ledger_accounts__id__recurring_plans__account_id',
+  );
+
+  $$RecurringPlansTableProcessedTableManager get recurringPlansRefs {
+    final manager = $$RecurringPlansTableTableManager(
+      $_db,
+      $_db.recurringPlans,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_recurringPlansRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -6810,6 +7839,31 @@ class $$LedgerAccountsTableFilterComposer
           }) => $$SpendingPlansTableFilterComposer(
             $db: $db,
             $table: $db.spendingPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> recurringPlansRefs(
+    Expression<bool> Function($$RecurringPlansTableFilterComposer f) f,
+  ) {
+    final $$RecurringPlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringPlans,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringPlansTableFilterComposer(
+            $db: $db,
+            $table: $db.recurringPlans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7042,6 +8096,31 @@ class $$LedgerAccountsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> recurringPlansRefs<T extends Object>(
+    Expression<T> Function($$RecurringPlansTableAnnotationComposer a) f,
+  ) {
+    final $$RecurringPlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringPlans,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringPlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recurringPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LedgerAccountsTableTableManager
@@ -7063,6 +8142,7 @@ class $$LedgerAccountsTableTableManager
             bool ledgerPostingsRefs,
             bool balanceCheckpointsRefs,
             bool spendingPlansRefs,
+            bool recurringPlansRefs,
           })
         > {
   $$LedgerAccountsTableTableManager(
@@ -7141,6 +8221,7 @@ class $$LedgerAccountsTableTableManager
                 ledgerPostingsRefs = false,
                 balanceCheckpointsRefs = false,
                 spendingPlansRefs = false,
+                recurringPlansRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -7150,6 +8231,7 @@ class $$LedgerAccountsTableTableManager
                     if (ledgerPostingsRefs) db.ledgerPostings,
                     if (balanceCheckpointsRefs) db.balanceCheckpoints,
                     if (spendingPlansRefs) db.spendingPlans,
+                    if (recurringPlansRefs) db.recurringPlans,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -7259,6 +8341,27 @@ class $$LedgerAccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (recurringPlansRefs)
+                        await $_getPrefetchedData<
+                          AccountRow,
+                          $LedgerAccountsTable,
+                          RecurringPlanRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerAccountsTableReferences
+                              ._recurringPlansRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerAccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recurringPlansRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -7285,6 +8388,7 @@ typedef $$LedgerAccountsTableProcessedTableManager =
         bool ledgerPostingsRefs,
         bool balanceCheckpointsRefs,
         bool spendingPlansRefs,
+        bool recurringPlansRefs,
       })
     >;
 typedef $$LedgerCategoriesTableCreateCompanionBuilder =
@@ -7393,6 +8497,24 @@ final class $$LedgerCategoriesTableReferences
     ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_spendingPlansRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RecurringPlansTable, List<RecurringPlanRow>>
+  _recurringPlansRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.recurringPlans,
+    aliasName: 'ledger_categories__id__recurring_plans__category_id',
+  );
+
+  $$RecurringPlansTableProcessedTableManager get recurringPlansRefs {
+    final manager = $$RecurringPlansTableTableManager(
+      $_db,
+      $_db.recurringPlans,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_recurringPlansRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -7532,6 +8654,31 @@ class $$LedgerCategoriesTableFilterComposer
           }) => $$SpendingPlansTableFilterComposer(
             $db: $db,
             $table: $db.spendingPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> recurringPlansRefs(
+    Expression<bool> Function($$RecurringPlansTableFilterComposer f) f,
+  ) {
+    final $$RecurringPlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringPlans,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringPlansTableFilterComposer(
+            $db: $db,
+            $table: $db.recurringPlans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7742,6 +8889,31 @@ class $$LedgerCategoriesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> recurringPlansRefs<T extends Object>(
+    Expression<T> Function($$RecurringPlansTableAnnotationComposer a) f,
+  ) {
+    final $$RecurringPlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringPlans,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringPlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recurringPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LedgerCategoriesTableTableManager
@@ -7762,6 +8934,7 @@ class $$LedgerCategoriesTableTableManager
             bool ledgerEntriesRefs,
             bool importCategoryRulesRefs,
             bool spendingPlansRefs,
+            bool recurringPlansRefs,
           })
         > {
   $$LedgerCategoriesTableTableManager(
@@ -7835,6 +9008,7 @@ class $$LedgerCategoriesTableTableManager
                 ledgerEntriesRefs = false,
                 importCategoryRulesRefs = false,
                 spendingPlansRefs = false,
+                recurringPlansRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -7842,6 +9016,7 @@ class $$LedgerCategoriesTableTableManager
                     if (ledgerEntriesRefs) db.ledgerEntries,
                     if (importCategoryRulesRefs) db.importCategoryRules,
                     if (spendingPlansRefs) db.spendingPlans,
+                    if (recurringPlansRefs) db.recurringPlans,
                   ],
                   addJoins:
                       <
@@ -7938,6 +9113,27 @@ class $$LedgerCategoriesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (recurringPlansRefs)
+                        await $_getPrefetchedData<
+                          CategoryRow,
+                          $LedgerCategoriesTable,
+                          RecurringPlanRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerCategoriesTableReferences
+                              ._recurringPlansRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerCategoriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recurringPlansRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -7963,6 +9159,7 @@ typedef $$LedgerCategoriesTableProcessedTableManager =
         bool ledgerEntriesRefs,
         bool importCategoryRulesRefs,
         bool spendingPlansRefs,
+        bool recurringPlansRefs,
       })
     >;
 typedef $$LedgerEntriesTableCreateCompanionBuilder =
@@ -8144,6 +9341,31 @@ final class $$LedgerEntriesTableReferences
     ).filter((f) => f.entryId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_csvImportRowsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $RecurringOccurrencesTable,
+    List<RecurringOccurrenceRow>
+  >
+  _recurringOccurrencesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.recurringOccurrences,
+        aliasName: 'ledger_entries__id__recurring_occurrences__entry_id',
+      );
+
+  $$RecurringOccurrencesTableProcessedTableManager
+  get recurringOccurrencesRefs {
+    final manager = $$RecurringOccurrencesTableTableManager(
+      $_db,
+      $_db.recurringOccurrences,
+    ).filter((f) => f.entryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _recurringOccurrencesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -8392,6 +9614,31 @@ class $$LedgerEntriesTableFilterComposer
           }) => $$CsvImportRowsTableFilterComposer(
             $db: $db,
             $table: $db.csvImportRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> recurringOccurrencesRefs(
+    Expression<bool> Function($$RecurringOccurrencesTableFilterComposer f) f,
+  ) {
+    final $$RecurringOccurrencesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringOccurrences,
+      getReferencedColumn: (t) => t.entryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringOccurrencesTableFilterComposer(
+            $db: $db,
+            $table: $db.recurringOccurrences,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -8816,6 +10063,32 @@ class $$LedgerEntriesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> recurringOccurrencesRefs<T extends Object>(
+    Expression<T> Function($$RecurringOccurrencesTableAnnotationComposer a) f,
+  ) {
+    final $$RecurringOccurrencesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.recurringOccurrences,
+          getReferencedColumn: (t) => t.entryId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RecurringOccurrencesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.recurringOccurrences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LedgerEntriesTableTableManager
@@ -8839,6 +10112,7 @@ class $$LedgerEntriesTableTableManager
             bool ledgerPostingsRefs,
             bool balanceCheckpointsRefs,
             bool csvImportRowsRefs,
+            bool recurringOccurrencesRefs,
           })
         > {
   $$LedgerEntriesTableTableManager(_$AppDatabase db, $LedgerEntriesTable table)
@@ -8957,6 +10231,7 @@ class $$LedgerEntriesTableTableManager
                 ledgerPostingsRefs = false,
                 balanceCheckpointsRefs = false,
                 csvImportRowsRefs = false,
+                recurringOccurrencesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -8964,6 +10239,7 @@ class $$LedgerEntriesTableTableManager
                     if (ledgerPostingsRefs) db.ledgerPostings,
                     if (balanceCheckpointsRefs) db.balanceCheckpoints,
                     if (csvImportRowsRefs) db.csvImportRows,
+                    if (recurringOccurrencesRefs) db.recurringOccurrences,
                   ],
                   addJoins:
                       <
@@ -9093,6 +10369,27 @@ class $$LedgerEntriesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (recurringOccurrencesRefs)
+                        await $_getPrefetchedData<
+                          EntryRow,
+                          $LedgerEntriesTable,
+                          RecurringOccurrenceRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LedgerEntriesTableReferences
+                              ._recurringOccurrencesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LedgerEntriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recurringOccurrencesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.entryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -9121,6 +10418,7 @@ typedef $$LedgerEntriesTableProcessedTableManager =
         bool ledgerPostingsRefs,
         bool balanceCheckpointsRefs,
         bool csvImportRowsRefs,
+        bool recurringOccurrencesRefs,
       })
     >;
 typedef $$LedgerPostingsTableCreateCompanionBuilder =
@@ -12633,6 +13931,1050 @@ typedef $$SpendingPlanLimitsTableProcessedTableManager =
       SpendingPlanLimitRow,
       PrefetchHooks Function({bool planId})
     >;
+typedef $$RecurringPlansTableCreateCompanionBuilder =
+    RecurringPlansCompanion Function({
+      required String id,
+      required String name,
+      required String kind,
+      required String cadence,
+      required String firstDueOn,
+      Value<int?> customDays,
+      required String currency,
+      required int expectedMinor,
+      required String accountId,
+      required String categoryId,
+      required bool paused,
+      Value<int> rowid,
+    });
+typedef $$RecurringPlansTableUpdateCompanionBuilder =
+    RecurringPlansCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> kind,
+      Value<String> cadence,
+      Value<String> firstDueOn,
+      Value<int?> customDays,
+      Value<String> currency,
+      Value<int> expectedMinor,
+      Value<String> accountId,
+      Value<String> categoryId,
+      Value<bool> paused,
+      Value<int> rowid,
+    });
+
+final class $$RecurringPlansTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $RecurringPlansTable, RecurringPlanRow> {
+  $$RecurringPlansTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LedgerAccountsTable _accountIdTable(_$AppDatabase db) => db
+      .ledgerAccounts
+      .createAlias('recurring_plans__account_id__ledger_accounts__id');
+
+  $$LedgerAccountsTableProcessedTableManager get accountId {
+    final $_column = $_itemColumn<String>('account_id')!;
+
+    final manager = $$LedgerAccountsTableTableManager(
+      $_db,
+      $_db.ledgerAccounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LedgerCategoriesTable _categoryIdTable(_$AppDatabase db) => db
+      .ledgerCategories
+      .createAlias('recurring_plans__category_id__ledger_categories__id');
+
+  $$LedgerCategoriesTableProcessedTableManager get categoryId {
+    final $_column = $_itemColumn<String>('category_id')!;
+
+    final manager = $$LedgerCategoriesTableTableManager(
+      $_db,
+      $_db.ledgerCategories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $RecurringOccurrencesTable,
+    List<RecurringOccurrenceRow>
+  >
+  _recurringOccurrencesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.recurringOccurrences,
+        aliasName: 'recurring_plans__id__recurring_occurrences__plan_id',
+      );
+
+  $$RecurringOccurrencesTableProcessedTableManager
+  get recurringOccurrencesRefs {
+    final manager = $$RecurringOccurrencesTableTableManager(
+      $_db,
+      $_db.recurringOccurrences,
+    ).filter((f) => f.planId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _recurringOccurrencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$RecurringPlansTableFilterComposer
+    extends Composer<_$AppDatabase, $RecurringPlansTable> {
+  $$RecurringPlansTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cadence => $composableBuilder(
+    column: $table.cadence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get firstDueOn => $composableBuilder(
+    column: $table.firstDueOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get customDays => $composableBuilder(
+    column: $table.customDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expectedMinor => $composableBuilder(
+    column: $table.expectedMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get paused => $composableBuilder(
+    column: $table.paused,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LedgerAccountsTableFilterComposer get accountId {
+    final $$LedgerAccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerCategoriesTableFilterComposer get categoryId {
+    final $$LedgerCategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.ledgerCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerCategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> recurringOccurrencesRefs(
+    Expression<bool> Function($$RecurringOccurrencesTableFilterComposer f) f,
+  ) {
+    final $$RecurringOccurrencesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringOccurrences,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringOccurrencesTableFilterComposer(
+            $db: $db,
+            $table: $db.recurringOccurrences,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RecurringPlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecurringPlansTable> {
+  $$RecurringPlansTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cadence => $composableBuilder(
+    column: $table.cadence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get firstDueOn => $composableBuilder(
+    column: $table.firstDueOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get customDays => $composableBuilder(
+    column: $table.customDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expectedMinor => $composableBuilder(
+    column: $table.expectedMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get paused => $composableBuilder(
+    column: $table.paused,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LedgerAccountsTableOrderingComposer get accountId {
+    final $$LedgerAccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerCategoriesTableOrderingComposer get categoryId {
+    final $$LedgerCategoriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.ledgerCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerCategoriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecurringPlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecurringPlansTable> {
+  $$RecurringPlansTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get cadence =>
+      $composableBuilder(column: $table.cadence, builder: (column) => column);
+
+  GeneratedColumn<String> get firstDueOn => $composableBuilder(
+    column: $table.firstDueOn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get customDays => $composableBuilder(
+    column: $table.customDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<int> get expectedMinor => $composableBuilder(
+    column: $table.expectedMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get paused =>
+      $composableBuilder(column: $table.paused, builder: (column) => column);
+
+  $$LedgerAccountsTableAnnotationComposer get accountId {
+    final $$LedgerAccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.ledgerAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerAccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerCategoriesTableAnnotationComposer get categoryId {
+    final $$LedgerCategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.ledgerCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerCategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> recurringOccurrencesRefs<T extends Object>(
+    Expression<T> Function($$RecurringOccurrencesTableAnnotationComposer a) f,
+  ) {
+    final $$RecurringOccurrencesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.recurringOccurrences,
+          getReferencedColumn: (t) => t.planId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RecurringOccurrencesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.recurringOccurrences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$RecurringPlansTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecurringPlansTable,
+          RecurringPlanRow,
+          $$RecurringPlansTableFilterComposer,
+          $$RecurringPlansTableOrderingComposer,
+          $$RecurringPlansTableAnnotationComposer,
+          $$RecurringPlansTableCreateCompanionBuilder,
+          $$RecurringPlansTableUpdateCompanionBuilder,
+          (RecurringPlanRow, $$RecurringPlansTableReferences),
+          RecurringPlanRow,
+          PrefetchHooks Function({
+            bool accountId,
+            bool categoryId,
+            bool recurringOccurrencesRefs,
+          })
+        > {
+  $$RecurringPlansTableTableManager(
+    _$AppDatabase db,
+    $RecurringPlansTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecurringPlansTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecurringPlansTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecurringPlansTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> cadence = const Value.absent(),
+                Value<String> firstDueOn = const Value.absent(),
+                Value<int?> customDays = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<int> expectedMinor = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<String> categoryId = const Value.absent(),
+                Value<bool> paused = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringPlansCompanion(
+                id: id,
+                name: name,
+                kind: kind,
+                cadence: cadence,
+                firstDueOn: firstDueOn,
+                customDays: customDays,
+                currency: currency,
+                expectedMinor: expectedMinor,
+                accountId: accountId,
+                categoryId: categoryId,
+                paused: paused,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String kind,
+                required String cadence,
+                required String firstDueOn,
+                Value<int?> customDays = const Value.absent(),
+                required String currency,
+                required int expectedMinor,
+                required String accountId,
+                required String categoryId,
+                required bool paused,
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringPlansCompanion.insert(
+                id: id,
+                name: name,
+                kind: kind,
+                cadence: cadence,
+                firstDueOn: firstDueOn,
+                customDays: customDays,
+                currency: currency,
+                expectedMinor: expectedMinor,
+                accountId: accountId,
+                categoryId: categoryId,
+                paused: paused,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RecurringPlansTable, RecurringPlanRow>(table),
+                  $$RecurringPlansTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                accountId = false,
+                categoryId = false,
+                recurringOccurrencesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (recurringOccurrencesRefs) db.recurringOccurrences,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (accountId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.accountId,
+                            referencedTable: $$RecurringPlansTableReferences
+                                ._accountIdTable(db),
+                            referencedColumn: $$RecurringPlansTableReferences
+                                ._accountIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (categoryId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.categoryId,
+                            referencedTable: $$RecurringPlansTableReferences
+                                ._categoryIdTable(db),
+                            referencedColumn: $$RecurringPlansTableReferences
+                                ._categoryIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (recurringOccurrencesRefs)
+                        await $_getPrefetchedData<
+                          RecurringPlanRow,
+                          $RecurringPlansTable,
+                          RecurringOccurrenceRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RecurringPlansTableReferences
+                              ._recurringOccurrencesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RecurringPlansTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recurringOccurrencesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.planId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$RecurringPlansTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecurringPlansTable,
+      RecurringPlanRow,
+      $$RecurringPlansTableFilterComposer,
+      $$RecurringPlansTableOrderingComposer,
+      $$RecurringPlansTableAnnotationComposer,
+      $$RecurringPlansTableCreateCompanionBuilder,
+      $$RecurringPlansTableUpdateCompanionBuilder,
+      (RecurringPlanRow, $$RecurringPlansTableReferences),
+      RecurringPlanRow,
+      PrefetchHooks Function({
+        bool accountId,
+        bool categoryId,
+        bool recurringOccurrencesRefs,
+      })
+    >;
+typedef $$RecurringOccurrencesTableCreateCompanionBuilder =
+    RecurringOccurrencesCompanion Function({
+      required String planId,
+      required int cycle,
+      required String entryId,
+      required int expectedMinor,
+      Value<int> rowid,
+    });
+typedef $$RecurringOccurrencesTableUpdateCompanionBuilder =
+    RecurringOccurrencesCompanion Function({
+      Value<String> planId,
+      Value<int> cycle,
+      Value<String> entryId,
+      Value<int> expectedMinor,
+      Value<int> rowid,
+    });
+
+final class $$RecurringOccurrencesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $RecurringOccurrencesTable,
+          RecurringOccurrenceRow
+        > {
+  $$RecurringOccurrencesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $RecurringPlansTable _planIdTable(_$AppDatabase db) => db
+      .recurringPlans
+      .createAlias('recurring_occurrences__plan_id__recurring_plans__id');
+
+  $$RecurringPlansTableProcessedTableManager get planId {
+    final $_column = $_itemColumn<String>('plan_id')!;
+
+    final manager = $$RecurringPlansTableTableManager(
+      $_db,
+      $_db.recurringPlans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_planIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LedgerEntriesTable _entryIdTable(_$AppDatabase db) => db.ledgerEntries
+      .createAlias('recurring_occurrences__entry_id__ledger_entries__id');
+
+  $$LedgerEntriesTableProcessedTableManager get entryId {
+    final $_column = $_itemColumn<String>('entry_id')!;
+
+    final manager = $$LedgerEntriesTableTableManager(
+      $_db,
+      $_db.ledgerEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_entryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RecurringOccurrencesTableFilterComposer
+    extends Composer<_$AppDatabase, $RecurringOccurrencesTable> {
+  $$RecurringOccurrencesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get cycle => $composableBuilder(
+    column: $table.cycle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expectedMinor => $composableBuilder(
+    column: $table.expectedMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RecurringPlansTableFilterComposer get planId {
+    final $$RecurringPlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.recurringPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringPlansTableFilterComposer(
+            $db: $db,
+            $table: $db.recurringPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerEntriesTableFilterComposer get entryId {
+    final $$LedgerEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.entryId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecurringOccurrencesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecurringOccurrencesTable> {
+  $$RecurringOccurrencesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get cycle => $composableBuilder(
+    column: $table.cycle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expectedMinor => $composableBuilder(
+    column: $table.expectedMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RecurringPlansTableOrderingComposer get planId {
+    final $$RecurringPlansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.recurringPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringPlansTableOrderingComposer(
+            $db: $db,
+            $table: $db.recurringPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerEntriesTableOrderingComposer get entryId {
+    final $$LedgerEntriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.entryId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecurringOccurrencesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecurringOccurrencesTable> {
+  $$RecurringOccurrencesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get cycle =>
+      $composableBuilder(column: $table.cycle, builder: (column) => column);
+
+  GeneratedColumn<int> get expectedMinor => $composableBuilder(
+    column: $table.expectedMinor,
+    builder: (column) => column,
+  );
+
+  $$RecurringPlansTableAnnotationComposer get planId {
+    final $$RecurringPlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.recurringPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringPlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recurringPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LedgerEntriesTableAnnotationComposer get entryId {
+    final $$LedgerEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.entryId,
+      referencedTable: $db.ledgerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LedgerEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ledgerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecurringOccurrencesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecurringOccurrencesTable,
+          RecurringOccurrenceRow,
+          $$RecurringOccurrencesTableFilterComposer,
+          $$RecurringOccurrencesTableOrderingComposer,
+          $$RecurringOccurrencesTableAnnotationComposer,
+          $$RecurringOccurrencesTableCreateCompanionBuilder,
+          $$RecurringOccurrencesTableUpdateCompanionBuilder,
+          (RecurringOccurrenceRow, $$RecurringOccurrencesTableReferences),
+          RecurringOccurrenceRow,
+          PrefetchHooks Function({bool planId, bool entryId})
+        > {
+  $$RecurringOccurrencesTableTableManager(
+    _$AppDatabase db,
+    $RecurringOccurrencesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecurringOccurrencesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecurringOccurrencesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$RecurringOccurrencesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> planId = const Value.absent(),
+                Value<int> cycle = const Value.absent(),
+                Value<String> entryId = const Value.absent(),
+                Value<int> expectedMinor = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringOccurrencesCompanion(
+                planId: planId,
+                cycle: cycle,
+                entryId: entryId,
+                expectedMinor: expectedMinor,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String planId,
+                required int cycle,
+                required String entryId,
+                required int expectedMinor,
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringOccurrencesCompanion.insert(
+                planId: planId,
+                cycle: cycle,
+                entryId: entryId,
+                expectedMinor: expectedMinor,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $RecurringOccurrencesTable,
+                    RecurringOccurrenceRow
+                  >(table),
+                  $$RecurringOccurrencesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({planId = false, entryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (planId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.planId,
+                        referencedTable: $$RecurringOccurrencesTableReferences
+                            ._planIdTable(db),
+                        referencedColumn: $$RecurringOccurrencesTableReferences
+                            ._planIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (entryId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.entryId,
+                        referencedTable: $$RecurringOccurrencesTableReferences
+                            ._entryIdTable(db),
+                        referencedColumn: $$RecurringOccurrencesTableReferences
+                            ._entryIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RecurringOccurrencesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecurringOccurrencesTable,
+      RecurringOccurrenceRow,
+      $$RecurringOccurrencesTableFilterComposer,
+      $$RecurringOccurrencesTableOrderingComposer,
+      $$RecurringOccurrencesTableAnnotationComposer,
+      $$RecurringOccurrencesTableCreateCompanionBuilder,
+      $$RecurringOccurrencesTableUpdateCompanionBuilder,
+      (RecurringOccurrenceRow, $$RecurringOccurrencesTableReferences),
+      RecurringOccurrenceRow,
+      PrefetchHooks Function({bool planId, bool entryId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12661,4 +15003,8 @@ class $AppDatabaseManager {
       $$SpendingPlansTableTableManager(_db, _db.spendingPlans);
   $$SpendingPlanLimitsTableTableManager get spendingPlanLimits =>
       $$SpendingPlanLimitsTableTableManager(_db, _db.spendingPlanLimits);
+  $$RecurringPlansTableTableManager get recurringPlans =>
+      $$RecurringPlansTableTableManager(_db, _db.recurringPlans);
+  $$RecurringOccurrencesTableTableManager get recurringOccurrences =>
+      $$RecurringOccurrencesTableTableManager(_db, _db.recurringOccurrences);
 }

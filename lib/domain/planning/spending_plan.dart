@@ -1,7 +1,6 @@
-import 'dart:math' as math;
-
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/analytics/financial_activity.dart';
+import 'package:summa/domain/planning/planning_date.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
 
 enum SpendingScope {
@@ -52,15 +51,7 @@ class SpendingPlanDraft {
       scope.usesAccount == (accountId != null) &&
       (scope == SpendingScope.category) == (categoryId != null);
 
-  DateTime periodStart(int index) {
-    final first = DateTime.utc(startsOn.year, startsOn.month + index);
-    final lastDay = DateTime.utc(first.year, first.month + 1, 0).day;
-    return DateTime.utc(
-      first.year,
-      first.month,
-      math.min(startsOn.day, lastDay),
-    );
-  }
+  DateTime periodStart(int index) => monthlyPlanningDate(startsOn, index);
 
   int? periodIndex(DateTime day) {
     if (day.isBefore(startsOn)) return null;
@@ -95,17 +86,6 @@ typedef SpendingPlanRevision = ({
   DateTime savedAt,
   SpendingPlanLimit limit,
 });
-
-DateTime planningDay(DateTime date) =>
-    DateTime.utc(date.year, date.month, date.day);
-
-const firstPlanningYear = 1900;
-const lastPlanningYear = 2199;
-
-bool isPlanningDay(DateTime date) =>
-    date == planningDay(date) &&
-    date.year >= firstPlanningYear &&
-    date.year <= lastPlanningYear;
 
 typedef SpendingPlanItem = ({LedgerRecord record, BigInt amountMinor});
 

@@ -343,6 +343,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
     context: context,
     builder: (context) => AlertDialog(
       title: Text(context.l10n.confirmRestoreContents),
+      scrollable: true,
       content: _BackupPreview(preview: preview, sourceName: sourceName),
       actions: [
         TextButton(
@@ -373,6 +374,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
             ? context.l10n.restoreThisSnapshotTitle
             : context.l10n.mergeThisSnapshotTitle,
       ),
+      scrollable: true,
       content: _BackupPreview(preview: preview, sourceName: sourceName),
       actions: [
         TextButton(
@@ -675,6 +677,8 @@ class _BackupPreview extends StatelessWidget {
         Text(context.l10n.backupCheckpointCount(preview.checkpointCount)),
       if (preview.spendingPlanCount > 0)
         Text(context.l10n.backupSpendingPlanCount(preview.spendingPlanCount)),
+      if (preview.recurringPlanCount > 0)
+        Text(context.l10n.backupRecurringPlanCount(preview.recurringPlanCount)),
       Text(
         context.l10n.backupTransactionCount(
           preview.entryCount,
@@ -716,6 +720,9 @@ String _localizedBackupError(BuildContext context, String message) {
   if (message.contains('导入分类规则')) return context.l10n.importRulesBackupConflict;
   if (message.contains('预算或外部额度')) {
     return context.l10n.spendingPlanBackupConflict;
+  }
+  if (message.contains('周期计划或交易关联')) {
+    return context.l10n.recurringBackupConflict;
   }
   if (message.contains('CSV 导入批次')) return context.l10n.csvBackupConflict;
   if (message.contains('余额检查点')) return context.l10n.checkpointBackupConflict;

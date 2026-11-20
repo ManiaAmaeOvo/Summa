@@ -207,6 +207,36 @@ class SpendingPlanLimits extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+@DataClassName('RecurringPlanRow')
+class RecurringPlans extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get kind => text()();
+  TextColumn get cadence => text()();
+  TextColumn get firstDueOn => text()();
+  IntColumn get customDays => integer().nullable()();
+  TextColumn get currency => text()();
+  IntColumn get expectedMinor => integer()();
+  TextColumn get accountId => text().references(LedgerAccounts, #id)();
+  TextColumn get categoryId => text().references(LedgerCategories, #id)();
+  BoolColumn get paused => boolean()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DataClassName('RecurringOccurrenceRow')
+class RecurringOccurrences extends Table {
+  TextColumn get planId =>
+      text().references(RecurringPlans, #id, onDelete: KeyAction.cascade)();
+  IntColumn get cycle => integer()();
+  TextColumn get entryId => text().unique().references(LedgerEntries, #id)();
+  IntColumn get expectedMinor => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {planId, cycle};
+}
+
 @DriftDatabase(
   tables: [
     LedgerAccounts,
@@ -221,6 +251,8 @@ class SpendingPlanLimits extends Table {
     ImportCategoryRules,
     SpendingPlans,
     SpendingPlanLimits,
+    RecurringPlans,
+    RecurringOccurrences,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -229,7 +261,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -314,6 +346,10 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(spendingPlans);
           await migrator.createTable(spendingPlanLimits);
           await _createSpendingPlanIndex();
+        }
+        if (from < 17) {
+          await migrator.createTable(recurringPlans);
+          await migrator.createTable(recurringOccurrences);
         }
         // Drift updates the version after this callback. Set it in the same
         // transaction as the schema so an interrupted open cannot replay DDL.
@@ -427,6 +463,7 @@ class AppDatabase extends _$AppDatabase {
     await transaction(() async {
       await delete(csvImportBatches).go();
       await delete(balanceCheckpoints).go();
+      await delete(recurringPlans).go();
       await delete(ledgerEntries).go();
       await (delete(
         spendingPlans,
@@ -450,6 +487,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(valuationRates).go();
       await delete(csvImportBatches).go();
       await delete(balanceCheckpoints).go();
+      await delete(recurringPlans).go();
       await delete(ledgerEntries).go();
       await delete(importCategoryRules).go();
       await delete(spendingPlans).go();

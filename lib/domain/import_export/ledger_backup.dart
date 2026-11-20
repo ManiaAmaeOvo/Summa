@@ -10,6 +10,7 @@ class LedgerBackupPreview {
     this.checkpointCount = 0,
     this.importBatchCount = 0,
     this.spendingPlanCount = 0,
+    this.recurringPlanCount = 0,
   });
 
   final DateTime createdAt;
@@ -20,6 +21,7 @@ class LedgerBackupPreview {
   final int checkpointCount;
   final int importBatchCount;
   final int spendingPlanCount;
+  final int recurringPlanCount;
 }
 
 class LedgerBackupException implements Exception {

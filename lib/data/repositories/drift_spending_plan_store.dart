@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:summa/data/database/app_database.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
+import 'package:summa/domain/planning/planning_date.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 
 class DriftSpendingPlanStore {
@@ -54,8 +55,8 @@ class DriftSpendingPlanStore {
       currency: draft.currency,
       scope: draft.scope.name,
       limitMinor: draft.limitMinor,
-      startsOn: _date(draft.startsOn),
-      endsOn: draft.endsOn == null ? null : _date(draft.endsOn!),
+      startsOn: encodePlanningDay(draft.startsOn),
+      endsOn: draft.endsOn == null ? null : encodePlanningDay(draft.endsOn!),
       rollover: draft.rollover,
       archived: false,
       accountId: draft.accountId,
@@ -93,7 +94,7 @@ class DriftSpendingPlanStore {
           SpendingPlanLimitRow(
             id: revisionId,
             planId: id,
-            periodStart: _date(limit.periodStart),
+            periodStart: encodePlanningDay(limit.periodStart),
             limitMinor: limit.limitMinor,
             ongoing: limit.ongoing,
             savedAtMicros: now > previous ? now : previous + 1,
@@ -179,8 +180,10 @@ class DriftSpendingPlanStore {
         'currency_code': plan.draft.currency,
         'scope': plan.draft.scope.name,
         'limit_minor': plan.draft.limitMinor,
-        'starts_on': _date(plan.draft.startsOn),
-        'ends_on': plan.draft.endsOn == null ? null : _date(plan.draft.endsOn!),
+        'starts_on': encodePlanningDay(plan.draft.startsOn),
+        'ends_on': plan.draft.endsOn == null
+            ? null
+            : encodePlanningDay(plan.draft.endsOn!),
         'rollover': plan.draft.rollover,
         'archived': plan.archived,
         'account_id': plan.draft.accountId,
@@ -190,7 +193,7 @@ class DriftSpendingPlanStore {
             {
               'id': revision.id,
               'saved_at_micros': revision.savedAt.microsecondsSinceEpoch,
-              'period_start': _date(revision.limit.periodStart),
+              'period_start': encodePlanningDay(revision.limit.periodStart),
               'limit_minor': revision.limit.limitMinor,
               'ongoing': revision.limit.ongoing,
             },
@@ -334,14 +337,7 @@ bool _validLimit(SpendingPlanDraft draft, SpendingPlanLimit limit) {
   return index != null && draft.periodStart(index) == limit.periodStart;
 }
 
-String _date(DateTime value) => value.toIso8601String().split('T').first;
-
-DateTime _parseDate(String value) {
-  final date = DateTime.tryParse('${value}T00:00:00Z');
-  if (date == null || !isPlanningDay(date) || _date(date) != value) {
-    throw _conflict;
-  }
-  return date;
-}
+DateTime _parseDate(String value) =>
+    decodePlanningDay(value) ?? (throw _conflict);
 
 const _conflict = LedgerBackupException('备份中的预算或外部额度无效或存在冲突');
