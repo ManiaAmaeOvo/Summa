@@ -20,13 +20,19 @@ String spendingScopeLabel(BuildContext context, SpendingScope scope) {
     SpendingScope.category => l10n.category,
     SpendingScope.account => l10n.account,
     SpendingScope.allowance => l10n.spendingPlanAllowance,
+    SpendingScope.resettableAllowance => l10n.accountPeriodicAllowance,
   };
 }
 
 class SpendingPlanEditor extends ConsumerStatefulWidget {
-  const SpendingPlanEditor({super.key, required this.allowance});
+  const SpendingPlanEditor({
+    super.key,
+    required this.allowance,
+    this.resetAccount,
+  });
 
   final bool allowance;
+  final AccountBalance? resetAccount;
 
   @override
   ConsumerState<SpendingPlanEditor> createState() => _SpendingPlanEditorState();
@@ -40,15 +46,25 @@ class _SpendingPlanEditorState extends ConsumerState<SpendingPlanEditor> {
   late DateTime _starts = DateUtils.addDaysToDate(_today, 1 - _today.day);
   late DateTime _ends = DateTime(_today.year, _today.month + 1, 0);
   String _currency = defaultCurrency;
-  String? _account;
+  late String? _account = widget.resetAccount?.id;
   String? _category;
   bool _fixed = false;
   bool _rollover = false;
   bool _saving = false;
   String? _error;
-  late SpendingScope _scope = widget.allowance
+  late SpendingScope _scope = widget.resetAccount != null
+      ? SpendingScope.resettableAllowance
+      : widget.allowance
       ? SpendingScope.allowance
       : SpendingScope.total;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.resetAccount case final account? when _name.text.isEmpty) {
+      _name.text = DefaultLedgerLabels.balance(context, account);
+    }
+  }
 
   @override
   void dispose() {
@@ -65,14 +81,14 @@ class _SpendingPlanEditorState extends ConsumerState<SpendingPlanEditor> {
     final planState = ref.watch(spendingPlansProvider);
     final used = {
       for (final plan in planState.value ?? const <SpendingPlan>[])
-        if (!plan.archived && plan.draft.scope == SpendingScope.allowance)
+        if (!plan.archived && plan.draft.scope.isAllowance)
           plan.draft.accountId,
     };
     final accounts = (accountState.value ?? const <LedgerAccount>[])
         .where(
           (account) =>
               currencyMinorDigits.containsKey(account.currencyCode) &&
-              (_scope == SpendingScope.allowance
+              (_scope.isAllowance
                   ? account.kind == AccountKind.entrustedFunds &&
                         !used.contains(account.id)
                   : account.kind != AccountKind.receivable),
@@ -85,11 +101,19 @@ class _SpendingPlanEditorState extends ConsumerState<SpendingPlanEditor> {
         category.id: DefaultLedgerLabels.category(context, category),
     };
     final dateLabels = MaterialLocalizations.of(context);
-    final currency = selected?.currencyCode ?? _currency;
+    final resetAccount = widget.resetAccount;
+    final currency =
+        resetAccount?.currencyCode ?? selected?.currencyCode ?? _currency;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.allowance ? l10n.addAllowance : l10n.addBudget),
+        title: Text(
+          resetAccount != null
+              ? l10n.accountPeriodicAllowance
+              : widget.allowance
+              ? l10n.addAllowance
+              : l10n.addBudget,
+        ),
       ),
       body: SafeArea(
         child: Form(
@@ -114,7 +138,7 @@ class _SpendingPlanEditorState extends ConsumerState<SpendingPlanEditor> {
                   ),
                   items: [
                     for (final scope in SpendingScope.values)
-                      if (scope != SpendingScope.allowance)
+                      if (!scope.isAllowance)
                         DropdownMenuItem(
                           value: scope,
                           child: Text(spendingScopeLabel(context, scope)),
@@ -128,7 +152,11 @@ class _SpendingPlanEditorState extends ConsumerState<SpendingPlanEditor> {
                 ),
                 const SizedBox(height: 12),
               ],
-              if (_scope.usesAccount)
+              if (resetAccount != null) ...[
+                Text(DefaultLedgerLabels.balance(context, resetAccount)),
+                const SizedBox(height: 8),
+                Text(l10n.accountPeriodicAllowanceExplanation),
+              ] else if (_scope.usesAccount)
                 DropdownButtonFormField<String>(
                   key: ValueKey(selected?.id),
                   initialValue: selected?.id,
@@ -211,7 +239,9 @@ class _SpendingPlanEditorState extends ConsumerState<SpendingPlanEditor> {
                   decimal: true,
                 ),
                 decoration: InputDecoration(
-                  labelText: l10n.spendingPlanLimit,
+                  labelText: resetAccount == null
+                      ? l10n.spendingPlanLimit
+                      : l10n.accountPeriodicAllowanceAmount,
                   suffixText: currency,
                 ),
                 validator: (value) {
@@ -228,20 +258,21 @@ class _SpendingPlanEditorState extends ConsumerState<SpendingPlanEditor> {
                 },
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<bool>(
-                initialValue: _fixed,
-                items: [
-                  DropdownMenuItem(
-                    value: false,
-                    child: Text(l10n.spendingPlanMonthly),
-                  ),
-                  DropdownMenuItem(
-                    value: true,
-                    child: Text(l10n.spendingPlanFixedPeriod),
-                  ),
-                ],
-                onChanged: (value) => setState(() => _fixed = value!),
-              ),
+              if (resetAccount == null)
+                DropdownButtonFormField<bool>(
+                  initialValue: _fixed,
+                  items: [
+                    DropdownMenuItem(
+                      value: false,
+                      child: Text(l10n.spendingPlanMonthly),
+                    ),
+                    DropdownMenuItem(
+                      value: true,
+                      child: Text(l10n.spendingPlanFixedPeriod),
+                    ),
+                  ],
+                  onChanged: (value) => setState(() => _fixed = value!),
+                ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(l10n.spendingPlanStart),
@@ -259,12 +290,13 @@ class _SpendingPlanEditorState extends ConsumerState<SpendingPlanEditor> {
                 )
               else ...[
                 Text(l10n.spendingPlanMonthlyHint),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.spendingPlanRollover),
-                  value: _rollover,
-                  onChanged: (value) => setState(() => _rollover = value),
-                ),
+                if (resetAccount == null)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.spendingPlanRollover),
+                    value: _rollover,
+                    onChanged: (value) => setState(() => _rollover = value),
+                  ),
               ],
               if (_error case final error?)
                 Text(

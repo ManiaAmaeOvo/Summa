@@ -568,7 +568,7 @@ void main() {
     expect(find.text('记账与交易类型'), findsOneWidget);
     await tester.tap(find.text('记账与交易类型'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('借入会同时增加负债'), findsOneWidget);
+    expect(find.textContaining('借还本金和账户之间的转账'), findsOneWidget);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     await tester.drag(
@@ -873,6 +873,82 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('transfer-target-family-card')));
     await tester.pumpAndSettle();
     expect(find.text('微信'), findsOneWidget);
+  });
+
+  testWidgets('reviews a pasted notice before preparing a pending entry', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _testApp(
+        overrides: [
+          transactionsProvider.overrideWith((ref) => Stream.value([])),
+          accountBalancesProvider.overrideWith(
+            (ref) => Stream.value([cashBalance]),
+          ),
+          accountsProvider.overrideWith(
+            (ref) => Stream.value([
+              const LedgerAccount(
+                id: 'cash',
+                name: '现金',
+                kind: AccountKind.cash,
+              ),
+              const LedgerAccount(
+                id: 'usd',
+                name: 'Dollar account',
+                kind: AccountKind.bank,
+                currencyCode: 'USD',
+              ),
+            ]),
+          ),
+          expenseCategoriesProvider.overrideWith(
+            (ref) => Stream.value([
+              const LedgerCategory(id: 'food', name: '饮食'),
+              const LedgerCategory(id: 'lunch', name: '午餐', parentId: 'food'),
+            ]),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('记一笔'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('粘贴支付通知'));
+    await tester.pumpAndSettle();
+    final dialog = find.byType(AlertDialog);
+    await tester.enterText(
+      find.descendant(of: dialog, matching: find.byType(TextField)).first,
+      '微信支付\n支付金额：¥28.50\n商户：示例餐厅',
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('支出 · ¥28.50'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, '带入记账'))
+          .onPressed,
+      isNull,
+    );
+    await tester.tap(
+      find.descendant(
+        of: dialog,
+        matching: find.byType(DropdownButtonFormField<String>),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Dollar account'), findsNothing);
+    await tester.tap(find.text('现金').hitTestable().last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('带入记账'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TransactionEditorSheet), findsOneWidget);
+    expect(find.text('28.50'), findsOneWidget);
+    expect(find.text('示例餐厅'), findsOneWidget);
+    expect(
+      tester
+          .widget<SwitchListTile>(find.widgetWithText(SwitchListTile, '保存为待入账'))
+          .value,
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('shows insufficient balance inside the open editor', (

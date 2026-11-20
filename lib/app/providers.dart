@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:summa/data/backup/local_backup_store.dart';
 import 'package:summa/data/database/app_database.dart';
@@ -93,6 +95,14 @@ final importCategoryRulesProvider =
 final spendingPlansProvider = StreamProvider.autoDispose<List<SpendingPlan>>(
   (ref) => ref.watch(expenseRepositoryProvider).watchSpendingPlans(),
 );
+
+final localPlanningDateProvider = Provider.autoDispose<DateTime>((ref) {
+  final now = DateTime.now();
+  final tomorrow = DateTime(now.year, now.month, now.day + 1);
+  final timer = Timer(tomorrow.difference(now), ref.invalidateSelf);
+  ref.onDispose(timer.cancel);
+  return now;
+});
 
 final recurringPlansProvider = StreamProvider.autoDispose<List<RecurringPlan>>(
   (ref) => ref.watch(expenseRepositoryProvider).watchRecurringPlans(),

@@ -48,6 +48,55 @@ class DriftSpendingPlanStore {
 
   Stream<List<SpendingPlan>> watch() => _query().watch().map(_readPlans);
 
+  Future<BigInt?> availableForPayment({
+    required String accountId,
+    required String currency,
+    required DateTime occurredAt,
+    String? excludingEntryId,
+  }) async {
+    final plans = _db.spendingPlans;
+    final query = _query()
+      ..where(
+        plans.accountId.equals(accountId) &
+            plans.scope.equals(SpendingScope.resettableAllowance.name) &
+            plans.archived.equals(false),
+      );
+    final plan = _readPlans(await query.get()).singleOrNull;
+    final index = plan?.draft.periodIndex(planningDay(occurredAt.toLocal()));
+    if (plan == null || index == null) return null;
+
+    DateTime localStart(int period) {
+      final day = plan.draft.periodStart(period);
+      return DateTime(day.year, day.month, day.day);
+    }
+
+    final rows = await _db
+        .customSelect(
+          '''
+      SELECT p.debit_minor
+      FROM ledger_postings AS p
+      JOIN ledger_entries AS e ON e.id = p.transaction_id
+      WHERE p.account_id = ? AND p.currency_code = ? AND p.needs_review = 0
+        AND e.transaction_type = 'expense' AND e.status = 'posted'
+        AND e.is_deleted = 0 AND e.occurred_at >= ? AND e.occurred_at < ?
+        ${excludingEntryId == null ? '' : 'AND e.id <> ?'}
+      ''',
+          variables: [
+            Variable.withString(accountId),
+            Variable.withString(currency),
+            Variable.withDateTime(localStart(index)),
+            Variable.withDateTime(localStart(index + 1)),
+            if (excludingEntryId != null) Variable.withString(excludingEntryId),
+          ],
+        )
+        .get();
+    final used = rows.fold(
+      BigInt.zero,
+      (sum, row) => sum - BigInt.from(row.read<int>('debit_minor')),
+    );
+    return resettableAllowanceRemaining(plan.limitForPeriod(index), used);
+  }
+
   Future<void> add(String id, SpendingPlanDraft draft) async {
     final row = SpendingPlanRow(
       id: id,
@@ -130,7 +179,7 @@ class DriftSpendingPlanStore {
       return account != null &&
           account.currencyCode == plan.currency &&
           (!activeOnly || !account.isArchived) &&
-          (plan.scope == SpendingScope.allowance.name
+          (SpendingScope.values.byName(plan.scope).isAllowance
               ? account.kind == AccountKind.entrustedFunds.name
               : account.kind != AccountKind.receivable.name &&
                     account.kind != AccountKind.familyDirect.name);
@@ -155,14 +204,17 @@ class DriftSpendingPlanStore {
   }
 
   Future<bool> _uniqueAllowance(SpendingPlanRow plan) async {
-    if (plan.archived || plan.scope != SpendingScope.allowance.name) {
+    if (plan.archived || !SpendingScope.values.byName(plan.scope).isAllowance) {
       return true;
     }
     final conflicting =
         await (_db.select(_db.spendingPlans)
               ..where(
                 (row) =>
-                    row.scope.equals(SpendingScope.allowance.name) &
+                    row.scope.isIn([
+                      SpendingScope.allowance.name,
+                      SpendingScope.resettableAllowance.name,
+                    ]) &
                     row.accountId.equals(plan.accountId!) &
                     row.archived.equals(false) &
                     row.id.equals(plan.id).not(),

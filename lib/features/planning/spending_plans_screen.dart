@@ -18,7 +18,7 @@ class SpendingPlansScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final plans = ref.watch(spendingPlansProvider);
     final records = ref.watch(transactionsProvider);
-    final today = DateTime.now();
+    final today = ref.watch(localPlanningDateProvider);
     void add({required bool allowance}) => Navigator.push<void>(
       context,
       MaterialPageRoute(
@@ -57,7 +57,7 @@ class SpendingPlansScreen extends ConsumerWidget {
                 Card(
                   child: ListTile(
                     leading: Icon(
-                      plan.draft.scope == SpendingScope.allowance
+                      plan.draft.scope.isAllowance
                           ? Icons.card_giftcard_outlined
                           : Icons.pie_chart_outline,
                     ),
@@ -84,7 +84,7 @@ class SpendingPlansScreen extends ConsumerWidget {
                     onTap: () => Navigator.push<void>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => _PlanDetails(id: plan.id),
+                        builder: (_) => SpendingPlanDetails(id: plan.id),
                       ),
                     ),
                   ),
@@ -101,16 +101,16 @@ class SpendingPlansScreen extends ConsumerWidget {
 int _currentIndex(SpendingPlan plan, DateTime now) =>
     plan.draft.periodIndex(planningDay(now)) ?? 0;
 
-class _PlanDetails extends ConsumerStatefulWidget {
-  const _PlanDetails({required this.id});
+class SpendingPlanDetails extends ConsumerStatefulWidget {
+  const SpendingPlanDetails({super.key, required this.id});
 
   final String id;
 
   @override
-  ConsumerState<_PlanDetails> createState() => _PlanDetailsState();
+  ConsumerState<SpendingPlanDetails> createState() => _PlanDetailsState();
 }
 
-class _PlanDetailsState extends ConsumerState<_PlanDetails> {
+class _PlanDetailsState extends ConsumerState<SpendingPlanDetails> {
   int? _position;
   bool _saving = false;
 
@@ -159,7 +159,7 @@ class _PlanDetailsState extends ConsumerState<_PlanDetails> {
     List<LedgerRecord> items,
   ) {
     final l10n = context.l10n;
-    final today = DateTime.now();
+    final today = ref.watch(localPlanningDateProvider);
     final latest = _currentIndex(plan, today);
     final index = (_position ?? latest).clamp(0, latest);
     final period = summarizeSpendingPlan(
@@ -175,6 +175,8 @@ class _PlanDetailsState extends ConsumerState<_PlanDetails> {
       padding: const EdgeInsets.all(16),
       children: [
         _ScopeText(plan: plan),
+        if (plan.draft.scope == SpendingScope.resettableAllowance)
+          Text(l10n.accountPeriodicAllowanceExplanation),
         if (plan.archived) Text(l10n.spendingPlanArchived),
         Row(
           children: [

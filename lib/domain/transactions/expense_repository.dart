@@ -18,6 +18,7 @@ import 'package:summa/domain/valuation/net_worth_valuation.dart';
 
 enum TransactionRuleError {
   insufficientBalance,
+  insufficientAllowance,
   overpayment,
   invalidPaymentSplit,
   refundLimitExceeded,

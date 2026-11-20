@@ -1,361 +1,176 @@
-# Summa User Guide
+# Summa 2.0 User Guide
 
 **English** | [简体中文](USER_GUIDE.zh-CN.md)
 
-Summa is a local-first personal ledger. It requires no sign-in and no backend
-server. Accounts, categories, transactions, and in-app backups remain on the
-current device unless you explicitly export or share them.
-
-> This guide covers Summa `0.4.1`. A ledger and its complete backups may contain
-> sensitive financial information. Do not publish real screenshots, JSON, or
-> backup files in a public issue without removing private data.
-
-## 1. Getting started
-
-On first launch, Summa creates default asset accounts, liability accounts, and
-two-level income and expense categories. A practical setup order is:
-
-1. Open **Accounts** and calibrate the actual balance of Cash, Bank Account,
-   Alipay, WeChat Pay, and any other accounts you use.
-2. Archive defaults you do not need and add your own accounts.
-3. Open **Settings → Category management** and review both category trees.
-4. Return to the home screen and tap **Add transaction**.
-5. After recording several transactions, inspect **Reports** to verify the
-   categories and account flows.
-6. Export a complete backup from **Settings → Data & backup** after entering
-   important information.
-
-Amounts are stored as integer minor units rather than floating-point values.
-Expenses, repayments, and transfers validate available balances. A personal
-asset account cannot be spent below zero, and a liability cannot be repaid by
-more than its outstanding amount.
-
-## 2. Language
-
-Open **Settings → Language** and choose:
-
-- **Follow system**: use the Android system language.
-- **English**: always display the English interface.
-- **Simplified Chinese**: always display the Simplified Chinese interface.
-
-The selection is stored locally and takes effect immediately. Untouched default
-account and category names follow the selected language. A name you explicitly
-rename, as well as every custom name and transaction note, remains exactly as
-you entered it and is never machine-translated.
-
-Open **Settings → Font size** to follow the Android system setting or choose
-Small, Standard, Large, or Extra large for Summa only. The selection takes
-effect immediately and is retained after restarting the app.
-
-Tapping the **Liquid net worth** summary card in **Transactions** opens the
-Accounts page, where all four balance groups and individual accounts are shown.
-
-## 3. Accounts and liabilities
-
-The Accounts tab separates money into four summaries:
-
-- **Personal liquid assets**: cash, bank accounts, Alipay, WeChat Pay, and other
-  balances that belong to you.
-- **Outstanding liabilities**: Huabei, Baitiao, monthly-pay services, personal
-  loans, and other amounts that still need to be repaid.
-- **Liquid net worth**: personal liquid assets minus outstanding liabilities.
-- **Entrusted / authorized funds**: family cards, purchasing budgets, and other
-  money you may use but do not fully own.
-
-Entrusted funds can pay liabilities and transfer to or from another non-liability
-account. They remain in the entrusted-funds group and are excluded from your
-personal liquid assets and liquid net worth. A transfer to a personal account
-therefore changes which balance group holds the money; it does not create income.
-
-Fixed assets are intentionally outside the current default balance model.
-Summa's headline balance focuses on available liquid money. This avoids making
-a phone, computer, or other hard-to-sell property look like spendable cash.
-
-### Calibrate a balance
-
-Tap an account, enter its actual current balance, and save. Calibration adjusts
-the opening balance. It does not fabricate an income or expense transaction, so
-reports are not distorted.
-
-### Add an account
-
-Tap **Add account**, enter a unique name, select an account type, and optionally
-enter its current balance:
-
-- Cash
-- Bank account
-- Payment wallet
-- Liability account
-- Entrusted / authorized funds
-
-An account name must be unique. Summa treats the English and Chinese labels of
-an untouched default account as the same name, preventing accidental duplicates
-after a language switch.
-
-### Archive and restore defaults
-
-The account action menu can archive an account. Archiving removes it from new
-transaction selectors and current balance summaries without breaking historical
-transactions. **Restore defaults** re-enables missing defaults without changing
-existing balances, custom accounts, or transaction history.
-
-## 4. Add a transaction
-
-Tap **Add transaction** on the home screen and choose one of five transaction
-types. The current time is selected by default and can be edited. Notes can
-store a merchant, purpose, explanation, or other context.
-
-### Expense
-
-Choose a positive amount, a secondary expense category, and a payment account.
-For example: `Food / Lunch`, Alipay, `28.50`.
-
-An expense from a personal asset or entrusted-fund account requires a sufficient
-balance. An expense paid through a liability account increases the amount owed.
-
-### Income
-
-Choose a positive amount, a secondary income category, and the destination
-account. Income categories include earned income as well as family support,
-living allowance, gifts, purchase remainder, refunds, and reimbursements.
-
-Recording income directly into a liability account reduces that liability
-instead of increasing cash. The reduction cannot exceed the outstanding amount.
-
-### Borrowing
-
-Borrowing connects a liability source to the personal asset account receiving
-the money. For example:
-
-```text
-Loan from a friend → WeChat Pay, ¥1,000.00
-```
-
-After saving, the WeChat Pay balance increases by ¥1,000.00 and the personal
-loan liability also increases by ¥1,000.00. This is not income and therefore
-does not increase liquid net worth. A new liability account can be quick-added
-from the editor.
-
-### Repayment
-
-Repayment connects a personal asset account to the liability being reduced. For
-example: `Bank Account → Huabei`. It is neither new income nor a new expense.
-Summa rejects the transaction if the payment balance is insufficient or the
-amount exceeds the outstanding liability.
-
-### Transfer
-
-A transfer moves money between two different personal asset accounts, such as
-`Bank Account → Alipay`. It does not appear in income or expense totals. The
-source account must have enough money.
-
-## 5. Edit and delete transactions
-
-Tap an existing transaction in **Transactions** to open it in the editor. Amount,
-time, category, accounts, flow direction, and note are updated as one operation.
-Summa recalculates and validates the complete affected ledger before accepting
-the change.
-
-Deleting a transaction uses a soft delete. It disappears immediately from the
-transaction list, reports, and balance calculations, while the database retains the
-minimum historical state required for backup compatibility and consistency.
-Soft-deleted rows do not remain in memory; they only cause gradual SQLite file
-growth over long-term use.
-
-## 6. Two-level categories
-
-Open **Settings → Category management** to maintain separate trees for income
-and expenses:
-
-```text
-Primary category → Secondary category
-```
-
-A transaction selects a secondary category; Summa derives its primary category
-for summaries and charts. Both levels support adding, renaming, ordering, and
-archiving. Every primary category retains an **Other** fallback. Historical
-transactions continue displaying an archived category. At both levels,
-**Other** remains the final item; a newly created category is inserted above it.
-
-**Restore default categories** only re-enables or recreates missing defaults. It
-does not delete custom categories.
-
-## 7. JSON code import
-
-Tap the code icon in the top-right of **Transactions**. This workflow is designed
-for transaction screenshots that have been converted to strict JSON by OCR or a
-language model.
-
-The import sequence is:
-
-```text
-Paste JSON → Parse and validate → Preview and edit → Confirm count → Atomic write
-```
-
-**Copy template** copies an LLM-ready prompt followed by valid fenced JSON. The
-prompt includes the category paths currently available in this ledger and tells
-the model that `/` is reserved as the separator in `Primary/Secondary`; an
-individual category name cannot contain `/`. The whole copied text can be pasted
-back into Summa because import ignores the prompt comment around the JSON fence.
-
-Before confirmation, tap any item to edit it or remove it from the batch. The
-write is atomic: either every valid item and confirmed new account is committed,
-or nothing is written.
-
-### Batch example
-
-```json
-{
-  "schema_version": 1,
-  "transactions": [
-    {
-      "type": "expense",
-      "amount": "28.50",
-      "occurred_at": "2026-09-09T12:30:00+08:00",
-      "category": "Food/Lunch",
-      "account": "Alipay",
-      "account_kind": "wallet",
-      "note": "Lunch"
-    },
-    {
-      "type": "borrowing",
-      "amount": "1000.00",
-      "occurred_at": "2026-09-09T13:00:00+08:00",
-      "account": "Loan from a friend",
-      "account_kind": "creditLine",
-      "target_account": "WeChat Pay",
-      "target_account_kind": "wallet",
-      "note": "Short-term loan"
-    }
-  ]
-}
-```
-
-Supported `type` values are `expense`, `income`, `transfer`, `borrowing`, and
-`repayment`. Amounts are positive decimal strings, timestamps use ISO 8601, and
-categories use `Primary/Secondary`. Protocol field names and enum values always
-remain English so JSON is stable across language settings.
-
-Both English and Chinese aliases are accepted for untouched default accounts and
-categories. Unknown accounts are marked for creation in the preview. Unknown
-categories are not silently created because OCR spelling errors would pollute
-the category tree; create the category first or correct it in preview.
-
-See the [complete JSON import protocol](docs/json-import.md).
-
-## 8. Reports and transaction export
-
-The Reports tab provides daily, weekly, monthly, and yearly views including:
-
-- Income, expense, borrowing, and repayment totals.
-- Income and expense category pie charts.
-- Expense trend and liability trend, with approximate dates on the horizontal
-  axis and amounts on the vertical axis.
-
-Export transactions for this week, month, year, all time, or a custom date range:
-
-- **JSON**: structured and re-importable.
-- **CSV**: suitable for Excel, Numbers, and other spreadsheet tools.
-- **Markdown**: readable in notes and convenient for language-model analysis.
-
-Human-readable headings and untouched default labels follow the selected app
-language. JSON protocol keys remain language-neutral English. A transaction
-export contains only the chosen transaction range and is not a complete app
-backup.
-
-## 9. Automatic and manual backups
-
-Open **Settings → Data & backup** to view the actual backup directory and both
-automatic and manual local snapshots.
-
-### Automatic snapshots
-
-Before the first successful change to transactions, accounts, or categories
-after each launch, Summa saves the complete previous state. Invalid or rejected
-operations do not leave a snapshot. Later changes during the same launch do not
-create more automatic snapshots. The newest five launch snapshots are retained;
-the sixth removes the oldest.
-
-### Manual local snapshots
-
-Tap **Back up inside the app**, enter a name, and save. Manual snapshots are not
-limited by the five automatic slots. Tap a snapshot to preview and replace the
-current ledger. Its menu also supports merge, rename, and delete.
-
-### Export or share a complete backup
-
-Tap **Export or share backup** and use the Android system sheet to save it to a
-downloads folder, cloud drive, or other trusted destination. An external file
-survives Summa uninstall and factory reset and is therefore the correct choice
-for long-term retention.
-
-### Replace versus merge
-
-- **Replace & restore** makes the current ledger exactly match the snapshot.
-- **Merge** updates items with the same stable ID and preserves data unique to
-  the current device. Use it when combining related copies of a ledger.
-
-Automatic and manual snapshots are stored under the app-specific
-`summa_backups` directory shown on the page. Android 11 and later normally
-restrict ordinary file managers from browsing private app storage. Manage these
-snapshots inside Summa, and export externally before uninstalling.
-
-## 10. Reset data
-
-The bottom of **Settings → Data & backup** offers two separately confirmed
-operations:
-
-- **Reset transactions & accounts** permanently clears every transaction,
-  deletes custom accounts, and restores default accounts with zero balances. It
-  preserves income and expense categories and all local backups.
-- **Factory reset** clears transactions, accounts, custom categories, and every
-  in-app backup, returning Summa to first-install state. Files already exported
-  outside the app are not affected.
-
-If the goal is to return to a known earlier state, restore a backup snapshot
-instead of resetting.
-
-## 11. Data safety and common questions
-
-### Does Summa require a network connection or server?
-
-No for core functionality. Opening the developer's GitHub profile or choosing a
-network share target is an explicit user action and does not affect offline
-ledger use.
-
-### Does data survive uninstall?
-
-Normally not. Android removes the app database and in-app snapshots. Export a
-complete backup and verify that it exists outside Summa before uninstalling or
-changing devices.
-
-### Why can an account not become negative?
-
-For a personal liquid asset, a negative value usually means the payment source
-was recorded incorrectly or the opening balance was not calibrated. Liabilities
-are modeled separately so debt is not hidden inside a negative asset balance.
-
-### Does soft deletion eventually use storage?
-
-Yes, slowly. Deleted rows remain in SQLite for consistency and backup history,
-but they are not loaded into active transaction lists. Ordinary personal use is
-unlikely to create meaningful storage pressure. A future maintenance tool can
-compact old deleted records if real-world usage shows a need.
-
-### Which format should I use with a language model?
-
-Use strict JSON for importing because Summa validates it field by field. Use a
-Markdown or CSV transaction export when asking a model to summarize or analyze
-a period. Never upload a complete real backup to an untrusted service.
-
-## 12. Troubleshooting
-
-- If a save is rejected, read the message inside the open editor. It identifies
-  insufficient balance, overpayment, or a missing selection.
-- If JSON cannot be parsed, copy the in-app template, keep numeric amounts inside
-  quotes, and use ISO 8601 timestamps with a timezone offset.
-- If a default English account or category is not found, verify that the default
-  was not explicitly renamed. Custom names are matched exactly.
-- If a local backup is not visible in a file manager, manage it inside Summa or
-  use **Export or share backup**.
-- If an external backup fails validation, the current database is left unchanged.
+Summa is a local ledger. Accounts, categories, transactions, and in-app backups
+are kept on your device. You can use the app without signing in.
+
+## 1. Start a ledger
+
+1. Open **Accounts**, add or archive accounts, and calibrate actual balances in
+   their currencies. Enter liabilities as positive amounts owed.
+2. Review the two levels of income and expense categories in **Settings →
+   Category management**.
+3. Tap **Add transaction** on Home. Home also shows net worth, available funds,
+   remaining budgets, upcoming obligations, and reconciliation items.
+4. Check results in **Reports**, then export a full JSON backup from **Settings
+   → Data & backup**.
+
+Settings also contains language and font size. Untouched default names follow
+the app language. Custom names keep their original spelling.
+You can add, rename, reorder, or archive categories. Each parent keeps an
+**Other** fallback. Archived categories remain visible on historical entries.
+
+To migrate from LedgerPro or Summa 0.4.2, export a full JSON backup from the old
+app and restore it in Summa 2.0. Both apps can be installed together. Verify
+balances, transaction history, and refund and transfer links after restoring.
+
+## 2. Accounts, currencies, and reconciliation
+
+- Personal accounts include cash, bank accounts, wallets, savings, and prepaid
+  assets. Liabilities show money you owe. Receivables show money owed to you.
+- Family cards and money held for someone else belong to entrusted funds. Their
+  balances and spending allowances are outside personal cash and net worth.
+- Tap an account to calibrate its balance. The difference creates an auditable
+  adjustment. Use **Reconciliation** in the account menu to compare an observed
+  balance with the ledger at a specific time and decide whether to adjust it.
+- Archiving removes an account from new transaction choices and preserves its
+  history. **Restore defaults** re-enables missing default accounts.
+- For a cross-currency transfer, enter the actual amount on each side. For a
+  foreign purchase, enter the original price and the actual debit. The net worth
+  card separately uses valuation rates in your chosen base currency and lists
+  currencies whose rates are missing.
+
+### Reset the Family Card to ¥1,000 each month
+
+1. Open **Accounts → Family Card → ⋮ → Resettable allowance**. You can enable it
+   on any account of the **Entrusted / authorized funds** type.
+2. Enter `1000` and choose the first day of the applicable month. Subsequent
+   cycles start on the same day, or the last day in a shorter month.
+3. Select Family Card when entering a card purchase. A posted ¥200 purchase
+   leaves ¥800 available. The following month starts at ¥1,000. Unused
+   allowance expires.
+4. Open the account’s allowance details to review prior cycles or change the
+   limit for one cycle or for subsequent ones. If the account already has a
+   tracked external allowance, archive that plan before enabling the resettable one.
+
+The transaction date determines the cycle. Pending purchases use allowance when
+posted. Card refunds restore availability in the refund’s cycle, up to its
+limit. The ledger balance remains available for reconciliation. Transfers and
+debt repayments continue to require ledger funds. Refreshing an allowance
+creates no transaction, income, or change in net worth.
+
+## 3. Record transactions and funding
+
+- **Expense**. Select a category and payment account. You can split payments
+  across accounts in the same currency. Use **Paid directly by family** for a
+  purchase made directly by a family member. For a Family Card purchase, select
+  the entrusted account itself.
+- **Income**. Select the receiving account. Record cash you receive from family
+  as family support or a living allowance if it belongs to you.
+- **Transfer**. Move money between eligible accounts. Enter both actual
+  settlement amounts if the currencies differ.
+- **Borrowing / Repayment**. Borrowing increases both your cash and your debt.
+  Repayment reduces cash and principal. Enter interest and fees separately.
+- **Lending / Collect principal**. Record a loan from your personal account into
+  a named receivable. Record principal collections against that receivable.
+- **Refund**. Open the original expense’s menu. Record full or partial refunds
+  against the original payment account.
+- **Pending**. Save an unconfirmed transaction as pending. After checking the
+  amount, accounts, category, and date, post it from the transaction menu.
+- **Edit, delete, or reverse**. Tap a row to edit it and use its menu for other
+  applicable actions.
+
+### Advance for someone else
+
+An advance means you paid on someone else’s behalf and expect reimbursement.
+The amount moves from your payment account to a receivable in the same
+currency. Your personal cash flow shows the money leaving and later returning.
+Neither principal movement counts as income or consumption. The receivable
+shows how much remains outstanding.
+
+**Full advance.** You pay ¥80 for a friend’s ticket from WeChat Pay.
+
+1. Choose **Add transaction → Advance**, select WeChat Pay as the source,
+   create a **Friend receivable**, and enter ¥80. Posting moves ¥80 from WeChat
+   Pay into the receivable.
+2. When your friend returns ¥30, choose **Reimbursement**. Select the
+   receivable as the source and WeChat Pay as the destination. The receivable
+   still shows ¥50.
+3. Record the final ¥50 with another **Reimbursement**.
+
+**Shared bill.** You pay ¥200 for dinner and your share is ¥80. Record a ¥200
+expense, enable **Part of this bill is owed by someone else**, and enter ¥120 against the
+receivable. Summa records a ¥200 cash outflow, ¥80 of personal spending, and
+¥120 receivable. Record reimbursement as it arrives.
+
+Use **Expense** for a gift or a cost you bear yourself. Use the original
+expense’s **Refund** action for money returned by a merchant. Use **Lending**
+when you lend money directly.
+
+## 4. Import statements
+
+From **Transactions → CSV Import**, open a generic CSV or a WeChat Pay or
+Alipay CSV/XLSX statement. Review duplicates, matches, category suggestions,
+payment accounts, and dates. Select and confirm the rows you want to post. Open
+the original statement from a transaction’s menu or undo a batch from import
+history. Category rule previews show suggested categories before you approve
+any transaction.
+
+For screenshots, **Code import → Copy template** provides a JSON template with
+current category names. An OCR tool or language model can fill it from
+redacted screenshots. Review the parsed accounts, amounts, dates, and
+categories before you confirm. Accounts marked for creation are created with
+the batch. See the [JSON import protocol](docs/json-import.md).
+
+**One payment notice (development build).** Open **Add transaction**, then
+**Paste payment notice**. Paste a Chinese WeChat Pay or Alipay notice with an
+explicit CNY amount. For example, put `微信支付` on the first line and
+`支付金额：¥28.50` on the next. Select a CNY account, then choose **Review in
+editor** and check the date, category, and duplicates. The entry defaults to
+pending. Refunds, transfers, and ambiguous notices need manual entry. This
+first version processes manually pasted text on the device.
+
+## 5. Planning and reports
+
+- **Planning** contains budgets, external allowances, recurring transactions,
+  subscriptions, debt and receivable contracts, and savings goals. Confirm or
+  link actual transactions when plans come due.
+- **Cash forecast** projects balances and shortfalls by currency. It separates
+  planned movements from already-posted transactions.
+- **Reports** can filter by period, currency, category, account, funding, and
+  statement fields. Open a category or account to see the matching
+  transactions. **Historical analysis** compares periods.
+- **Export financial report** uses the current filters and supports JSON, CSV,
+  XLSX, and Markdown, with optional matching transactions.
+
+## 6. Backup, restore, and reset
+
+Full backups contain ledger entries and postings, accounts, categories, import
+history, rates, reconciliation, and planning settings. Use **Data & backup** for
+full restoration or migration. A financial report export contains the selected
+report and can include its matching transactions.
+
+- The first successful edit after each launch preserves the previous state.
+  Summa keeps the five most recent automatic snapshots.
+- Named in-app backups do not occupy automatic slots. Their menu supports
+  merge, rename, and delete. Use **Export or share backup** to save a full
+  copy outside Summa before changing devices or uninstalling.
+- **Replace** restores the backup state. **Merge** incorporates compatible
+  records by their stable IDs and keeps records unique to this device. Compare
+  balances and transaction history after restoration.
+- **Reset transactions and accounts** clears transactions, custom accounts, and
+  account-linked plans. It keeps categories, other budgets, and backups.
+  **Factory reset** also clears custom categories and in-app backups. Saved
+  files outside Summa remain available.
+
+## 7. Troubleshooting
+
+- If a save is rejected, check the editor message for a balance, cycle
+  allowance, outstanding principal, or required selection.
+- If JSON fails to parse, copy the in-app template. Quote amounts and use ISO
+  8601 timestamps with timezone offsets. Use the current names for custom
+  accounts and categories.
+- When working with a language model, use the JSON template for importing and
+  CSV or Markdown for analyzing selected records. Remove private identifiers
+  and notes before sharing and keep complete backups in trusted locations.

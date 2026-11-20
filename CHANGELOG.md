@@ -5,6 +5,15 @@
 This project follows semantic versioning. The Android build number appears
 after `+` in the Flutter version.
 
+## Unreleased
+
+- Added monthly resettable spending allowances on entrusted accounts, with a
+  per-cycle amount check when posting purchases.
+- Updated the bilingual user guide and in-app help, including examples for
+  advances, reimbursements, and Family Card allowances.
+- Began Phase 6 with local payment notice text parsing and a reviewed pending
+  transaction workflow.
+
 ## [2.0.0-rc.2] - 2026-11-20
 
 ### Changed

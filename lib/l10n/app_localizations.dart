@@ -317,19 +317,19 @@ abstract class AppLocalizations {
   /// No description provided for @helpTransactions1.
   ///
   /// In en, this message translates to:
-  /// **'Tap “Add transaction” on the home screen to record an expense, income, borrowing, repayment, or transfer between personal accounts. The current time is selected by default and can be changed.'**
+  /// **'Tap “Add transaction” on Home for income, expenses, transfers, borrowing, repayment, lending, advances, and collections. You can split an expense between payment accounts or save it as pending.'**
   String get helpTransactions1;
 
   /// No description provided for @helpTransactions2.
   ///
   /// In en, this message translates to:
-  /// **'Borrowing increases both a liability and the destination account balance and is not income. Repayment reduces both the payment balance and the liability and is not an expense. Transfers are excluded from income and expense totals.'**
+  /// **'Principal and transfers are movements of funds. For a full or partial merchant refund, use the original transaction’s menu.'**
   String get helpTransactions2;
 
   /// No description provided for @helpTransactions3.
   ///
   /// In en, this message translates to:
-  /// **'Insufficient balances, overpayment, and invalid account flows are rejected. Tap an existing transaction to edit or soft-delete it.'**
+  /// **'Tap a transaction to edit it. Its menu offers actions such as posting, refunding, deleting, or reversing. Pending transactions are outside balances and reports until posted.'**
   String get helpTransactions3;
 
   /// No description provided for @helpAccountsTitle.
@@ -341,20 +341,14 @@ abstract class AppLocalizations {
   /// No description provided for @helpAccounts1.
   ///
   /// In en, this message translates to:
-  /// **'The Accounts tab shows personal liquid assets, outstanding liabilities, liquid net worth, and entrusted or authorized funds. Tap an account to calibrate its current balance; calibration does not create artificial income or expenses.'**
+  /// **'Review balances by currency in Accounts and set the net worth base currency and valuation rates. Enter the amounts actually settled on each side of a cross-currency transfer.'**
   String get helpAccounts1;
 
   /// No description provided for @helpAccounts2.
   ///
   /// In en, this message translates to:
-  /// **'Accounts can be added or archived. Category management in Settings maintains separate two-level structures for income and expenses. Transactions use the second level, and every primary category keeps an “Other” fallback.'**
+  /// **'You can add or archive accounts and calibrate or reconcile balances. Manage two-level categories in Settings.'**
   String get helpAccounts2;
-
-  /// No description provided for @helpJsonTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'JSON code import'**
-  String get helpJsonTitle;
 
   /// No description provided for @helpJson1.
   ///
@@ -368,12 +362,6 @@ abstract class AppLocalizations {
   /// **'The flow is parse and validate, preview and edit each item, confirm the count, then write atomically. Unknown accounts can be created automatically; unknown categories must be created first or corrected in the preview.'**
   String get helpJson2;
 
-  /// No description provided for @helpJson3.
-  ///
-  /// In en, this message translates to:
-  /// **'Amounts are positive decimal strings, timestamps use ISO 8601, and categories use “Primary/Secondary”.'**
-  String get helpJson3;
-
   /// No description provided for @helpReportsTitle.
   ///
   /// In en, this message translates to:
@@ -383,13 +371,13 @@ abstract class AppLocalizations {
   /// No description provided for @helpReports1.
   ///
   /// In en, this message translates to:
-  /// **'Reports supports daily, weekly, monthly, and yearly views with income and expense category charts, expense trends, and liability trends.'**
+  /// **'Filter reports by period, currency, category, account, funding source, or original statement fields. Open a category or account to check its transactions. Historical Analysis compares periods.'**
   String get helpReports1;
 
   /// No description provided for @helpReports2.
   ///
   /// In en, this message translates to:
-  /// **'Export transactions for this week, month, year, all time, or a custom range as JSON, CSV, or Markdown. Transaction exports are for analysis and are not complete restorable backups.'**
+  /// **'Export the current financial report as JSON, CSV, XLSX, or Markdown. To transfer the whole ledger, use a full JSON backup from Data & backup.'**
   String get helpReports2;
 
   /// No description provided for @helpBackupTitle.
@@ -425,7 +413,7 @@ abstract class AppLocalizations {
   /// No description provided for @helpReset1.
   ///
   /// In en, this message translates to:
-  /// **'“Reset transactions & accounts” clears transactions and custom accounts and sets default accounts to zero, while preserving categories and backups.'**
+  /// **'“Reset transactions & accounts” clears transactions, custom accounts, and account-linked plans and sets default balances to zero. It preserves categories, other budgets, and backups.'**
   String get helpReset1;
 
   /// No description provided for @helpReset2.
@@ -451,6 +439,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Complete backups contain sensitive financial information. Store them only in trusted locations and never upload a real backup to a public issue.'**
   String get helpSecurity2;
+
+  /// No description provided for @helpImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statement import and review'**
+  String get helpImportTitle;
+
+  /// No description provided for @helpCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Use CSV Import in Transactions for generic CSV or WeChat Pay and Alipay CSV/XLSX. Review duplicates, suggested categories, and payment accounts. Select and confirm rows to post them. You can undo a batch from import history.'**
+  String get helpCsv;
+
+  /// No description provided for @helpPlanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Planning contains budgets, allowances, recurring plans and subscriptions, debt and receivables, savings goals, and cash forecasts. Confirm or link actual transactions when a plan comes due.'**
+  String get helpPlanning;
+
+  /// No description provided for @helpAdvanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Advances and shared bills'**
+  String get helpAdvanceTitle;
+
+  /// No description provided for @advanceEditorHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Advance when you pay on someone’s behalf and expect them to repay you. Your payment account falls, and the receivable in the same currency rises. Use Reimbursement when they pay you back. Record any share you bear as an expense.'**
+  String get advanceEditorHint;
+
+  /// No description provided for @helpAdvanceExample.
+  ///
+  /// In en, this message translates to:
+  /// **'You pay ¥80 via WeChat Pay for a friend. Create a Friend receivable, then record an ¥80 Advance from WeChat Pay to it. If your friend returns ¥30, record a Reimbursement from the receivable to WeChat Pay. ¥50 remains outstanding. If you paid a ¥200 shared meal and your share was ¥80, record a ¥200 expense and set the advance portion to ¥120.'**
+  String get helpAdvanceExample;
+
+  /// No description provided for @pastePaymentNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste payment notice'**
+  String get pastePaymentNotice;
+
+  /// No description provided for @paymentNoticePrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste one Chinese WeChat Pay or Alipay notice. Summa parses it on this device and discards the original text when you close this dialog.'**
+  String get paymentNoticePrivacy;
+
+  /// No description provided for @paymentNoticeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Notice text'**
+  String get paymentNoticeText;
+
+  /// No description provided for @paymentNoticeUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste one notice with an explicit CNY payment or receipt amount, for example “支付金额：¥28.50”. You can also close this dialog and enter the transaction manually.'**
+  String get paymentNoticeUnsupported;
+
+  /// No description provided for @paymentNoticeNoAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an eligible CNY account first.'**
+  String get paymentNoticeNoAccounts;
+
+  /// No description provided for @paymentNoticeReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review in editor'**
+  String get paymentNoticeReview;
+
+  /// No description provided for @paymentNoticeCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the date, account, and category, and look for duplicates. The transaction defaults to pending.'**
+  String get paymentNoticeCheck;
+
+  /// No description provided for @helpPaymentNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'To start a pending entry from a single CNY notice, use the paste icon in Add transaction, select the account, and review the resulting draft.'**
+  String get helpPaymentNotice;
+
+  /// No description provided for @accountPeriodicAllowance.
+  ///
+  /// In en, this message translates to:
+  /// **'Resettable allowance'**
+  String get accountPeriodicAllowance;
+
+  /// No description provided for @accountPeriodicAllowanceAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset amount per cycle'**
+  String get accountPeriodicAllowanceAmount;
+
+  /// No description provided for @accountPeriodicAllowanceExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshes the authorized spending amount monthly. Unused allowance expires and posted card payments reduce the current cycle’s amount. A reset creates no income or balance adjustment. The ledger balance remains available for reconciliation.'**
+  String get accountPeriodicAllowanceExplanation;
+
+  /// No description provided for @accountAllowanceRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Available this cycle'**
+  String get accountAllowanceRemaining;
+
+  /// No description provided for @accountAllowanceBookSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Entrusted funds ledger balance'**
+  String get accountAllowanceBookSummary;
+
+  /// No description provided for @accountAllowanceGroupHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger balances are shown separately from the amount authorized for this cycle.'**
+  String get accountAllowanceGroupHelp;
+
+  /// No description provided for @accountAllowanceNextReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Next reset {date}'**
+  String accountAllowanceNextReset(String date);
+
+  /// No description provided for @accountAllowanceBookBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger balance {amount}'**
+  String accountAllowanceBookBalance(String amount);
+
+  /// No description provided for @insufficientAllowance.
+  ///
+  /// In en, this message translates to:
+  /// **'{account} has insufficient allowance for the transaction’s cycle. Available: {amount}'**
+  String insufficientAllowance(String account, String amount);
+
+  /// No description provided for @helpAllowanceExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Accounts → Family Card → ⋮ → Resettable allowance. Enter ¥1,000 and choose the first day of the month. After posting a ¥200 card expense, ¥800 remains. The amount returns to ¥1,000 on the first day of next month. Each entrusted account can have one active allowance.'**
+  String get helpAllowanceExample;
 
   /// No description provided for @accountBalances.
   ///

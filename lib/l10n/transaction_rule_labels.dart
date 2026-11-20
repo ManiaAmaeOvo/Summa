@@ -19,6 +19,11 @@ String localizedTransactionRule(
         account,
         formatMoney(exception.amountMinor ?? 0, exception.currencyCode),
       ),
+    TransactionRuleError.insufficientAllowance =>
+      context.l10n.insufficientAllowance(
+        account,
+        formatMoney(exception.amountMinor ?? 0, exception.currencyCode),
+      ),
     TransactionRuleError.overpayment => context.l10n.overpayment(
       account,
       formatMoney(exception.amountMinor ?? 0, exception.currencyCode),

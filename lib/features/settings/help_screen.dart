@@ -33,9 +33,32 @@ class HelpScreen extends StatelessWidget {
             paragraphs: [l10n.helpAccounts1, l10n.helpAccounts2],
           ),
           _HelpSection(
-            icon: Icons.data_object_rounded,
-            title: l10n.helpJsonTitle,
-            paragraphs: [l10n.helpJson1, l10n.helpJson2, l10n.helpJson3],
+            icon: Icons.people_outline,
+            title: l10n.helpAdvanceTitle,
+            paragraphs: [l10n.advanceEditorHint, l10n.helpAdvanceExample],
+          ),
+          _HelpSection(
+            icon: Icons.event_repeat_outlined,
+            title: l10n.accountPeriodicAllowance,
+            paragraphs: [
+              l10n.accountPeriodicAllowanceExplanation,
+              l10n.helpAllowanceExample,
+            ],
+          ),
+          _HelpSection(
+            icon: Icons.file_upload_outlined,
+            title: l10n.helpImportTitle,
+            paragraphs: [
+              l10n.helpCsv,
+              l10n.helpJson1,
+              l10n.helpJson2,
+              l10n.helpPaymentNotice,
+            ],
+          ),
+          _HelpSection(
+            icon: Icons.event_note_outlined,
+            title: l10n.planningTab,
+            paragraphs: [l10n.helpPlanning],
           ),
           _HelpSection(
             icon: Icons.pie_chart_outline_rounded,

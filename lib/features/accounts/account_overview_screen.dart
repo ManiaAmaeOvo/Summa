@@ -6,7 +6,11 @@ import 'package:summa/app/widgets/ledger_surfaces.dart';
 import 'package:summa/core/money/money.dart';
 import 'package:summa/domain/accounts/ledger_account.dart';
 import 'package:summa/domain/analytics/ledger_analysis.dart';
+import 'package:summa/domain/planning/planning_date.dart';
+import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/features/planning/savings_goals_screen.dart';
+import 'package:summa/features/planning/spending_plan_editor.dart';
+import 'package:summa/features/planning/spending_plans_screen.dart';
 import 'package:summa/features/reports/report_screen.dart';
 import 'package:summa/features/reconciliation/reconciliation_screen.dart';
 import 'package:summa/features/valuation/valuation_screen.dart';
@@ -45,6 +49,42 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
 
   @override
   Widget build(BuildContext context) {
+    final allowancePlans = {
+      for (final plan
+          in ref.watch(spendingPlansProvider).value ?? const <SpendingPlan>[])
+        if (plan.draft.scope.isAllowance && !plan.archived)
+          plan.draft.accountId!: plan,
+    };
+    final today = ref.watch(localPlanningDateProvider);
+    final records = ref.watch(transactionsProvider).value;
+    final periods = <String, SpendingPeriod>{};
+    if (records != null) {
+      for (final entry in allowancePlans.entries) {
+        final plan = entry.value;
+        if (plan.draft.scope != SpendingScope.resettableAllowance) continue;
+        final index = plan.draft.periodIndex(planningDay(today));
+        if (index == null) continue;
+        periods[entry.key] = summarizeSpendingPlan(
+          plan,
+          records,
+          periodIndex: index,
+          today: today,
+        );
+      }
+    }
+
+    void openAllowance(AccountBalance account) {
+      final plan = allowancePlans[account.id];
+      Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => plan == null
+              ? SpendingPlanEditor(allowance: true, resetAccount: account)
+              : SpendingPlanDetails(id: plan.id),
+        ),
+      );
+    }
+
     void editBalance(AccountBalance account) {
       showDialog<void>(
         context: context,
@@ -128,6 +168,10 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
     final entrustedFunds = totalFor(AccountGroup.entrustedFunds);
     final liabilities = totalFor(AccountGroup.liability);
     final netAssets = personalAssets - liabilities;
+    final hasPeriodicAllowance = items.any(
+      (account) =>
+          account.currencyCode == currency && periods.containsKey(account.id),
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
@@ -158,7 +202,9 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
               value: formatMoney(netAssets, currency),
             ),
             LedgerMetricCard(
-              label: context.l10n.entrustedFunds,
+              label: hasPeriodicAllowance
+                  ? context.l10n.accountAllowanceBookSummary
+                  : context.l10n.entrustedFunds,
               value: formatMoney(entrustedFunds, currency),
             ),
           ],
@@ -238,10 +284,15 @@ class _AccountOverviewState extends ConsumerState<_AccountOverview> {
                   _itemsFor(group, currency).isNotEmpty))
             _AccountGroup(
               title: _groupLabel(context, group).$1,
-              description: _groupLabel(context, group).$2,
+              description:
+                  group == AccountGroup.entrustedFunds && hasPeriodicAllowance
+                  ? context.l10n.accountAllowanceGroupHelp
+                  : _groupLabel(context, group).$2,
               items: _itemsFor(group, currency),
               onEdit: editBalance,
               onDelete: deleteAccount,
+              onAllowance: openAllowance,
+              periods: periods,
             ),
         const SizedBox(height: 8),
         Text(
@@ -612,6 +663,8 @@ class _AccountGroup extends StatelessWidget {
     required this.items,
     required this.onEdit,
     required this.onDelete,
+    required this.onAllowance,
+    required this.periods,
   });
 
   final String title;
@@ -619,6 +672,29 @@ class _AccountGroup extends StatelessWidget {
   final List<AccountBalance> items;
   final ValueChanged<AccountBalance> onEdit;
   final ValueChanged<AccountBalance> onDelete;
+  final ValueChanged<AccountBalance> onAllowance;
+  final Map<String, SpendingPeriod> periods;
+
+  String _balanceCaption(BuildContext context, AccountBalance account) {
+    final l10n = context.l10n;
+    if (periods[account.id] case final period?) {
+      final date = MaterialLocalizations.of(context)
+          .formatShortDate(period.endExclusive);
+      return [
+        l10n.accountAllowanceRemaining,
+        l10n.accountAllowanceNextReset(date),
+        l10n.accountAllowanceBookBalance(
+          formatMoney(account.currentBalanceMinor, account.currencyCode),
+        ),
+      ].join('\n');
+    }
+    return switch (account.kind) {
+      AccountKind.thirdPartyPayable => l10n.accountKindThirdPartyPayable,
+      AccountKind.receivable => l10n.accountKindReceivable,
+      AccountKind.creditLine => l10n.liability,
+      _ => l10n.balance,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -637,18 +713,12 @@ class _AccountGroup extends StatelessWidget {
                 if (index > 0) const Divider(height: 1),
                 LedgerEntryTile(
                   label: DefaultLedgerLabels.balance(context, items[index]),
-                  value: formatMoney(
-                    items[index].currentBalanceMinor,
+                  value: formatMoneyTotal(
+                    periods[items[index].id]?.remainingMinor ??
+                        BigInt.from(items[index].currentBalanceMinor),
                     items[index].currencyCode,
                   ),
-                  caption: switch (items[index].kind) {
-                    AccountKind.thirdPartyPayable =>
-                      context.l10n.accountKindThirdPartyPayable,
-                    AccountKind.receivable =>
-                      context.l10n.accountKindReceivable,
-                    AccountKind.creditLine => context.l10n.liability,
-                    _ => context.l10n.balance,
-                  },
+                  caption: _balanceCaption(context, items[index]),
                   trailing: PopupMenuButton<_AccountAction>(
                     tooltip: context.l10n.accountActions,
                     onSelected: (action) {
@@ -683,6 +753,8 @@ class _AccountGroup extends StatelessWidget {
                           );
                         case _AccountAction.editBalance:
                           onEdit(account);
+                        case _AccountAction.allowance:
+                          onAllowance(account);
                         case _AccountAction.delete:
                           onDelete(account);
                       }
@@ -700,13 +772,20 @@ class _AccountGroup extends StatelessWidget {
                         value: _AccountAction.editBalance,
                         child: Text(context.l10n.calibrateBalanceAction),
                       ),
+                      if (items[index].kind == AccountKind.entrustedFunds)
+                        PopupMenuItem(
+                          value: _AccountAction.allowance,
+                          child: Text(context.l10n.accountPeriodicAllowance),
+                        ),
                       PopupMenuItem(
                         value: _AccountAction.delete,
                         child: Text(context.l10n.archiveAccount),
                       ),
                     ],
                   ),
-                  onTap: () => onEdit(items[index]),
+                  onTap: () => periods.containsKey(items[index].id)
+                      ? onAllowance(items[index])
+                      : onEdit(items[index]),
                 ),
               ],
             ],
@@ -717,4 +796,4 @@ class _AccountGroup extends StatelessWidget {
   }
 }
 
-enum _AccountAction { analyze, reconcile, editBalance, delete }
+enum _AccountAction { analyze, reconcile, editBalance, allowance, delete }

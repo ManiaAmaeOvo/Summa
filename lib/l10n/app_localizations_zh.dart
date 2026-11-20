@@ -122,28 +122,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get helpTransactions1 =>
-      '首页点击“记一笔”，可记录支出、收入、借入、还款和个人账户转账。日期默认使用当前时间，也可手动修改。';
+      '首页点击「记一笔」可记录收支、转账、借还款、借出、垫付和回款。支出可拆分付款账户，尚未确认的流水可先存为待入账。';
 
   @override
-  String get helpTransactions2 =>
-      '借入会同时增加负债和目标账户余额，不算收入；还款同时减少付款余额和负债，不算支出；转账不进入收支统计。';
+  String get helpTransactions2 => '借还本金和账户之间的转账属于资金流转。退款请从原账单的菜单发起，支持部分退款。';
 
   @override
-  String get helpTransactions3 => '余额不足、超额还款或无效账户流向会被拒绝。点击已有账单可以编辑或软删除。';
+  String get helpTransactions3 =>
+      '点击账单可编辑；菜单提供入账、退款、删除或冲销等适用操作。待入账流水在确认前不参与余额和报表。';
 
   @override
   String get helpAccountsTitle => '账户与分类';
 
   @override
   String get helpAccounts1 =>
-      '底部“账户”展示个人流动资产、待偿负债、流动净资产和受托/授权资金。点击账户可校准当前余额；校准不会产生虚假收入或支出。';
+      '账户页用于核对各币种余额，净资产卡按设定的基准币种估值。实际跨币种转账要填两边实际金额，估值汇率在账户页另行维护。';
 
   @override
-  String get helpAccounts2 =>
-      '账户可新增或停用。设置中的分类管理分别维护收入和支出的两级分类；账单实际选择二级分类，每个一级分类保留“其他”兜底项。';
-
-  @override
-  String get helpJsonTitle => 'JSON 代码块导入';
+  String get helpAccounts2 => '账户可新增或归档，余额差额可以校准或到对账页处理。「设置 → 分类管理」维护两级分类。';
 
   @override
   String get helpJson1 => '账单页右上角代码图标可粘贴单笔或批量 JSON，适合把账单截图经 OCR 或语言模型整理后导入。';
@@ -153,17 +149,15 @@ class AppLocalizationsZh extends AppLocalizations {
       '流程为解析校验、逐条预览和编辑、确认数量、原子写入。未知账户可自动创建，未知分类需要先创建或在预览中修正。';
 
   @override
-  String get helpJson3 => '金额使用正数十进制字符串，时间使用 ISO 8601，分类写作“一级/二级”。';
-
-  @override
   String get helpReportsTitle => '报表与导出';
 
   @override
-  String get helpReports1 => '底部“报表”支持日报、周报、月报和年报，并展示收支分类饼图、支出趋势和负债走势。';
+  String get helpReports1 =>
+      '报表可按时间、币种、分类、账户、资金归属及账单原始字段筛选。点开分类或账户可以核对对应流水；历史分析可比较多个期间。';
 
   @override
   String get helpReports2 =>
-      '账单可按本周、本月、本年、全部或自选时间段导出为 JSON、CSV 或 Markdown。账单导出用于分析，不等同于可还原整个软件的完整备份。';
+      '「导出财务报告」按当前筛选生成 JSON、CSV、XLSX 或 Markdown。迁移账本请使用「数据与备份」里的完整 JSON。';
 
   @override
   String get helpBackupTitle => '备份、合并与回档';
@@ -182,7 +176,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get helpResetTitle => '重置范围';
 
   @override
-  String get helpReset1 => '“重置账单与账户”清空账单和自定义账户，将默认账户归零，但保留分类和备份。';
+  String get helpReset1 => '「重置账单与账户」清空账单、自定义账户和账户关联计划，将默认账户归零。分类、其他预算和备份会保留。';
 
   @override
   String get helpReset2 => '“恢复出厂设置”还会恢复默认分类并删除全部软件内备份。外部导出的文件不受影响。';
@@ -195,6 +189,92 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get helpSecurity2 => '完整备份包含敏感财务信息，请只保存到可信位置，不要把真实备份上传到公开 Issue。';
+
+  @override
+  String get helpImportTitle => '账单导入与复核';
+
+  @override
+  String get helpCsv =>
+      '账单页的「CSV 导入」支持通用 CSV，以及微信和支付宝的 CSV/XLSX。检查去重结果、分类建议和付款账户，勾选确认后才入账；已导入批次可在导入历史撤销。';
+
+  @override
+  String get helpPlanning =>
+      '「规划」集中管理预算、外部额度、周期收支与订阅、债务及应收款、储蓄目标和现金流预测。计划到期后仍需核对并确认实际交易才入账。';
+
+  @override
+  String get helpAdvanceTitle => '垫付与 AA';
+
+  @override
+  String get advanceEditorHint =>
+      '替他人先付款、以后由对方归还。保存后，付款账户减少，同币种应收款增加；收到对方还款时用「报销到账」。如果这笔钱要由你承担，请记录为支出。';
+
+  @override
+  String get helpAdvanceExample =>
+      '你用微信替朋友付 ¥80，预计他会全额还你。建立「朋友应收」账户，记一笔 ¥80 的「垫付」，从微信转入该应收款。朋友先还你 ¥30 时，记「报销到账」，从应收款转回微信，尚欠 ¥50。AA 餐费 ¥200 中你承担 ¥80 时，记 ¥200 支出并勾选「本单含替他人垫付」，填写 ¥120。';
+
+  @override
+  String get pastePaymentNotice => '粘贴支付通知';
+
+  @override
+  String get paymentNoticePrivacy => '粘贴一条微信支付或支付宝通知。文本只在当前设备解析，关闭窗口后不会保留原文。';
+
+  @override
+  String get paymentNoticeText => '通知文本';
+
+  @override
+  String get paymentNoticeUnsupported =>
+      '需要一条含明确人民币付款或收款金额的通知，例如「支付金额：¥28.50」。可关闭窗口后手动记账。';
+
+  @override
+  String get paymentNoticeNoAccounts => '请先添加可用的人民币账户。';
+
+  @override
+  String get paymentNoticeReview => '带入记账';
+
+  @override
+  String get paymentNoticeCheck => '请核对时间、账户和分类，并检查是否已记过这笔。默认保存为待入账。';
+
+  @override
+  String get helpPaymentNotice =>
+      '在「记一笔」点击粘贴图标，可从一条人民币支付通知生成草稿。选好账户并核对草稿后，默认保存为待入账。';
+
+  @override
+  String get accountPeriodicAllowance => '周期重置额度';
+
+  @override
+  String get accountPeriodicAllowanceAmount => '每期重置金额';
+
+  @override
+  String get accountPeriodicAllowanceExplanation =>
+      '按月恢复授权可用额度。上期余量不结转，刷卡消费在入账后扣减本期额度。重置不产生收入或账面余额调整，现有账面净额仍可用于对账。';
+
+  @override
+  String get accountAllowanceRemaining => '本期可用额度';
+
+  @override
+  String get accountAllowanceBookSummary => '受托资金账面净额';
+
+  @override
+  String get accountAllowanceGroupHelp => '账面净额与本期可用额度分别显示。';
+
+  @override
+  String accountAllowanceNextReset(String date) {
+    return '下次重置 $date';
+  }
+
+  @override
+  String accountAllowanceBookBalance(String amount) {
+    return '账面净额 $amount';
+  }
+
+  @override
+  String insufficientAllowance(String account, String amount) {
+    return '$account 在交易所属周期的额度不足，可用 $amount';
+  }
+
+  @override
+  String get helpAllowanceExample =>
+      '打开「账户 → 亲情卡 → ⋮ → 周期重置额度」，填写 1,000 元，起始日选本月 1 日。刷卡消费 200 元并入账后，本期可用额度为 800 元，下月 1 日恢复为 1,000 元。每个受托账户只启用一项外部额度。';
 
   @override
   String get accountBalances => '账户余额';

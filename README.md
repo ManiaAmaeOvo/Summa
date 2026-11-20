@@ -8,8 +8,8 @@ Summa requires no account and no backend server. Accounts, liabilities,
 categories, transactions, and in-app backups remain in the device's local
 SQLite database unless you explicitly export or share them.
 
-> Latest stable release: [`v0.4.2`](https://github.com/ManiaAmaeOvo/Summa/releases/tag/v0.4.2)
-> (`0.4.2+6`). Export a complete backup regularly when using important data.
+> Legacy migration baseline [`v0.4.2`](https://github.com/ManiaAmaeOvo/Summa/releases/tag/v0.4.2)
+> (`0.4.2+6`). This branch documents Summa 2.0 and its development builds.
 
 ## Why Summa exists
 
@@ -28,26 +28,20 @@ app.
 
 ## Features
 
-- Expense, income, borrowing, repayment, and personal-account transfers.
-- Separate two-level category trees for income and expenses, with add, rename,
-  ordering, and archive controls; `Other` always stays last.
-- Cash, bank, wallet, entrusted or authorized funds, and liability accounts.
-- Hard validation for insufficient balances and liability overpayment.
-- Daily, weekly, monthly, and yearly summaries; category pie charts and scaled
-  expense/liability trend charts.
-- Strict single or batch JSON import with an LLM-ready template, editable
-  preview, and atomic writes.
-- Automatic creation of confirmed unknown accounts during JSON import.
-- Transaction export by date range in JSON, CSV, or Markdown.
-- Complete backup with replace or merge restore and a safety snapshot before
-  restoration.
-- One automatic snapshot before the first successful change after each launch,
-  with the latest five automatic snapshots retained.
-- Named manual local snapshots with preview, rename, merge, restore, and delete.
-- English and Simplified Chinese UI with a persistent in-app language selector.
-- Persistent app font-size controls from small through extra large, or follow
-  the Android system setting.
-- Fully offline core functionality.
+- Multi-currency accounts, split payments, partial refunds, pending entries,
+  settlement amounts, and separate valuation rates.
+- Funding attribution for personal, family, and entrusted payments, with
+  advances, receivables, and collections.
+- Budgets, monthly resettable card allowances, recurring plans, subscriptions,
+  debt and receivable contracts, and savings goals.
+- Generic CSV and WeChat Pay or Alipay statement import with rule previews,
+  manual review, matching, and batch undo.
+- JSON code import with a template for OCR and language models.
+- Reconciliation, cash forecasting, multidimensional and historical reports,
+  and JSON, CSV, XLSX, and Markdown financial report exports.
+- Full backup and replace or merge restore, including older backups.
+- Offline core functionality, English and Simplified Chinese, dark mode,
+  and font-size controls.
 
 ## Install
 
@@ -65,22 +59,11 @@ Android currently requires `minSdk 24` and targets SDK 36.
 
 ## Quick start
 
-1. Open **Accounts** and calibrate the current balances for cash, bank,
-   payment-wallet, entrusted-fund, and liability accounts.
-2. Tap **Add transaction** on the home screen and choose Expense, Income,
-   Borrowing, Repayment, or Transfer.
-3. Open **Settings → Category management** to maintain the two-level income
-   and expense categories.
-4. Use the code icon in the top-right of **Transactions** to paste strict JSON,
-   preview the parsed transactions, and import them as one atomic batch.
-5. Open **Reports** for daily, weekly, monthly, or yearly summaries and export
-   JSON, CSV, or Markdown for a selected period.
-6. Open **Settings → Data & backup** to manage automatic and manual snapshots,
-   external backups, restore, merge, and reset operations.
-7. Open **Settings → Language** to follow the system language or explicitly use
-   English or Simplified Chinese.
-8. Open **Settings → Font size** to follow Android or choose a size used only
-   inside Summa. Tap **Liquid net worth** in **Transactions** to open Accounts.
+1. Check your currency balances in **Accounts**. Set a Family Card allowance
+   from the account menu.
+2. Tap **Add transaction** on Home, or use a file or JSON import in **Transactions**.
+3. Manage plans in **Planning**, and check spending and cash flows in **Reports**.
+4. Save a full JSON backup outside Summa from **Settings → Data & backup**.
 
 See the [complete user guide](USER_GUIDE.md) for ledger semantics, import
 examples, backup behavior, recovery options, and common questions. The same

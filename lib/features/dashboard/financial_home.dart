@@ -179,7 +179,7 @@ class _FinancialHomeState extends ConsumerState<FinancialHome> {
                   for (final plan in all)
                     if (!plan.archived &&
                         plan.draft.currency == currency &&
-                        plan.draft.scope != SpendingScope.allowance)
+                        !plan.draft.scope.isAllowance)
                       if (plan.draft.periodIndex(today) case final index?)
                         _HomeAmount(
                           label: plan.draft.name,

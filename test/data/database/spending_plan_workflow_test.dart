@@ -9,6 +9,7 @@ import 'package:summa/domain/analytics/financial_activity.dart';
 import 'package:summa/domain/import_export/ledger_backup.dart';
 import 'package:summa/domain/planning/spending_plan.dart';
 import 'package:summa/domain/transactions/expense_record.dart';
+import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/domain/transactions/transaction_terms.dart';
 
 const _cash = 'account-cash';
@@ -36,6 +37,95 @@ void main() {
     for (final item in await ledger.watchAccountBalances().first)
       item.id: item.currentBalanceMinor,
   };
+
+  test(
+    'family card authorization resets on the first without ledger income',
+    () async {
+      final v14 = await ledger.createFullBackup();
+      await ledger.addSpendingPlan(
+        SpendingPlanDraft(
+          name: 'Family card',
+          currency: 'CNY',
+          scope: SpendingScope.resettableAllowance,
+          limitMinor: 100000,
+          startsOn: DateTime.utc(2026, 1, 1),
+          accountId: _card,
+        ),
+      );
+      final plan = (await plans()).single;
+      Future<SpendingPeriod> period(int month, int day) async =>
+          summarizeSpendingPlan(
+            plan,
+            await records(),
+            periodIndex: month - 1,
+            today: DateTime(2026, month, day),
+          );
+      Future<void> charge(
+        int amount,
+        int month,
+        int day,
+        String note, {
+        LedgerPostingStatus status = LedgerPostingStatus.posted,
+      }) => ledger.addTransaction(
+        type: LedgerTransactionType.expense,
+        accountId: _card,
+        categoryId: _food,
+        amountMinor: amount,
+        occurredAt: DateTime(2026, month, day, 12),
+        note: note,
+        status: status,
+      );
+
+      expect(await records(), isEmpty);
+      expect((await period(1, 1)).remainingMinor, BigInt.from(100000));
+      expect((await balances())[_card], 0);
+      await charge(20000, 1, 31, 'January purchase');
+      expect((await period(1, 31)).remainingMinor, BigInt.from(80000));
+      final beforeReset = await balances();
+      expect((await period(2, 1)).remainingMinor, BigInt.from(100000));
+      expect(await balances(), beforeReset);
+
+      await charge(90000, 2, 1, 'February purchase');
+      final purchase = (await records()).first;
+      await charge(20000, 2, 2, 'Pending', status: LedgerPostingStatus.pending);
+      final pending = (await records()).first;
+      expect((await period(2, 2)).remainingMinor, BigInt.from(10000));
+      await expectLater(
+        ledger.postTransaction(pending.id),
+        throwsA(
+          isA<TransactionRuleException>().having(
+            (error) => error.error,
+            'error',
+            TransactionRuleError.insufficientAllowance,
+          ),
+        ),
+      );
+      await ledger.saveRefund(
+        originalId: purchase.id,
+        accountId: _card,
+        amountMinor: 15000,
+        occurredAt: DateTime(2026, 2, 3, 12),
+        note: 'Refund',
+      );
+      await ledger.postTransaction(pending.id);
+      expect((await period(2, 3)).remainingMinor, BigInt.from(5000));
+      final activity = summarizeFinancialActivity(await records(), 'CNY');
+      expect(activity.grossSpending, BigInt.from(115000));
+      expect(activity.personalCashOutflow, BigInt.zero);
+      expect(activity.personalCashInflow, BigInt.zero);
+
+      final backup = await ledger.createFullBackup();
+      expect((jsonDecode(backup) as Map)['backup_version'], 15);
+      await ledger.restoreFullBackup(v14, mode: BackupRestoreMode.replace);
+      expect(await plans(), isEmpty);
+      await ledger.restoreFullBackup(backup, mode: BackupRestoreMode.replace);
+      expect(
+        (await plans()).single.draft.scope,
+        SpendingScope.resettableAllowance,
+      );
+      expect((await period(2, 3)).remainingMinor, BigInt.from(5000));
+    },
+  );
 
   test(
     'budget scopes use posted settlement, receipts and split allocations',

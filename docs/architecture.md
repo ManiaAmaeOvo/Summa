@@ -47,14 +47,18 @@ lib/
 
 ## Core ledger constraints
 
-- CNY amounts are stored as integer minor units, never binary floating point.
-- Expenses and transfers cannot exceed the source asset balance.
-- Repayment cannot exceed either the payment balance or target liability.
-- Transfers are limited to two different personal asset accounts and do not
-  affect income or expense totals.
-- Archived accounts, categories, and soft-deleted transactions retain stable
-  historical references.
-- Batch import and backup restore execute inside one database transaction.
+- Amounts use integer minor units per currency. Posted transactions have
+  balanced postings in each currency. Pending transactions affect balances
+  after confirmation.
+- Personal asset payments validate available funds. Repayments and collections
+  validate the outstanding amount. Cross-currency transfers keep both actual
+  settlement amounts, and valuation rates are stored separately.
+- Accounts, categories, and transactions keep stable IDs. Refunds and reversals
+  link to their original entries, and balance checkpoints can link to adjustments.
+- Batch import, reviewed posting, and full restoration use database transactions.
+- Resettable allowances are stored as account-linked plans. Payment validation
+  and display use the same cycle limit and posted account legs. Date boundaries
+  determine resets. Reconciliation continues to use the original ledger postings.
 
 ## Localization model
 
@@ -68,20 +72,16 @@ UI renders the label in the active language. Once a user renames it to a custom
 value, that exact name is preserved across language changes. JSON import accepts
 both default-language aliases while protocol keys and enum values stay English.
 
-## Database version
+## Database versions
 
-The current schema version is 6:
+The current SQLite schema is 20. Versions 6–8 backfill and preserve postings,
+9 adds settlement values, 10 adds valuation, 11–15 add funding attribution,
+receivables, checkpoints, CSV batches, and rules, and 16–19 add financial plans.
+Version 20 expands rules with compound conditions. See the
+[2.0 implementation record](v2/PROGRESS.md) for migration details.
 
-- v1: accounts, two-level expense categories, and transactions.
-- v2: entrusted funds and `Other` secondary categories.
-- v3: additional default liability accounts.
-- v4: transaction soft deletion.
-- v5: target accounts and income, borrowing, and repayment system categories.
-- v6: personal account transfer categories.
-
-The `0.4.0` localization design does not rewrite financial rows or require a
-schema migration. Any future schema change must increment the version, include a
-forward migration, and add automated coverage.
+The app can restore Summa V1–15 and LedgerPro V1 backups. It writes V15 when the
+ledger has a resettable allowance plan and V14 otherwise. Both use Schema 20.
 
 ## Local backups
 

@@ -36,7 +36,7 @@ import 'drift_spending_plan_store.dart';
 import 'drift_valuation_store.dart';
 
 const _backupFormat = 'summa_full_backup';
-const _currentBackupVersion = 14;
+const _currentBackupVersion = 15;
 const _legacyBackupFormat = 'ledgerpro_full_backup';
 
 enum _BalanceScope { active, contracts, savings, history }
@@ -536,6 +536,7 @@ class DriftExpenseRepository implements ExpenseRepository {
     final validation = await _validateTransaction(
       type: type,
       amountMinor: amountMinor,
+      occurredAt: occurredAt,
       categoryId: categoryId,
       accountId: accountId,
       targetAccountId: targetAccountId,
@@ -725,6 +726,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       await _validateTransaction(
         type: type,
         amountMinor: entry.amountMinor,
+        occurredAt: entry.occurredAt,
         categoryId: entry.categoryId,
         accountId: entry.accountId,
         targetAccountId: entry.targetAccountId,
@@ -1874,6 +1876,7 @@ class DriftExpenseRepository implements ExpenseRepository {
   _validateTransaction({
     required LedgerTransactionType type,
     required int amountMinor,
+    required DateTime occurredAt,
     required String? categoryId,
     required String accountId,
     required String? targetAccountId,
@@ -2043,6 +2046,26 @@ class DriftExpenseRepository implements ExpenseRepository {
           for (final payment in allocations) {
             final source = accounts[payment.accountId]!;
             final kind = AccountKind.values.byName(source.kind);
+            if (kind == AccountKind.entrustedFunds) {
+              final remaining = await _spendingPlans.availableForPayment(
+                accountId: source.id,
+                currency: source.currencyCode,
+                occurredAt: occurredAt,
+                excludingEntryId: previous?.id,
+              );
+              if (remaining != null) {
+                if (remaining < BigInt.from(payment.amountMinor)) {
+                  throw TransactionRuleException(
+                    TransactionRuleError.insufficientAllowance,
+                    accountId: source.id,
+                    accountName: source.name,
+                    currencyCode: source.currencyCode,
+                    amountMinor: remaining.isNegative ? 0 : remaining.toInt(),
+                  );
+                }
+                continue;
+              }
+            }
             if (!kind.isLiability && kind != AccountKind.familyDirect) {
               await requireFunds(source, payment.amountMinor);
             }
@@ -2733,13 +2756,19 @@ class DriftExpenseRepository implements ExpenseRepository {
       (postings[posting.transactionId] ??= []).add(posting);
     }
     final valuation = await _valuation.readSettings();
+    final spendingPlans = await _spendingPlans.backup();
     return const JsonEncoder.withIndent('  ').convert({
       'format': _backupFormat,
-      'backup_version': _currentBackupVersion,
+      'backup_version':
+          spendingPlans.any(
+            (plan) => plan['scope'] == SpendingScope.resettableAllowance.name,
+          )
+          ? _currentBackupVersion
+          : 14,
       'savings_goals': await _savings.backup(),
       'debt_contracts': await _debtContracts.backup(),
       'recurring_plans': await _recurringPlans.backup(),
-      'spending_plans': await _spendingPlans.backup(),
+      'spending_plans': spendingPlans,
       'import_category_rules': await _importRules.backup(),
       'csv_import': await _csv.backup(),
       'balance_checkpoints': await _reconciliation.backup(),

@@ -10,9 +10,11 @@ enum SpendingScope {
   entrusted,
   category,
   account,
-  allowance;
+  allowance,
+  resettableAllowance;
 
-  bool get usesAccount => this == account || this == allowance;
+  bool get isAllowance => this == allowance || this == resettableAllowance;
+  bool get usesAccount => this == account || isAllowance;
 }
 
 class SpendingPlanDraft {
@@ -48,6 +50,8 @@ class SpendingPlanDraft {
       isPlanningDay(startsOn) &&
       (endsOn == null ||
           isPlanningDay(endsOn!) && !endsOn!.isBefore(startsOn) && !rollover) &&
+      (scope != SpendingScope.resettableAllowance ||
+          endsOn == null && !rollover) &&
       scope.usesAccount == (accountId != null) &&
       (scope == SpendingScope.category) == (categoryId != null);
 
@@ -73,6 +77,24 @@ class SpendingPlan {
   final SpendingPlanDraft draft;
   final bool archived;
   final List<SpendingPlanRevision> limits;
+
+  int limitForPeriod(int index) {
+    final start = draft.periodStart(index);
+    var limit = draft.limitMinor;
+    DateTime? effectiveFrom;
+    for (final revision in limits) {
+      final change = revision.limit;
+      final date = change.periodStart;
+      if (date == start ||
+          (change.ongoing &&
+              date.isBefore(start) &&
+              (effectiveFrom == null || !date.isBefore(effectiveFrom)))) {
+        limit = change.limitMinor;
+        effectiveFrom = date;
+      }
+    }
+    return limit;
+  }
 }
 
 typedef SpendingPlanLimit = ({
@@ -115,8 +137,10 @@ SpendingPeriod summarizeSpendingPlan(
   final usage = <int, BigInt>{};
   final items = <SpendingPlanItem>[];
   for (final record in transactions) {
-    final date = planningDay(record.occurredAt);
-    if (date.isAfter(day)) continue;
+    final date = planningDay(record.occurredAt.toLocal());
+    if (date.isAfter(day) && draft.scope != SpendingScope.resettableAllowance) {
+      continue;
+    }
     final index = draft.periodIndex(date);
     if (index == null ||
         index > periodIndex ||
@@ -149,17 +173,24 @@ SpendingPeriod summarizeSpendingPlan(
     carried = remaining.isNegative ? BigInt.zero : remaining;
   }
 
-  final base = BigInt.from(overrides[periodIndex] ?? regular);
+  final base = BigInt.from(
+    draft.scope == SpendingScope.resettableAllowance
+        ? plan.limitForPeriod(periodIndex)
+        : overrides[periodIndex] ?? regular,
+  );
   final used = usage[periodIndex] ?? BigInt.zero;
+  final remaining = draft.scope == SpendingScope.resettableAllowance
+      ? resettableAllowanceRemaining(base.toInt(), used)
+      : base + carried - used;
   return (
     start: start,
     endExclusive: end,
     baseMinor: base,
     carriedMinor: carried,
     usedMinor: used,
-    remainingMinor: base + carried - used,
+    remainingMinor: remaining,
     projectedMinor:
-        draft.scope != SpendingScope.allowance &&
+        !draft.scope.isAllowance &&
             !day.isBefore(start) &&
             day.isBefore(end) &&
             used > BigInt.zero
@@ -203,8 +234,21 @@ BigInt _spending(SpendingPlanDraft plan, LedgerRecord record) {
     case SpendingScope.account:
     case SpendingScope.allowance:
       return _accountSpending(record, plan.accountId!);
+    case SpendingScope.resettableAllowance:
+      if (record.type != LedgerTransactionType.expense) return BigInt.zero;
+      return record.accountPostings
+          .where(
+            (posting) =>
+                posting.accountId == plan.accountId &&
+                posting.currencyCode == plan.currency &&
+                !posting.needsReview,
+          )
+          .fold(BigInt.zero, (sum, part) => sum - BigInt.from(part.debitMinor));
   }
 }
+
+BigInt resettableAllowanceRemaining(int limitMinor, BigInt netUsed) =>
+    BigInt.from(limitMinor) - (netUsed.isNegative ? BigInt.zero : netUsed);
 
 BigInt _accountSpending(LedgerRecord record, String accountId) {
   final charges = record.accountId == accountId

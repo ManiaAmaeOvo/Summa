@@ -12,6 +12,7 @@ import 'package:summa/domain/transactions/expense_record.dart';
 import 'package:summa/domain/transactions/expense_repository.dart';
 import 'package:summa/domain/transactions/transaction_terms.dart';
 import 'package:summa/features/accounts/account_overview_screen.dart';
+import 'package:summa/features/transaction_editor/payment_notice_dialog.dart';
 import 'package:summa/l10n/default_ledger_labels.dart';
 import 'package:summa/l10n/input_error_labels.dart';
 import 'package:summa/l10n/l10n.dart';
@@ -61,6 +62,7 @@ class _TransactionEditorSheetState
   String? _submissionError;
   bool _isSaving = false;
   bool _pending = false;
+  bool _reviewingPaymentNotice = false;
   bool _familyFunded = false;
   String _familyCurrency = defaultCurrency;
   final _extraPayments = <_SplitPaymentInput>[];
@@ -87,6 +89,26 @@ class _TransactionEditorSheetState
 
   bool get _isRefund => widget.refundFor != null;
   bool get _isEditing => widget.record != null;
+
+  Future<void> _pastePaymentNotice() async {
+    FocusScope.of(context).unfocus();
+    final result = await showDialog<ReviewedPaymentNotice>(
+      context: context,
+      builder: (_) => const PaymentNoticeDialog(),
+    );
+    if (!mounted || result == null) return;
+    _changeType(result.draft.type);
+    setState(() {
+      _reviewingPaymentNotice = true;
+      _pending = true;
+      _accountId = result.accountId;
+      _amountController.text = moneyInputText(
+        result.draft.amountMinor,
+        defaultCurrency,
+      );
+      _noteController.text = result.draft.note;
+    });
+  }
 
   @override
   void initState() {
@@ -258,6 +280,12 @@ class _TransactionEditorSheetState
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                   ),
+                  if (!_isEditing && !_isRefund)
+                    IconButton(
+                      onPressed: _isSaving ? null : _pastePaymentNotice,
+                      icon: const Icon(Icons.content_paste_search_outlined),
+                      tooltip: context.l10n.pastePaymentNotice,
+                    ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
@@ -284,6 +312,10 @@ class _TransactionEditorSheetState
                   onChanged: _isSaving ? null : _changeType,
                 ),
               const SizedBox(height: 16),
+              if (_reviewingPaymentNotice) ...[
+                Text(context.l10n.paymentNoticeCheck),
+                const SizedBox(height: 8),
+              ],
               TextFormField(
                 controller: _amountController,
                 autofocus: !_isEditing,
@@ -499,6 +531,7 @@ class _TransactionEditorSheetState
       _includeAdvance = false;
       _externalDebtPayment = false;
       _type = value;
+      _reviewingPaymentNotice = false;
       _familyFunded = false;
       _parentCategoryId = null;
       _categoryId = null;
@@ -578,7 +611,11 @@ class _TransactionEditorSheetState
   ];
 
   Widget _buildAccountFields(List<LedgerAccount> accounts) {
-    final selectable = _withOriginalArchivedAccounts(accounts);
+    final selectable = _reviewingPaymentNotice
+        ? accounts
+              .where((account) => account.currencyCode == defaultCurrency)
+              .toList()
+        : _withOriginalArchivedAccounts(accounts);
     _formAccounts = selectable;
     return switch (_type) {
       LedgerTransactionType.expense => _expenseFields(
@@ -1183,6 +1220,10 @@ class _TransactionEditorSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_type == LedgerTransactionType.advance) ...[
+          Text(context.l10n.advanceEditorHint),
+          const SizedBox(height: 12),
+        ],
         _accountDropdown(
           key: ValueKey('${_type.name}-source'),
           accounts: sources,

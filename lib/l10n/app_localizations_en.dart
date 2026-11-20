@@ -128,29 +128,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helpTransactions1 =>
-      'Tap “Add transaction” on the home screen to record an expense, income, borrowing, repayment, or transfer between personal accounts. The current time is selected by default and can be changed.';
+      'Tap “Add transaction” on Home for income, expenses, transfers, borrowing, repayment, lending, advances, and collections. You can split an expense between payment accounts or save it as pending.';
 
   @override
   String get helpTransactions2 =>
-      'Borrowing increases both a liability and the destination account balance and is not income. Repayment reduces both the payment balance and the liability and is not an expense. Transfers are excluded from income and expense totals.';
+      'Principal and transfers are movements of funds. For a full or partial merchant refund, use the original transaction’s menu.';
 
   @override
   String get helpTransactions3 =>
-      'Insufficient balances, overpayment, and invalid account flows are rejected. Tap an existing transaction to edit or soft-delete it.';
+      'Tap a transaction to edit it. Its menu offers actions such as posting, refunding, deleting, or reversing. Pending transactions are outside balances and reports until posted.';
 
   @override
   String get helpAccountsTitle => 'Accounts and categories';
 
   @override
   String get helpAccounts1 =>
-      'The Accounts tab shows personal liquid assets, outstanding liabilities, liquid net worth, and entrusted or authorized funds. Tap an account to calibrate its current balance; calibration does not create artificial income or expenses.';
+      'Review balances by currency in Accounts and set the net worth base currency and valuation rates. Enter the amounts actually settled on each side of a cross-currency transfer.';
 
   @override
   String get helpAccounts2 =>
-      'Accounts can be added or archived. Category management in Settings maintains separate two-level structures for income and expenses. Transactions use the second level, and every primary category keeps an “Other” fallback.';
-
-  @override
-  String get helpJsonTitle => 'JSON code import';
+      'You can add or archive accounts and calibrate or reconcile balances. Manage two-level categories in Settings.';
 
   @override
   String get helpJson1 =>
@@ -161,19 +158,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'The flow is parse and validate, preview and edit each item, confirm the count, then write atomically. Unknown accounts can be created automatically; unknown categories must be created first or corrected in the preview.';
 
   @override
-  String get helpJson3 =>
-      'Amounts are positive decimal strings, timestamps use ISO 8601, and categories use “Primary/Secondary”.';
-
-  @override
   String get helpReportsTitle => 'Reports and export';
 
   @override
   String get helpReports1 =>
-      'Reports supports daily, weekly, monthly, and yearly views with income and expense category charts, expense trends, and liability trends.';
+      'Filter reports by period, currency, category, account, funding source, or original statement fields. Open a category or account to check its transactions. Historical Analysis compares periods.';
 
   @override
   String get helpReports2 =>
-      'Export transactions for this week, month, year, all time, or a custom range as JSON, CSV, or Markdown. Transaction exports are for analysis and are not complete restorable backups.';
+      'Export the current financial report as JSON, CSV, XLSX, or Markdown. To transfer the whole ledger, use a full JSON backup from Data & backup.';
 
   @override
   String get helpBackupTitle => 'Backup, merge, and restore';
@@ -195,7 +188,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helpReset1 =>
-      '“Reset transactions & accounts” clears transactions and custom accounts and sets default accounts to zero, while preserving categories and backups.';
+      '“Reset transactions & accounts” clears transactions, custom accounts, and account-linked plans and sets default balances to zero. It preserves categories, other budgets, and backups.';
 
   @override
   String get helpReset2 =>
@@ -211,6 +204,95 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get helpSecurity2 =>
       'Complete backups contain sensitive financial information. Store them only in trusted locations and never upload a real backup to a public issue.';
+
+  @override
+  String get helpImportTitle => 'Statement import and review';
+
+  @override
+  String get helpCsv =>
+      'Use CSV Import in Transactions for generic CSV or WeChat Pay and Alipay CSV/XLSX. Review duplicates, suggested categories, and payment accounts. Select and confirm rows to post them. You can undo a batch from import history.';
+
+  @override
+  String get helpPlanning =>
+      'Planning contains budgets, allowances, recurring plans and subscriptions, debt and receivables, savings goals, and cash forecasts. Confirm or link actual transactions when a plan comes due.';
+
+  @override
+  String get helpAdvanceTitle => 'Advances and shared bills';
+
+  @override
+  String get advanceEditorHint =>
+      'Use Advance when you pay on someone’s behalf and expect them to repay you. Your payment account falls, and the receivable in the same currency rises. Use Reimbursement when they pay you back. Record any share you bear as an expense.';
+
+  @override
+  String get helpAdvanceExample =>
+      'You pay ¥80 via WeChat Pay for a friend. Create a Friend receivable, then record an ¥80 Advance from WeChat Pay to it. If your friend returns ¥30, record a Reimbursement from the receivable to WeChat Pay. ¥50 remains outstanding. If you paid a ¥200 shared meal and your share was ¥80, record a ¥200 expense and set the advance portion to ¥120.';
+
+  @override
+  String get pastePaymentNotice => 'Paste payment notice';
+
+  @override
+  String get paymentNoticePrivacy =>
+      'Paste one Chinese WeChat Pay or Alipay notice. Summa parses it on this device and discards the original text when you close this dialog.';
+
+  @override
+  String get paymentNoticeText => 'Notice text';
+
+  @override
+  String get paymentNoticeUnsupported =>
+      'Paste one notice with an explicit CNY payment or receipt amount, for example “支付金额：¥28.50”. You can also close this dialog and enter the transaction manually.';
+
+  @override
+  String get paymentNoticeNoAccounts => 'Add an eligible CNY account first.';
+
+  @override
+  String get paymentNoticeReview => 'Review in editor';
+
+  @override
+  String get paymentNoticeCheck =>
+      'Check the date, account, and category, and look for duplicates. The transaction defaults to pending.';
+
+  @override
+  String get helpPaymentNotice =>
+      'To start a pending entry from a single CNY notice, use the paste icon in Add transaction, select the account, and review the resulting draft.';
+
+  @override
+  String get accountPeriodicAllowance => 'Resettable allowance';
+
+  @override
+  String get accountPeriodicAllowanceAmount => 'Reset amount per cycle';
+
+  @override
+  String get accountPeriodicAllowanceExplanation =>
+      'Refreshes the authorized spending amount monthly. Unused allowance expires and posted card payments reduce the current cycle’s amount. A reset creates no income or balance adjustment. The ledger balance remains available for reconciliation.';
+
+  @override
+  String get accountAllowanceRemaining => 'Available this cycle';
+
+  @override
+  String get accountAllowanceBookSummary => 'Entrusted funds ledger balance';
+
+  @override
+  String get accountAllowanceGroupHelp =>
+      'Ledger balances are shown separately from the amount authorized for this cycle.';
+
+  @override
+  String accountAllowanceNextReset(String date) {
+    return 'Next reset $date';
+  }
+
+  @override
+  String accountAllowanceBookBalance(String amount) {
+    return 'Ledger balance $amount';
+  }
+
+  @override
+  String insufficientAllowance(String account, String amount) {
+    return '$account has insufficient allowance for the transaction’s cycle. Available: $amount';
+  }
+
+  @override
+  String get helpAllowanceExample =>
+      'Open Accounts → Family Card → ⋮ → Resettable allowance. Enter ¥1,000 and choose the first day of the month. After posting a ¥200 card expense, ¥800 remains. The amount returns to ¥1,000 on the first day of next month. Each entrusted account can have one active allowance.';
 
   @override
   String get accountBalances => 'Account balances';
